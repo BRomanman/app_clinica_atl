@@ -4,7 +4,8 @@ package com.example.app_clinica_atl.navigation
 sealed class Route(val path: String) { // Cada objeto representa una pantalla
     data object Home     : Route("home")     // Ruta Home
     data object Login    : Route("login")    // Ruta Login
-    data object Register : Route("register") // Ruta Registro
+    data object Register : Route("register")
+    data object BookAppointment : Route("book_appointment")// Ruta Registro
 }
 
 /*
