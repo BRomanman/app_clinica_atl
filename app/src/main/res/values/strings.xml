@@ -1,3 +1,15 @@
 <resources>
     <string name="app_name">Clínica ATL</string>
+    <string name="common_confirm">Confirmar</string>
+    <string name="common_cancel">Cancelar</string>
+    <string name="book_appointment_title">Reserva de hora</string>
+    <string name="book_appointment_subtitle">Selecciona el área, profesional y horario</string>
+    <string name="book_appointment_department">Área de atención</string>
+    <string name="book_appointment_doctor">Profesional</string>
+    <string name="book_appointment_doctor_since">Atiende desde %1$d</string>
+    <string name="book_appointment_date">Fecha de la reserva</string>
+    <string name="book_appointment_date_placeholder">Selecciona la fecha</string>
+    <string name="book_appointment_time">Hora de la reserva</string>
+    <string name="book_appointment_time_placeholder">Selecciona la hora</string>
+    <string name="book_appointment_submit">Confirmar reserva</string>
 </resources>
