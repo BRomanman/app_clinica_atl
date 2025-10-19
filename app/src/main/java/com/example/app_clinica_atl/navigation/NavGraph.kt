@@ -1,5 +1,7 @@
 package com.example.app_clinica_atl.navigation
 
+import android.os.Build
+import androidx.annotation.RequiresApi
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.DrawerValue
 import androidx.compose.material3.ModalNavigationDrawer
@@ -21,6 +23,7 @@ import com.example.app_clinica_atl.ui.screen.RegisterScreenVm
 import com.example.app_clinica_atl.ui.viewmodel.AuthViewModel
 import kotlinx.coroutines.launch
 
+@RequiresApi(Build.VERSION_CODES.O)
 @Composable
 fun AppNavGraph(
     navController: NavHostController,

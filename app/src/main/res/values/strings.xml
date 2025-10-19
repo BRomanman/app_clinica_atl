@@ -12,4 +12,16 @@
     <string name="book_appointment_time">Hora de la reserva</string>
     <string name="book_appointment_time_placeholder">Selecciona la hora</string>
     <string name="book_appointment_submit">Confirmar reserva</string>
+    <string name="profile_header_title">Perfil del paciente</string>
+    <string name="profile_header_subtitle">Actualizar información</string>
+    <string name="profile_delete_cta">Eliminar cuenta</string>
+    <string name="profile_personal_info_title">Información personal</string>
+    <string name="profile_field_name">Nombre</string>
+    <string name="profile_field_address">Dirección</string>
+    <string name="profile_field_phone">Número de contacto</string>
+    <string name="profile_field_email">Correo electrónico</string>
+    <string name="profile_upload_section_title">Agregar historial médico</string>
+    <string name="profile_upload_placeholder">Adjuntar archivo…</string>
+    <string name="profile_upload_cta">Agregar archivo</string>
+    <string name="profile_save_cta">Guardar cambios</string>
 </resources>

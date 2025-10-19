@@ -70,7 +70,7 @@ private fun LoginScreen(
 
     Box(
         modifier = Modifier
-            .fillMaxSize() // Ocupa todo
+            .fillMaxSize() // Ocupa_todo
             .background(bg) // Fondo
             .padding(16.dp), // Margen
         contentAlignment = Alignment.Center // Centro
