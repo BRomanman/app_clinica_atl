@@ -22,14 +22,14 @@ import androidx.compose.material.icons.filled.Upload
 import androidx.compose.material3.Button
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
-import androidx.compose.material3.Divider
+import androidx.compose.material3.DividerDefaults
+import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
-import androidx.compose.material3.TextFieldDefaults
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -175,7 +175,11 @@ fun PatientProfileScreen(
                 )
 
                 Spacer(modifier = Modifier.height(12.dp))
-                Divider(color = headerColor.copy(alpha = 0.4f))
+                HorizontalDivider(
+                    Modifier,
+                    DividerDefaults.Thickness,
+                    color = headerColor.copy(alpha = 0.4f)
+                )
                 Spacer(modifier = Modifier.height(12.dp))
 
                 Text(
@@ -248,11 +252,8 @@ private fun ProfileTextField(
         singleLine = true,
         modifier = Modifier
             .fillMaxWidth()
-            .padding(bottom = 12.dp),
-        colors = TextFieldDefaults.outlinedTextFieldColors(
-            focusedBorderColor = Color(0xFF4CB4B6),
-            focusedLabelColor = Color(0xFF4CB4B6)
-        )
+            .padding(bottom = 12.dp)
+
     )
 }
 
