@@ -27,7 +27,7 @@ fun AppTopBar(
 ) {
     CenterAlignedTopAppBar(
         colors = TopAppBarDefaults.centerAlignedTopAppBarColors(
-            containerColor = MaterialTheme.colorScheme.primary
+            containerColor = MaterialTheme.colorScheme.onPrimaryContainer
         ),
         title = {
             Text(

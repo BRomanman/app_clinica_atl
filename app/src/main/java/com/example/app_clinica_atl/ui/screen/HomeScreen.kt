@@ -1,6 +1,5 @@
-package com.example.app_clinica_atl.ui.screen // <-- CORREGIDO
+package com.example.app_clinica_atl.ui.screen
 
-// (Importaciones de Compose)
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Box
@@ -19,11 +18,11 @@ import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
+import androidx.compose.material3.MaterialTheme // <-- ¡Importante!
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
@@ -34,18 +33,17 @@ import com.example.app_clinica_atl.R
 
 @Composable
 fun HomeScreen(
-    // Parámetro actualizado para la navegación
     onBookAppointment: () -> Unit
 ) {
-    // Columna principal que permite el scroll vertical
     Column(
         modifier = Modifier
             .fillMaxSize()
             .verticalScroll(rememberScrollState())
-            .background(Color(0xFFF0F0F0)) // Fondo gris claro
+            // --- CAMBIO: Usa el color de fondo del tema ---
+            .background(MaterialTheme.colorScheme.background)
     ) {
         HeaderSection()
-        MainActionCard(onBookAppointment) // Se le pasa la acción
+        MainActionCard(onBookAppointment)
         InsuranceSection()
     }
 }
@@ -55,7 +53,8 @@ private fun HeaderSection() {
     Column(
         modifier = Modifier
             .fillMaxWidth()
-            .background(Color(0xFF2C3E50)), // Fondo azul oscuro
+            // --- CAMBIO: Usa el color primario del tema ---
+            .background(MaterialTheme.colorScheme.primary),
         horizontalAlignment = Alignment.CenterHorizontally
     ) {
         Spacer(modifier = Modifier.height(16.dp))
@@ -66,9 +65,9 @@ private fun HeaderSection() {
         )
         Spacer(modifier = Modifier.height(8.dp))
         Text(
-            // TODO (MVVM): Conectar al nombre de usuario real desde un ViewModel
             text = "Hola Nombre_Usuario.",
-            color = Color.White,
+            // --- CAMBIO: Usa el color de texto "sobre primario" ---
+            color = MaterialTheme.colorScheme.onPrimary,
             fontSize = 18.sp
         )
         Spacer(modifier = Modifier.height(16.dp))
@@ -90,14 +89,22 @@ private fun MainActionCard(onBookAppointment: () -> Unit) {
             contentScale = ContentScale.Crop
         )
         Button(
-            onClick = onBookAppointment, // Acción de navegación
+            onClick = onBookAppointment,
             shape = RoundedCornerShape(8.dp),
-            colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF00BFFF)), // Azul brillante
+            // --- CAMBIO: Usa el color secundario del tema ---
+            colors = ButtonDefaults.buttonColors(
+                containerColor = MaterialTheme.colorScheme.secondary
+            ),
             modifier = Modifier
                 .padding(bottom = 16.dp)
                 .width(200.dp)
         ) {
-            Text(text = "Reserva tu Hora", color = Color.White, fontSize = 16.sp)
+            // --- CAMBIO: Usa el color de texto "sobre secundario" ---
+            Text(
+                text = "Reserva tu Hora",
+                color = MaterialTheme.colorScheme.onSecondary,
+                fontSize = 16.sp
+            )
         }
     }
 }
@@ -114,7 +121,8 @@ private fun InsuranceSection() {
             text = "Seguros",
             fontSize = 22.sp,
             fontWeight = FontWeight.Bold,
-            color = Color.DarkGray
+            // --- CAMBIO: Usa el color de texto "sobre fondo" ---
+            color = MaterialTheme.colorScheme.onBackground
         )
         Spacer(modifier = Modifier.height(16.dp))
 
@@ -122,11 +130,9 @@ private fun InsuranceSection() {
             imageRes = R.drawable.seguro_1,
             title = "Seguro de accidente vehicular"
         )
-
         Spacer(modifier = Modifier.height(16.dp))
-
         InsuranceCard(
-            imageRes = R.drawable.seguro_vida_1,
+            imageRes = R.drawable.seguro_vida_2,
             title = "Seguro de vida y salud"
         )
     }
@@ -139,7 +145,11 @@ private fun InsuranceCard(imageRes: Int, title: String) {
             .fillMaxWidth()
             .padding(horizontal = 16.dp),
         shape = RoundedCornerShape(12.dp),
-        elevation = CardDefaults.cardElevation(defaultElevation = 4.dp)
+        elevation = CardDefaults.cardElevation(defaultElevation = 4.dp),
+        // --- CAMBIO: Define los colores de la Card desde el tema ---
+        colors = CardDefaults.cardColors(
+            containerColor = MaterialTheme.colorScheme.surface
+        )
     ) {
         Column(horizontalAlignment = Alignment.CenterHorizontally) {
             Image(
@@ -155,7 +165,8 @@ private fun InsuranceCard(imageRes: Int, title: String) {
                 modifier = Modifier.padding(16.dp),
                 fontSize = 16.sp,
                 textAlign = TextAlign.Center,
-                color = Color.DarkGray
+                // --- CAMBIO: Usa el color de texto "sobre superficie" ---
+                color = MaterialTheme.colorScheme.onSurface
             )
         }
     }

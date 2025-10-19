@@ -1,172 +1,215 @@
 package com.example.app_clinica_atl.ui.screen
 
-import androidx.compose.foundation.background                 // Fondo
-import androidx.compose.foundation.layout.*                   // Box/Column/Row/Spacer
+import androidx.compose.foundation.background
+import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.rememberScrollState // <-- CAMBIO: Importar
 import androidx.compose.foundation.text.KeyboardOptions
-import androidx.compose.material.icons.Icons                  // Íconos Material
-import androidx.compose.material.icons.filled.Visibility      // Ícono mostrar
-import androidx.compose.material.icons.filled.VisibilityOff   // Ícono ocultar
-import androidx.compose.material3.*                           // Material 3
-import androidx.compose.runtime.*                             // remember, Composable
-import androidx.compose.ui.Alignment                          // Alineaciones
-import androidx.compose.ui.Modifier                           // Modificador
-import androidx.compose.ui.text.input.*                       // KeyboardOptions/Types/Transformations
-import androidx.compose.ui.unit.dp                            // DPs
-import androidx.lifecycle.compose.collectAsStateWithLifecycle // Observa StateFlow
-import com.example.app_clinica_atl.ui.viewmodel.AuthViewModel         // ViewModel
+import androidx.compose.foundation.verticalScroll // <-- CAMBIO: Importar
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Visibility
+import androidx.compose.material.icons.filled.VisibilityOff
+import androidx.compose.material3.*
+import androidx.compose.runtime.*
+import androidx.compose.ui.Alignment
+import androidx.compose.ui.Modifier
+import androidx.compose.ui.text.input.*
+import androidx.compose.ui.unit.dp
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import com.example.app_clinica_atl.ui.viewmodel.AuthViewModel
 
-//1 creamos la union con el viewmodel creado
-@Composable                                                  // Pantalla Registro conectada al VM
+// --- CAMBIO: Firma de RegisterScreenVm actualizada ---
+@Composable
 fun RegisterScreenVm(
-    vm: AuthViewModel,                            // MOD: recibimos el VM desde NavGraph
-    onRegisteredNavigateLogin: () -> Unit,                   // Navega a Login si success=true
-    onGoLogin: () -> Unit                                    // Botón alternativo para ir a Login
+    vm: AuthViewModel,
+    onRegisteredNavigateLogin: () -> Unit,
+    onGoLogin: () -> Unit
 ) {
 
-    val state by vm.register.collectAsStateWithLifecycle()   // Observa estado en tiempo real
+    val state by vm.register.collectAsStateWithLifecycle()
 
-    if (state.success) {                                     // Si registro fue exitoso
-        vm.clearRegisterResult()                             // Limpia banderas
-        onRegisteredNavigateLogin()                          // Navega a Login
+    if (state.success) {
+        vm.clearRegisterResult()
+        onRegisteredNavigateLogin()
     }
 
-    RegisterScreen(                                          // Delegamos UI presentacional
-        name = state.name,                                   // 1) Nombre
-        email = state.email,                                 // 2) Email
-        phone = state.phone,                                 // 3) Teléfono
-        pass = state.pass,                                   // 4) Password
-        confirm = state.confirm,                             // 5) Confirmación
+    RegisterScreen(
+        nombre = state.nombre,               // 1) Renombrado
+        apellido = state.apellido,           // 2) Nuevo
+        fecha_nacimiento = state.fecha_nacimiento, // 3) Nuevo
+        email = state.email,                 // 4)
+        phone = state.phone,                 // 5)
+        pass = state.pass,                   // 6)
+        confirm = state.confirm,             // 7)
 
-        nameError = state.nameError,                         // Errores por campo
+        nombreError = state.nombreError,     // Errores
+        apellidoError = state.apellidoError,
+        fechaNacimientoError = state.fechaNacimientoError,
         emailError = state.emailError,
         phoneError = state.phoneError,
         passError = state.passError,
         confirmError = state.confirmError,
 
-        canSubmit = state.canSubmit,                         // Habilitar "Registrar"
-        isSubmitting = state.isSubmitting,                   // Flag de carga
-        errorMsg = state.errorMsg,                           // Error global (duplicado)
+        canSubmit = state.canSubmit,
+        isSubmitting = state.isSubmitting,
+        errorMsg = state.errorMsg,
 
-        onNameChange = vm::onNameChange,                     // Handlers
+        onNombreChange = vm::onNombreChange, // Handlers
+        onApellidoChange = vm::onApellidoChange,
+        onFechaNacimientoChange = vm::onFechaNacimientoChange,
         onEmailChange = vm::onRegisterEmailChange,
         onPhoneChange = vm::onPhoneChange,
         onPassChange = vm::onRegisterPassChange,
         onConfirmChange = vm::onConfirmChange,
 
-        onSubmit = vm::submitRegister,                       // Acción Registrar
-        onGoLogin = onGoLogin                                // Ir a Login
+        onSubmit = vm::submitRegister,
+        onGoLogin = onGoLogin
     )
 }
 
 
-//2 ajustamos el private y parametros
-@Composable // Pantalla Registro (solo navegación)
+// --- CAMBIO: Firma de RegisterScreen actualizada ---
+@Composable
 private fun RegisterScreen(
-    name: String,                                            // 1) Nombre (solo letras/espacios)
-    email: String,                                           // 2) Email
-    phone: String,                                           // 3) Teléfono (solo números)
-    pass: String,                                            // 4) Password (segura)
-    confirm: String,                                         // 5) Confirmación
-    nameError: String?,                                      // Errores
+    nombre: String,                 // 1) Renombrado
+    apellido: String,               // 2) Nuevo
+    fecha_nacimiento: String,       // 3) Nuevo
+    email: String,                  // 4)
+    phone: String,                  // 5)
+    pass: String,                   // 6)
+    confirm: String,                // 7)
+    nombreError: String?,           // Errores
+    apellidoError: String?,
+    fechaNacimientoError: String?,
     emailError: String?,
     phoneError: String?,
     passError: String?,
     confirmError: String?,
-    canSubmit: Boolean,                                      // Habilitar botón
-    isSubmitting: Boolean,                                   // Flag de carga
-    errorMsg: String?,                                       // Error global (duplicado)
-    onNameChange: (String) -> Unit,                          // Handler nombre
-    onEmailChange: (String) -> Unit,                         // Handler email
-    onPhoneChange: (String) -> Unit,                         // Handler teléfono
-    onPassChange: (String) -> Unit,                          // Handler password
-    onConfirmChange: (String) -> Unit,                       // Handler confirmación
-    onSubmit: () -> Unit,                                    // Acción Registrar
-    onGoLogin: () -> Unit                                    // Ir a Login
+    canSubmit: Boolean,
+    isSubmitting: Boolean,
+    errorMsg: String?,
+    onNombreChange: (String) -> Unit, // Handlers
+    onApellidoChange: (String) -> Unit,
+    onFechaNacimientoChange: (String) -> Unit,
+    onEmailChange: (String) -> Unit,
+    onPhoneChange: (String) -> Unit,
+    onPassChange: (String) -> Unit,
+    onConfirmChange: (String) -> Unit,
+    onSubmit: () -> Unit,
+    onGoLogin: () -> Unit
 ) {
-    val bg = MaterialTheme.colorScheme.tertiaryContainer // Fondo único
-    //4 Anexamos las variables para mostrar y ocultar el password
-    var showPass by remember { mutableStateOf(false) }        // Mostrar/ocultar password
-    var showConfirm by remember { mutableStateOf(false) }     // Mostrar/ocultar confirm
+    val bg = MaterialTheme.colorScheme.tertiaryContainer
+    var showPass by remember { mutableStateOf(false) }
+    var showConfirm by remember { mutableStateOf(false) }
 
     Box(
         modifier = Modifier
-            .fillMaxSize() // Ocupa todo
-            .background(bg) // Fondo
-            .padding(16.dp), // Margen
-        contentAlignment = Alignment.Center // Centro
+            .fillMaxSize()
+            .background(bg)
+            .padding(16.dp),
+        contentAlignment = Alignment.Center
     ) {
-        // 5 modificamos el parametro de la columna
-        Column(modifier = Modifier.fillMaxWidth()) { // Estructura vertical
+        // --- CAMBIO: Añadido .verticalScroll() para evitar que el teclado tape los campos ---
+        Column(
+            modifier = Modifier
+                .fillMaxWidth()
+                .verticalScroll(rememberScrollState()) // <-- AÑADIDO
+        ) {
             Text(
                 text = "Registro",
-                style = MaterialTheme.typography.headlineSmall // Título
+                style = MaterialTheme.typography.headlineSmall
             )
-            Spacer(Modifier.height(12.dp)) // Separación
+            Spacer(Modifier.height(12.dp))
 
-            //6 eliminamos los elementos que van de aqui y agregamos los nuevos del formulario
-            // ---------- NOMBRE (solo letras/espacios) ----------
+            // ---------- 1. NOMBRE ----------
             OutlinedTextField(
-                value = name,                                // Valor actual
-                onValueChange = onNameChange,                // Notifica VM (filtra y valida)
-                label = { Text("Nombre") },                  // Etiqueta
-                singleLine = true,                           // Una línea
-                isError = nameError != null,                 // Marca error
-                keyboardOptions = KeyboardOptions(
-                    keyboardType = KeyboardType.Text         // Teclado de texto
-                ),
+                value = nombre, // <-- CAMBIO
+                onValueChange = onNombreChange, // <-- CAMBIO
+                label = { Text("Nombre") },
+                singleLine = true,
+                isError = nombreError != null, // <-- CAMBIO
+                keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Text),
                 modifier = Modifier.fillMaxWidth()
             )
-            if (nameError != null) {                         // Muestra error
-                Text(nameError, color = MaterialTheme.colorScheme.error, style = MaterialTheme.typography.labelSmall)
+            if (nombreError != null) { // <-- CAMBIO
+                Text(nombreError, color = MaterialTheme.colorScheme.error, style = MaterialTheme.typography.labelSmall)
             }
 
-            Spacer(Modifier.height(8.dp))                    // Espacio
+            Spacer(Modifier.height(8.dp))
 
-            // ---------- EMAIL ----------
+            // ---------- 2. APELLIDO (NUEVO) ----------
             OutlinedTextField(
-                value = email,                               // Valor actual
-                onValueChange = onEmailChange,               // Notifica VM (valida)
-                label = { Text("Email") },                   // Etiqueta
-                singleLine = true,                           // Una línea
-                isError = emailError != null,                // Marca error
-                keyboardOptions = KeyboardOptions(
-                    keyboardType = KeyboardType.Email        // Teclado de email
-                ),
+                value = apellido,
+                onValueChange = onApellidoChange,
+                label = { Text("Apellido") },
+                singleLine = true,
+                isError = apellidoError != null,
+                keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Text),
                 modifier = Modifier.fillMaxWidth()
             )
-            if (emailError != null) {                        // Muestra error
+            if (apellidoError != null) {
+                Text(apellidoError, color = MaterialTheme.colorScheme.error, style = MaterialTheme.typography.labelSmall)
+            }
+
+            Spacer(Modifier.height(8.dp))
+
+            // ---------- 3. FECHA DE NACIMIENTO (NUEVO) ----------
+            OutlinedTextField(
+                value = fecha_nacimiento,
+                onValueChange = onFechaNacimientoChange,
+                label = { Text("Fecha de Nacimiento") },
+                placeholder = { Text("YYYY-MM-DD") }, // Placeholder para guiar
+                singleLine = true,
+                isError = fechaNacimientoError != null,
+                keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Text), // Usar Text para los guiones
+                modifier = Modifier.fillMaxWidth()
+            )
+            if (fechaNacimientoError != null) {
+                Text(fechaNacimientoError, color = MaterialTheme.colorScheme.error, style = MaterialTheme.typography.labelSmall)
+            }
+
+            Spacer(Modifier.height(8.dp))
+
+            // ---------- 4. EMAIL ----------
+            OutlinedTextField(
+                value = email,
+                onValueChange = onEmailChange,
+                label = { Text("Email") },
+                singleLine = true,
+                isError = emailError != null,
+                keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Email),
+                modifier = Modifier.fillMaxWidth()
+            )
+            if (emailError != null) {
                 Text(emailError, color = MaterialTheme.colorScheme.error, style = MaterialTheme.typography.labelSmall)
             }
 
-            Spacer(Modifier.height(8.dp))                    // Espacio
+            Spacer(Modifier.height(8.dp))
 
-            // ---------- TELÉFONO (solo números). El VM ya filtra a dígitos ----------
+            // ---------- 5. TELÉFONO ----------
             OutlinedTextField(
-                value = phone,                               // Valor actual (solo dígitos)
-                onValueChange = onPhoneChange,               // Notifica VM (filtra y valida)
-                label = { Text("Teléfono") },                // Etiqueta
-                singleLine = true,                           // Una línea
-                isError = phoneError != null,                // Marca error
-                keyboardOptions = KeyboardOptions(
-                    keyboardType = KeyboardType.Number       // Teclado numérico
-                ),
+                value = phone,
+                onValueChange = onPhoneChange,
+                label = { Text("Teléfono") },
+                singleLine = true,
+                isError = phoneError != null,
+                keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
                 modifier = Modifier.fillMaxWidth()
             )
-            if (phoneError != null) {                        // Muestra error
+            if (phoneError != null) {
                 Text(phoneError, color = MaterialTheme.colorScheme.error, style = MaterialTheme.typography.labelSmall)
             }
 
-            Spacer(Modifier.height(8.dp))                    // Espacio
+            Spacer(Modifier.height(8.dp))
 
-            // ---------- PASSWORD (segura) ----------
+            // ---------- 6. PASSWORD ----------
             OutlinedTextField(
-                value = pass,                                // Valor actual
-                onValueChange = onPassChange,                // Notifica VM (valida fuerza)
-                label = { Text("Contraseña") },              // Etiqueta
-                singleLine = true,                           // Una línea
-                isError = passError != null,                 // Marca error
-                visualTransformation = if (showPass) VisualTransformation.None else PasswordVisualTransformation(), // Oculta/mostrar
-                trailingIcon = {                             // Icono para alternar visibilidad
+                value = pass,
+                onValueChange = onPassChange,
+                label = { Text("Contraseña") },
+                singleLine = true,
+                isError = passError != null,
+                visualTransformation = if (showPass) VisualTransformation.None else PasswordVisualTransformation(),
+                trailingIcon = {
                     IconButton(onClick = { showPass = !showPass }) {
                         Icon(
                             imageVector = if (showPass) Icons.Filled.VisibilityOff else Icons.Filled.Visibility,
@@ -176,21 +219,21 @@ private fun RegisterScreen(
                 },
                 modifier = Modifier.fillMaxWidth()
             )
-            if (passError != null) {                         // Muestra error
+            if (passError != null) {
                 Text(passError, color = MaterialTheme.colorScheme.error, style = MaterialTheme.typography.labelSmall)
             }
 
-            Spacer(Modifier.height(8.dp))                    // Espacio
+            Spacer(Modifier.height(8.dp))
 
-            // ---------- CONFIRMAR PASSWORD ----------
+            // ---------- 7. CONFIRMAR PASSWORD ----------
             OutlinedTextField(
-                value = confirm,                             // Valor actual
-                onValueChange = onConfirmChange,             // Notifica VM (valida igualdad)
-                label = { Text("Confirmar contraseña") },    // Etiqueta
-                singleLine = true,                           // Una línea
-                isError = confirmError != null,              // Marca error
-                visualTransformation = if (showConfirm) VisualTransformation.None else PasswordVisualTransformation(), // Oculta/mostrar
-                trailingIcon = {                             // Icono para alternar visibilidad
+                value = confirm,
+                onValueChange = onConfirmChange,
+                label = { Text("Confirmar contraseña") },
+                singleLine = true,
+                isError = confirmError != null,
+                visualTransformation = if (showConfirm) VisualTransformation.None else PasswordVisualTransformation(),
+                trailingIcon = {
                     IconButton(onClick = { showConfirm = !showConfirm }) {
                         Icon(
                             imageVector = if (showConfirm) Icons.Filled.VisibilityOff else Icons.Filled.Visibility,
@@ -200,19 +243,19 @@ private fun RegisterScreen(
                 },
                 modifier = Modifier.fillMaxWidth()
             )
-            if (confirmError != null) {                      // Muestra error
+            if (confirmError != null) {
                 Text(confirmError, color = MaterialTheme.colorScheme.error, style = MaterialTheme.typography.labelSmall)
             }
 
-            Spacer(Modifier.height(16.dp))                   // Espacio
+            Spacer(Modifier.height(16.dp))
 
             // ---------- BOTÓN REGISTRAR ----------
             Button(
-                onClick = onSubmit,                          // Intenta registrar (inserta en la colección)
-                enabled = canSubmit && !isSubmitting,        // Solo si todo es válido y no cargando
+                onClick = onSubmit,
+                enabled = canSubmit && !isSubmitting,
                 modifier = Modifier.fillMaxWidth()
             ) {
-                if (isSubmitting) {                          // Muestra loading mientras “procesa”
+                if (isSubmitting) {
                     CircularProgressIndicator(strokeWidth = 2.dp, modifier = Modifier.size(18.dp))
                     Spacer(Modifier.width(8.dp))
                     Text("Creando cuenta...")
@@ -221,12 +264,12 @@ private fun RegisterScreen(
                 }
             }
 
-            if (errorMsg != null) {                          // Error global (ej: usuario duplicado)
+            if (errorMsg != null) {
                 Spacer(Modifier.height(8.dp))
                 Text(errorMsg, color = MaterialTheme.colorScheme.error)
             }
 
-            Spacer(Modifier.height(12.dp))                   // Espacio
+            Spacer(Modifier.height(12.dp))
 
             // ---------- BOTÓN IR A LOGIN ----------
             OutlinedButton(onClick = onGoLogin, modifier = Modifier.fillMaxWidth()) {

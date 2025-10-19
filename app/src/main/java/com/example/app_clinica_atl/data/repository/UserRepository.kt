@@ -1,37 +1,48 @@
 package com.example.app_clinica_atl.data.repository
 
-import com.example.app_clinica_atl.data.local.user.UserDao       // DAO de usuario
-import com.example.app_clinica_atl.data.local.user.UserEntity    // Entidad de usuario
+import com.example.app_clinica_atl.data.local.user.UserDao
+import com.example.app_clinica_atl.data.local.user.UserEntity
 
-// Repositorio: orquesta reglas de negocio para login/registro sobre el DAO.
 class UserRepository(
-    private val userDao: UserDao // Inyección del DAO
+    private val userDao: UserDao
 ) {
 
-    // Login: busca por email y valida contraseña
+    // Login no cambia, solo usa email y password
     suspend fun login(email: String, password: String): Result<UserEntity> {
-        val user = userDao.getByEmail(email)                         // Busca usuario
-        return if (user != null && user.password == password) {      // Verifica pass
-            Result.success(user)                                     // Éxito
+        val user = userDao.getByEmail(email)
+        return if (user != null && user.password == password) {
+            Result.success(user)
         } else {
-            Result.failure(IllegalArgumentException("Credenciales inválidas")) // Error
+            Result.failure(IllegalArgumentException("Credenciales inválidas"))
         }
     }
 
-    // Registro: valida no duplicado y crea nuevo usuario (con teléfono)
-    suspend fun register(name: String, email: String, phone: String, password: String): Result<Long> {
-        val exists = userDao.getByEmail(email) != null               // ¿Correo ya usado?
+    // --- CAMBIO: Firma de register actualizada ---
+    suspend fun register(
+        nombre: String,
+        apellido: String,
+        fecha_nacimiento: String,
+        email: String,
+        phone: String,
+        password: String
+    ): Result<Long> {
+        val exists = userDao.getByEmail(email) != null
         if (exists) {
             return Result.failure(IllegalStateException("El correo ya está registrado"))
         }
-        val id = userDao.insert(                                     // Inserta nuevo
+
+        // --- CAMBIO: Creación de UserEntity actualizada ---
+        val id = userDao.insert(
             UserEntity(
-                name = name,
+                nombre = nombre,
+                apellido = apellido,
+                fecha_nacimiento = fecha_nacimiento,
                 email = email,
-                phone = phone,                                       // Teléfono incluido
-                password = password
+                phone = phone,
+                password = password,
+                id_rol = 2L // Asumimos rol 2 = "Paciente" para todos los registros nuevos
             )
         )
-        return Result.success(id)                                    // Devuelve ID generado
+        return Result.success(id)
     }
 }

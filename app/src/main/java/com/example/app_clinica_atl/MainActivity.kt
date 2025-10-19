@@ -15,6 +15,7 @@ import androidx.navigation.compose.rememberNavController
 import com.example.app_clinica_atl.data.local.database.AppDatabase
 import com.example.app_clinica_atl.data.repository.UserRepository
 import com.example.app_clinica_atl.navigation.AppNavGraph
+import com.example.app_clinica_atl.ui.theme.AppClinicaATLTheme
 import com.example.app_clinica_atl.ui.viewmodel.AuthViewModel
 import com.example.app_clinica_atl.ui.viewmodel.AuthViewModelFactory
 
@@ -76,6 +77,14 @@ fun AppRoot() { // Raíz de la app para separar responsabilidades (se conserva)
             // NOTA: Si tu AppNavGraph no tiene este parámetro aún, basta con agregarlo:
             // fun AppNavGraph(navController: NavHostController, authViewModel: AuthViewModel) { ... }
             // y luego pasar ese authViewModel a las pantallas Login/Register donde se use.
+        }
+    }
+    AppClinicaATLTheme { // <--- ¡CÁMBIALO A ESTO!
+        Surface(color = MaterialTheme.colorScheme.background) {
+            AppNavGraph(
+                navController = navController,
+                authViewModel = authViewModel
+            )
         }
     }
 }

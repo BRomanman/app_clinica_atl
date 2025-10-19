@@ -8,35 +8,58 @@ import androidx.compose.material3.dynamicDarkColorScheme
 import androidx.compose.material3.dynamicLightColorScheme
 import androidx.compose.material3.lightColorScheme
 import androidx.compose.runtime.Composable
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 
-private val DarkColorScheme = darkColorScheme(
-    primary = Purple80,
-    secondary = PurpleGrey80,
-    tertiary = Pink80
+// --- NUEVO: Esquema de colores Claro (Light) ---
+private val LightColorScheme = lightColorScheme(
+    primary = Primary, // Azul 4A90E2
+    onPrimary = Color.White, // Texto blanco sobre azul
+    primaryContainer = PrimaryLight, // Azul claro B3D4FC
+    onPrimaryContainer = PrimaryDark, // Azul oscuro 005BB5
+
+    secondary = Secondary, // Verde menta 50E3C2
+    onSecondary = NeutralDark, // Gris oscuro 4A4A4A
+    secondaryContainer = SecondaryLight, // Verde suave B2FFF2
+    onSecondaryContainer = SecondaryDark, // Verde profundo 00B894
+
+    tertiary = SecondaryDark, // Reusamos el verde profundo
+    onTertiary = NeutralLight,
+
+    background = NeutralLight, // Gris muy claro F5F5F5
+    onBackground = NeutralDark, // Gris oscuro 4A4A4A
+
+    surface = NeutralLight, // Fondo para 'Cards' (igual al fondo)
+    onSurface = NeutralDark, // Texto para 'Cards'
 )
 
-private val LightColorScheme = lightColorScheme(
-    primary = Purple40,
-    secondary = PurpleGrey40,
-    tertiary = Pink40
+// --- NUEVO: Esquema de colores Oscuro (Dark) ---
+private val DarkColorScheme = darkColorScheme(
+    primary = PrimaryLight, // Azul claro B3D4FC
+    onPrimary = PrimaryDark, // Azul oscuro 005BB5
+    primaryContainer = PrimaryDark,
+    onPrimaryContainer = PrimaryLight,
 
-    /* Other default colors to override
-    background = Color(0xFFFFFBFE),
-    surface = Color(0xFFFFFBFE),
-    onPrimary = Color.White,
-    onSecondary = Color.White,
-    onTertiary = Color.White,
-    onBackground = Color(0xFF1C1B1F),
-    onSurface = Color(0xFF1C1B1F),
-    */
+    secondary = Secondary, // Verde menta 50E3C2
+    onSecondary = SecondaryDark, // Verde profundo 00B894
+    secondaryContainer = SecondaryDark,
+    onSecondaryContainer = Secondary,
+
+    tertiary = SecondaryLight, // Verde suave B2FFF2
+    onTertiary = SecondaryDark,
+
+    background = Color(0xFF1C1B1F), // Un fondo oscuro estándar
+    onBackground = NeutralLight, // Texto claro F5F5F5
+
+    surface = Color(0xFF2C2C2E), // Fondo oscuro ligeramente más claro para 'Cards'
+    onSurface = NeutralLight, // Texto claro para 'Cards'
 )
 
 @Composable
-fun ClinicaATLTheme(
+fun AppClinicaATLTheme( // <-- CAMBIO: Nombre de la función actualizado
     darkTheme: Boolean = isSystemInDarkTheme(),
-    // Dynamic color is available on Android 12+
-    dynamicColor: Boolean = true,
+    // Dynamic color (Android 12+) lo dejamos activado
+    dynamicColor: Boolean = false,
     content: @Composable () -> Unit
 ) {
     val colorScheme = when {
@@ -44,14 +67,14 @@ fun ClinicaATLTheme(
             val context = LocalContext.current
             if (darkTheme) dynamicDarkColorScheme(context) else dynamicLightColorScheme(context)
         }
-
+        // Si no hay color dinámico, usamos nuestros esquemas personalizados
         darkTheme -> DarkColorScheme
         else -> LightColorScheme
     }
 
     MaterialTheme(
         colorScheme = colorScheme,
-        typography = Typography,
+        typography = Typography, // (Esto viene de tu archivo Typography.kt)
         content = content
     )
 }
