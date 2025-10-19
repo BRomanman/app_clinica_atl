@@ -17,9 +17,12 @@ import com.example.app_clinica_atl.ui.components.AppDrawer
 import com.example.app_clinica_atl.ui.components.AppTopBar
 import com.example.app_clinica_atl.ui.components.defaultDrawerItems
 import com.example.app_clinica_atl.ui.screen.BookAppointmentScreen
+import com.example.app_clinica_atl.ui.screen.FormularioSeguroScreen
 import com.example.app_clinica_atl.ui.screen.HomeScreen
 import com.example.app_clinica_atl.ui.screen.LoginScreenVm
+import com.example.app_clinica_atl.ui.screen.PatientProfileScreen
 import com.example.app_clinica_atl.ui.screen.RegisterScreenVm
+import com.example.app_clinica_atl.ui.screen.SegurosScreen
 import com.example.app_clinica_atl.ui.viewmodel.AuthViewModel
 import kotlinx.coroutines.launch
 
@@ -29,16 +32,39 @@ fun AppNavGraph(
     navController: NavHostController,
     authViewModel: AuthViewModel
 ) {
-
     val drawerState = rememberDrawerState(initialValue = DrawerValue.Closed)
     val scope = rememberCoroutineScope()
 
-    // Helpers de navegación
-    val goHome: () -> Unit = { navController.navigate(Route.Home.path) }
-    val goLogin: () -> Unit = { navController.navigate(Route.Login.path) }
-    val goRegister: () -> Unit = { navController.navigate(Route.Register.path) }
-    // --- Acción nueva ---
-    val goBookAppointment: () -> Unit = { navController.navigate(Route.BookAppointment.path) }
+    val goHome: () -> Unit = {
+        navController.navigate(Route.Home.path) {
+            launchSingleTop = true
+        }
+    }
+    val goLogin: () -> Unit = {
+        navController.navigate(Route.Login.path) {
+            launchSingleTop = true
+        }
+    }
+    val goRegister: () -> Unit = {
+        navController.navigate(Route.Register.path) {
+            launchSingleTop = true
+        }
+    }
+    val goBookAppointment: () -> Unit = {
+        navController.navigate(Route.BookAppointment.path) {
+            launchSingleTop = true
+        }
+    }
+    val goInsurance: () -> Unit = {
+        navController.navigate(Route.Insurance.path) {
+            launchSingleTop = true
+        }
+    }
+    val goProfile: () -> Unit = {
+        navController.navigate(Route.Profile.path) {
+            launchSingleTop = true
+        }
+    }
 
     ModalNavigationDrawer(
         drawerState = drawerState,
@@ -50,6 +76,18 @@ fun AppNavGraph(
                         scope.launch { drawerState.close() }
                         goHome()
                     },
+                    onInsurance = {
+                        scope.launch { drawerState.close() }
+                        goInsurance()
+                    },
+                    onBookAppointment = {
+                        scope.launch { drawerState.close() }
+                        goBookAppointment()
+                    },
+                    onProfile = {
+                        scope.launch { drawerState.close() }
+                        goProfile()
+                    },
                     onLogin = {
                         scope.launch { drawerState.close() }
                         goLogin()
@@ -57,11 +95,6 @@ fun AppNavGraph(
                     onRegister = {
                         scope.launch { drawerState.close() }
                         goRegister()
-                    },
-                    // --- Pasar la acción nueva ---
-                    onBookAppointment = {
-                        scope.launch { drawerState.close() }
-                        goBookAppointment()
                     }
                 )
             )
@@ -72,10 +105,9 @@ fun AppNavGraph(
                 AppTopBar(
                     onOpenDrawer = { scope.launch { drawerState.open() } },
                     onHome = goHome,
-                    onLogin = goLogin,
-                    onRegister = goRegister,
-                    // --- Pasar la acción nueva ---
-                    onBookAppointment = goBookAppointment
+                    onInsurance = goInsurance,
+                    onBookAppointment = goBookAppointment,
+                    onProfile = goProfile
                 )
             }
         ) { innerPadding ->
@@ -84,8 +116,6 @@ fun AppNavGraph(
                 startDestination = Route.Home.path,
                 modifier = Modifier.padding(innerPadding)
             ) {
-
-                // --- Pantalla Home actualizada ---
                 composable(Route.Home.path) {
                     HomeScreen(
                         onBookAppointment = goBookAppointment
@@ -99,6 +129,7 @@ fun AppNavGraph(
                         onGoRegister = goRegister
                     )
                 }
+
                 composable(Route.Register.path) {
                     RegisterScreenVm(
                         vm = authViewModel,
@@ -109,6 +140,18 @@ fun AppNavGraph(
 
                 composable(Route.BookAppointment.path) {
                     BookAppointmentScreen()
+                }
+
+                composable(Route.Insurance.path) {
+                    SegurosScreen(navController = navController)
+                }
+
+                composable(Route.InsuranceForm.path) {
+                    FormularioSeguroScreen(navController = navController)
+                }
+
+                composable(Route.Profile.path) {
+                    PatientProfileScreen()
                 }
             }
         }

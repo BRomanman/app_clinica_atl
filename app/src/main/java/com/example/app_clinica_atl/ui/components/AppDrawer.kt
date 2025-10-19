@@ -1,15 +1,17 @@
 package com.example.app_clinica_atl.ui.components
 
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.Home
 import androidx.compose.material.icons.filled.AccountCircle
+import androidx.compose.material.icons.filled.Book
+import androidx.compose.material.icons.filled.Home
+import androidx.compose.material.icons.filled.Lock
 import androidx.compose.material.icons.filled.Person
-import androidx.compose.material.icons.filled.EditCalendar // <-- Icono nuevo
+import androidx.compose.material.icons.filled.PersonAdd
 import androidx.compose.material3.Icon
+import androidx.compose.material3.ModalDrawerSheet
 import androidx.compose.material3.NavigationDrawerItem
 import androidx.compose.material3.NavigationDrawerItemDefaults
 import androidx.compose.material3.Text
-import androidx.compose.material3.ModalDrawerSheet
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.vector.ImageVector
@@ -42,19 +44,19 @@ fun AppDrawer(
     }
 }
 
-// Helper para construir la lista estándar de ítems del drawer
 @Composable
 fun defaultDrawerItems(
     onHome: () -> Unit,
+    onInsurance: () -> Unit,
+    onBookAppointment: () -> Unit,
+    onProfile: () -> Unit,
     onLogin: () -> Unit,
-    onRegister: () -> Unit,
-    onBookAppointment: () -> Unit // <-- Parámetro nuevo
+    onRegister: () -> Unit
 ): List<DrawerItem> = listOf(
     DrawerItem("Home", Icons.Filled.Home, onHome),
-
-    // --- Item nuevo ---
-    DrawerItem("Reservar Hora", Icons.Filled.EditCalendar, onBookAppointment),
-
+    DrawerItem("Seguros", Icons.Filled.Lock, onInsurance),
+    DrawerItem("Reservar Hora", Icons.Filled.Book, onBookAppointment),
+    DrawerItem("Perfil", Icons.Filled.Person, onProfile),
     DrawerItem("Login", Icons.Filled.AccountCircle, onLogin),
-    DrawerItem("Registro", Icons.Filled.Person, onRegister)
+    DrawerItem("Registro", Icons.Filled.PersonAdd, onRegister)
 )

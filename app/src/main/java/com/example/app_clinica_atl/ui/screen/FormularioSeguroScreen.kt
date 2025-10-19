@@ -1,11 +1,25 @@
-package com.example.atl_app.ui.screen
+package com.example.app_clinica_atl.ui.screen
 
 import androidx.compose.foundation.background
-import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardOptions
-import androidx.compose.material3.*
-import androidx.compose.runtime.*
+import androidx.compose.material3.Button
+import androidx.compose.material3.ButtonDefaults
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.OutlinedTextField
+import androidx.compose.material3.Text
+import androidx.compose.material3.TextFieldDefaults
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.input.KeyboardType
@@ -44,7 +58,7 @@ fun FormularioSeguroScreen(navController: NavController) {
             modifier = Modifier.fillMaxWidth()
         ) {
             Text(
-                text = "Formulario de Contratación",
+                text = "Formulario de Contratacion",
                 style = MaterialTheme.typography.headlineSmall,
                 color = Color.Black
             )
@@ -61,7 +75,6 @@ fun FormularioSeguroScreen(navController: NavController) {
                 unfocusedLabelColor = Color.Black
             )
 
-            // Campo Nombre
             OutlinedTextField(
                 value = nombre,
                 onValueChange = {
@@ -73,19 +86,16 @@ fun FormularioSeguroScreen(navController: NavController) {
                 colors = textFieldColors,
                 isError = nombreError != null,
                 singleLine = true,
-                keyboardOptions = KeyboardOptions(
-                    keyboardType = KeyboardType.Text         // Teclado de texto
-                ),
+                keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Text)
             )
-            if (nombreError != null) {
+            nombreError?.let {
                 Text(
-                    text = nombreError!!,
+                    text = it,
                     color = Color.Red,
                     style = MaterialTheme.typography.labelSmall
                 )
             }
 
-            // Campo Apellido
             OutlinedTextField(
                 value = apellido,
                 onValueChange = {
@@ -97,19 +107,16 @@ fun FormularioSeguroScreen(navController: NavController) {
                 colors = textFieldColors,
                 isError = apellidoError != null,
                 singleLine = true,
-                keyboardOptions = KeyboardOptions(
-                    keyboardType = KeyboardType.Text         // Teclado de texto
-                )
+                keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Text)
             )
-            if (apellidoError != null) {
+            apellidoError?.let {
                 Text(
-                    text = apellidoError!!,
+                    text = it,
                     color = Color.Red,
                     style = MaterialTheme.typography.labelSmall
                 )
             }
 
-            // Campo Fecha de Nacimiento
             OutlinedTextField(
                 value = fechaNacimiento,
                 onValueChange = {
@@ -123,75 +130,73 @@ fun FormularioSeguroScreen(navController: NavController) {
                 singleLine = true,
                 keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number)
             )
-            if (fechaNacimientoError != null) {
+            fechaNacimientoError?.let {
                 Text(
-                    text = fechaNacimientoError!!,
+                    text = it,
                     color = Color.Red,
                     style = MaterialTheme.typography.labelSmall
                 )
             }
 
-            // Campo Correo
             OutlinedTextField(
                 value = correo,
                 onValueChange = {
                     correo = it
                     correoError = null
                 },
-                label = { Text("Correo electrónico", color = Color.Black) },
+                label = { Text("Correo electronico", color = Color.Black) },
                 modifier = Modifier.fillMaxWidth(),
                 colors = textFieldColors,
                 isError = correoError != null,
                 singleLine = true,
-                keyboardOptions = KeyboardOptions(
-                    keyboardType = KeyboardType.Email)
+                keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Email)
             )
-            if (correoError != null) {
+            correoError?.let {
                 Text(
-                    text = correoError!!,
+                    text = it,
                     color = Color.Red,
                     style = MaterialTheme.typography.labelSmall
                 )
             }
 
-            // Campo Teléfono
             OutlinedTextField(
                 value = telefono,
                 onValueChange = {
                     telefono = it
                     telefonoError = null
                 },
-                label = { Text("Teléfono", color = Color.Black) },
+                label = { Text("Telefono", color = Color.Black) },
                 modifier = Modifier.fillMaxWidth(),
                 colors = textFieldColors,
                 isError = telefonoError != null,
                 singleLine = true,
                 keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number)
             )
-            if (telefonoError != null) {
+            telefonoError?.let {
                 Text(
-                    text = telefonoError!!,
+                    text = it,
                     color = Color.Red,
                     style = MaterialTheme.typography.labelSmall
                 )
             }
 
             Text(
-                text = "El siguiente formulario creará un usuario para el solicitante con una contraseña estandar. Esta contraseña contendrá las primeras 2 letras de su nombre seguido de su primer apellido más los últimos 2 digitos del teléfono.",
+                text = "El usuario creado tendra una contrasena temporal compuesta por las dos primeras letras del nombre, el primer apellido y los ultimos dos digitos del telefono.",
                 color = Color.Black
             )
 
             Button(
                 onClick = {
-                    // Validaciones individuales con mensajes de error específicos
                     when {
                         nombre.text.isBlank() -> nombreError = "El nombre es obligatorio."
                         apellido.text.isBlank() -> apellidoError = "El apellido es obligatorio."
-                        !fechaNacimiento.text.matches(Regex("\\d{2}/\\d{2}/\\d{4}")) -> fechaNacimientoError = "La fecha debe tener formato dd/mm/aaaa."
-                        !correo.text.contains("@") || !correo.text.contains(".") -> correoError = "Correo inválido."
-                        !telefono.text.matches(Regex("\\d{8,}")) -> telefonoError = "El teléfono debe tener al menos 8 dígitos numéricos."
+                        !fechaNacimiento.text.matches(Regex("\\d{2}/\\d{2}/\\d{4}")) ->
+                            fechaNacimientoError = "La fecha debe tener formato dd/mm/aaaa."
+                        !correo.text.contains("@") || !correo.text.contains(".") ->
+                            correoError = "Correo invalido."
+                        !telefono.text.matches(Regex("\\d{8,}")) ->
+                            telefonoError = "El telefono debe contener al menos 8 numeros."
                         else -> {
-                            // Limpiar todos los errores y navegar
                             nombreError = null
                             apellidoError = null
                             fechaNacimientoError = null
@@ -213,8 +218,8 @@ fun FormularioSeguroScreen(navController: NavController) {
     }
 }
 
-@Preview(showBackground = true, apiLevel = 34)
+@Preview(showBackground = true)
 @Composable
-fun FormularioSeguroScreenPreview() {
+private fun FormularioSeguroScreenPreview() {
     FormularioSeguroScreen(navController = rememberNavController())
 }

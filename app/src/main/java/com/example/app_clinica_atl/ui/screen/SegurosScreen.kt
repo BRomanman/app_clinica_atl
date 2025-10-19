@@ -1,9 +1,16 @@
-package com.example.atl_app.ui.screen
+package com.example.app_clinica_atl.ui.screen
 
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
-import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.material3.Card
@@ -22,35 +29,88 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.navigation.NavController
 import androidx.navigation.compose.rememberNavController
-import com.example.atl_app.R
-import com.example.atl_app.navigation.Route
+import com.example.app_clinica_atl.R
+import com.example.app_clinica_atl.navigation.Route
 
-data class Seguro(val area: String, val nombre: String, val descripcion: String, val imagen: Int)
+data class Seguro(
+    val area: String,
+    val nombre: String,
+    val descripcion: String,
+    val imagen: Int
+)
 
 @Composable
 fun SegurosScreen(navController: NavController) {
     val seguros = listOf(
-        Seguro("Salud", "Seguro de Salud Básico", "Plan económico. Cubre consultas y medicamentos esenciales.", R.drawable.seguro_salud_2),
-        Seguro("Salud", "Seguro de Salud Avanzado", "Cobertura extendida con especialistas, chequeos preventivos y urgencias.", R.drawable.seguro_salud_1),
-        Seguro("Salud", "Seguro de Salud Premium", "Cobertura completa. Incluye consultas, hospitalización y emergencias.", R.drawable.seguro_3),
-        Seguro("Salud", "Seguro de Salud Empresarial", "Plan para empleados con atención médica completa y programas de bienestar.", R.drawable.seguro_empresarial3),
-
-        Seguro("Vida", "Seguro de Vida Individual", "Protección adaptada a necesidades individuales.", R.drawable.seguro_vida_2),
-        Seguro("Vida", "Seguro de Vida Individual Premium", "Protección adaptada a todas las necesidades individuales.", R.drawable.seguro_vida_1),
-        Seguro("Vida", "Seguro de Vida Familiar", "Cobertura completa en caso de fallecimiento.", R.drawable.familia_feliz1),
-        Seguro("Vida", "Seguro de Vida Estudiante", "Protección económica adaptada a jóvenes y estudiantes, fácil de contratar.", R.drawable.clinica_1),
-        Seguro("Vida", "Seguro de Vida Senior", "Plan pensado para adultos mayores, con cobertura en caso de fallecimiento y asistencia médica.", R.drawable.seguro_salud_3),
-        Seguro("Vida", "Seguro de Vida Senior Premium", "Cobertura total para adultos mayores, permite disfrutar de la etapa final de la vida con tranquilidad.", R.drawable.atencion_1)
+        Seguro(
+            "Salud",
+            "Seguro de Salud Basico",
+            "Plan economico con cobertura de consultas y medicamentos esenciales.",
+            R.drawable.seguro_salud_2
+        ),
+        Seguro(
+            "Salud",
+            "Seguro de Salud Avanzado",
+            "Cobertura extendida con especialistas, chequeos preventivos y urgencias.",
+            R.drawable.seguro_salud_1
+        ),
+        Seguro(
+            "Salud",
+            "Seguro de Salud Premium",
+            "Cobertura completa que incluye hospitalizacion y atencion de urgencia.",
+            R.drawable.seguro_3
+        ),
+        Seguro(
+            "Salud",
+            "Seguro de Salud Empresarial",
+            "Plan orientado a colaboradores con programas de bienestar y chequeos periodicos.",
+            R.drawable.seguro_empresarial3
+        ),
+        Seguro(
+            "Vida",
+            "Seguro de Vida Individual",
+            "Proteccion pensada para quienes buscan un plan base y flexible.",
+            R.drawable.seguro_vida_2
+        ),
+        Seguro(
+            "Vida",
+            "Seguro de Vida Individual Premium",
+            "Cobertura total con beneficios adicionales para toda la familia.",
+            R.drawable.seguro_vida_1
+        ),
+        Seguro(
+            "Vida",
+            "Seguro de Vida Familiar",
+            "Protege a tu familia ante eventualidades y asegura estabilidad economica.",
+            R.drawable.familia_feliz1
+        ),
+        Seguro(
+            "Vida",
+            "Seguro de Vida Estudiante",
+            "Pensado para estudiantes y jovenes adultos con cuotas accesibles.",
+            R.drawable.clinica_1
+        ),
+        Seguro(
+            "Vida",
+            "Seguro de Vida Senior",
+            "Cobertura enfocada en adultos mayores, con asistencia medica incluida.",
+            R.drawable.seguro_salud_3
+        ),
+        Seguro(
+            "Vida",
+            "Seguro de Vida Senior Premium",
+            "Plan integral con acompanamiento permanente y servicios domiciliarios.",
+            R.drawable.atencion_1
+        )
     )
 
-    val grupos = seguros.groupBy { it.area }
+    val segurosAgrupados = seguros.groupBy { it.area }
 
     Box(modifier = Modifier.fillMaxSize()) {
-
         Box(
             modifier = Modifier
                 .fillMaxSize()
-                .background(MaterialTheme.colorScheme.surface.copy(alpha = 0.6f))
+                .background(MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.25f))
         )
 
         Column(
@@ -71,7 +131,7 @@ fun SegurosScreen(navController: NavController) {
                 modifier = Modifier.fillMaxSize(),
                 verticalArrangement = Arrangement.spacedBy(16.dp)
             ) {
-                grupos.forEach { (area, lista) ->
+                segurosAgrupados.forEach { (area, lista) ->
                     item {
                         Text(
                             text = area,
@@ -87,11 +147,13 @@ fun SegurosScreen(navController: NavController) {
                             modifier = Modifier
                                 .fillMaxWidth()
                                 .clickable {
-                                    navController.navigate(Route.Seguros2.path) // Navegar a la pantalla de formulario
+                                    navController.navigate(Route.InsuranceForm.path) {
+                                        launchSingleTop = true
+                                    }
                                 },
                             elevation = CardDefaults.cardElevation(6.dp),
                             colors = CardDefaults.cardColors(
-                                containerColor = MaterialTheme.colorScheme.background.copy(alpha = 0.9f)
+                                containerColor = MaterialTheme.colorScheme.background
                             )
                         ) {
                             Column(
@@ -133,8 +195,8 @@ fun SegurosScreen(navController: NavController) {
     }
 }
 
-
-
-@Preview(showBackground = true, apiLevel = 34)
+@Preview(showBackground = true)
 @Composable
-fun SegurosScreenPreview() { SegurosScreen(navController = rememberNavController()) }
+private fun SegurosScreenPreview() {
+    SegurosScreen(navController = rememberNavController())
+}
