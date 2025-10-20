@@ -19,11 +19,7 @@ import androidx.compose.ui.text.style.TextOverflow
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun AppTopBar(
-    onOpenDrawer: () -> Unit,
-    onHome: () -> Unit,
-    onInsurance: () -> Unit,
-    onBookAppointment: () -> Unit,
-    onProfile: () -> Unit
+    onOpenDrawer: () -> Unit
 ) {
     CenterAlignedTopAppBar(
         colors = TopAppBarDefaults.centerAlignedTopAppBarColors(
@@ -40,20 +36,6 @@ fun AppTopBar(
         navigationIcon = {
             IconButton(onClick = onOpenDrawer) {
                 Icon(imageVector = Icons.Filled.Menu, contentDescription = "Menu")
-            }
-        },
-        actions = {
-            IconButton(onClick = onInsurance) {
-                Icon(Icons.Filled.Lock, contentDescription = "Seguros")
-            }
-            IconButton(onClick = onBookAppointment) {
-                Icon(Icons.Filled.Book, contentDescription = "Reservar")
-            }
-            IconButton(onClick = onProfile) {
-                Icon(Icons.Filled.Person, contentDescription = "Perfil")
-            }
-            IconButton(onClick = onHome) {
-                Icon(Icons.Filled.Home, contentDescription = "Inicio")
             }
         }
     )

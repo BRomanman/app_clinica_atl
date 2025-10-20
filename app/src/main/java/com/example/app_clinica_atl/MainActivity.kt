@@ -15,7 +15,6 @@ import androidx.navigation.compose.rememberNavController
 import com.example.app_clinica_atl.data.local.database.AppDatabase
 import com.example.app_clinica_atl.data.repository.UserRepository
 import com.example.app_clinica_atl.navigation.AppNavGraph
-import com.example.app_clinica_atl.ui.theme.AppClinicaATLTheme
 import com.example.app_clinica_atl.ui.viewmodel.AuthViewModel
 import com.example.app_clinica_atl.ui.viewmodel.AuthViewModelFactory
 
@@ -40,9 +39,11 @@ Piensa en él como una “lona base” sobre la cual vas a pintar tu UI.
 * Si cambias el tema a dark mode, colorScheme.background
 * cambia automáticamente y el Surface pinta la pantalla con el nuevo color.
 * */
+
 @RequiresApi(Build.VERSION_CODES.O)
-@Composable // Indica que esta función dibuja UI
-fun AppRoot() { // Raíz de la app para separar responsabilidades (se conserva)
+@Composable
+fun AppRoot() {
+
     // ====== NUEVO: construcción de dependencias (Composition Root) ======
     val context = LocalContext.current.applicationContext
     // ^ Obtenemos el applicationContext para construir la base de datos de Room.
@@ -56,27 +57,23 @@ fun AppRoot() { // Raíz de la app para separar responsabilidades (se conserva)
     val userRepository = UserRepository(userDao)
     // ^ Repositorio que encapsula la lógica de login/registro contra Room.
 
+
+
     val authViewModel: AuthViewModel = viewModel(
         factory = AuthViewModelFactory(userRepository)
     )
     // ^ Creamos el ViewModel con factory para inyectar el repositorio.
     //   Esto reemplaza cualquier uso anterior de listas en memoria (USERS).
 
-    // ====== TU NAVEGACIÓN ORIGINAL ======
-    val navController = rememberNavController() // Controlador de navegación (igual que antes)
-    MaterialTheme { // Provee colores/tipografías Material 3 (igual que antes)
-        Surface(color = MaterialTheme.colorScheme.background) { // Fondo general (igual que antes)
 
-            // ====== MOD: pasamos el AuthViewModel a tu NavGraph ======
-            // Si tu AppNavGraph ya recibía el VM o lo creaba adentro, lo mejor ahora es PASARLO
-            // para que toda la app use la MISMA instancia que acabamos de inyectar.
+    val navController = rememberNavController() // Controlador de navegación (igual que antes)
+    MaterialTheme {
+        Surface(color = MaterialTheme.colorScheme.background) {
             AppNavGraph(
                 navController = navController,
-                authViewModel = authViewModel // <-- NUEVO parámetro
+                authViewModel = authViewModel
             )
-            // NOTA: Si tu AppNavGraph no tiene este parámetro aún, basta con agregarlo:
-            // fun AppNavGraph(navController: NavHostController, authViewModel: AuthViewModel) { ... }
-            // y luego pasar ese authViewModel a las pantallas Login/Register donde se use.
+
         }
     }
 

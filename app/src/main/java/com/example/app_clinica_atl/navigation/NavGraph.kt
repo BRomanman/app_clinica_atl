@@ -103,11 +103,7 @@ fun AppNavGraph(
         Scaffold(
             topBar = {
                 AppTopBar(
-                    onOpenDrawer = { scope.launch { drawerState.open() } },
-                    onHome = goHome,
-                    onInsurance = goInsurance,
-                    onBookAppointment = goBookAppointment,
-                    onProfile = goProfile
+                    onOpenDrawer = { scope.launch { drawerState.open() } }
                 )
             }
         ) { innerPadding ->
