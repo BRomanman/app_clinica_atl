@@ -2,6 +2,7 @@ package com.example.app_clinica_atl.ui.screen
 
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Spacer
@@ -33,7 +34,8 @@ import com.example.app_clinica_atl.R
 
 @Composable
 fun HomeScreen(
-    onBookAppointment: () -> Unit
+    onBookAppointment: () -> Unit,
+    onInsuranceSelected: () -> Unit
 ) {
     Column(
         modifier = Modifier
@@ -44,7 +46,7 @@ fun HomeScreen(
     ) {
         HeaderSection()
         MainActionCard(onBookAppointment)
-        InsuranceSection()
+        InsuranceSection(onInsuranceSelected = onInsuranceSelected)
     }
 }
 
@@ -109,8 +111,37 @@ private fun MainActionCard(onBookAppointment: () -> Unit) {
     }
 }
 
+private data class InsuranceHighlight(val imageRes: Int, val title: String)
+
 @Composable
-private fun InsuranceSection() {
+private fun InsuranceSection(onInsuranceSelected: () -> Unit) {
+    val insuranceHighlights = listOf(
+        InsuranceHighlight(
+            imageRes = R.drawable.seguro_1,
+            title = "Seguro de accidente vehicular"
+        ),
+        InsuranceHighlight(
+            imageRes = R.drawable.seguro_vida_2,
+            title = "Seguro de vida y salud"
+        ),
+        InsuranceHighlight(
+            imageRes = R.drawable.seguro_salud_2,
+            title = "Seguro de Salud Basico"
+        ),
+        InsuranceHighlight(
+            imageRes = R.drawable.seguro_salud_1,
+            title = "Seguro de Salud Avanzado"
+        ),
+        InsuranceHighlight(
+            imageRes = R.drawable.familia_feliz1,
+            title = "Seguro de Vida Familiar"
+        ),
+        InsuranceHighlight(
+            imageRes = R.drawable.seguro_salud_3,
+            title = "Seguro de Vida Senior"
+        )
+    )
+
     Column(
         modifier = Modifier
             .fillMaxWidth()
@@ -126,24 +157,30 @@ private fun InsuranceSection() {
         )
         Spacer(modifier = Modifier.height(16.dp))
 
-        InsuranceCard(
-            imageRes = R.drawable.seguro_1,
-            title = "Seguro de accidente vehicular"
-        )
-        Spacer(modifier = Modifier.height(16.dp))
-        InsuranceCard(
-            imageRes = R.drawable.seguro_vida_2,
-            title = "Seguro de vida y salud"
-        )
+        insuranceHighlights.forEachIndexed { index, highlight ->
+            InsuranceCard(
+                imageRes = highlight.imageRes,
+                title = highlight.title,
+                onClick = onInsuranceSelected
+            )
+            if (index != insuranceHighlights.lastIndex) {
+                Spacer(modifier = Modifier.height(16.dp))
+            }
+        }
     }
 }
 
 @Composable
-private fun InsuranceCard(imageRes: Int, title: String) {
+private fun InsuranceCard(
+    imageRes: Int,
+    title: String,
+    onClick: () -> Unit
+) {
     Card(
         modifier = Modifier
             .fillMaxWidth()
-            .padding(horizontal = 16.dp),
+            .padding(horizontal = 16.dp)
+            .clickable(onClick = onClick),
         shape = RoundedCornerShape(12.dp),
         elevation = CardDefaults.cardElevation(defaultElevation = 4.dp),
         // --- CAMBIO: Define los colores de la Card desde el tema ---

@@ -37,6 +37,7 @@ fun AppNavGraph(
     val goRegister: () -> Unit = { navController.navigate(Route.Register.path) { launchSingleTop = true } }
     val goBookAppointment: () -> Unit = { navController.navigate(Route.BookAppointment.path) { launchSingleTop = true } }
     val goInsurance: () -> Unit = { navController.navigate(Route.Insurance.path) { launchSingleTop = true } }
+    val goInsuranceForm: () -> Unit = { navController.navigate(Route.InsuranceForm.path) { launchSingleTop = true } }
     val goProfile: () -> Unit = { navController.navigate(Route.Profile.path) { launchSingleTop = true } }
 
     val goPatientSearch: () -> Unit = {
@@ -78,7 +79,10 @@ fun AppNavGraph(
                 modifier = Modifier.padding(innerPadding)
             ) {
                 composable(Route.Home.path) {
-                    HomeScreen(onBookAppointment = goBookAppointment)
+                    HomeScreen(
+                        onBookAppointment = goBookAppointment,
+                        onInsuranceSelected = goInsuranceForm
+                    )
                 }
                 composable(Route.Login.path) {
                     LoginScreenVm(
