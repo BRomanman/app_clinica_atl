@@ -98,7 +98,7 @@ private fun DoctorMenuButton(
     }
 }
 
-@Preview(showBackground = true)
+
 @Composable
 private fun DoctorMenuScreenPreview() {
     DoctorMenuScreen(
