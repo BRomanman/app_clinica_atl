@@ -82,6 +82,8 @@ private object DoctorDirectory {
     )
 }
 
+
+
 @RequiresApi(Build.VERSION_CODES.O)
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -133,16 +135,16 @@ fun BookAppointmentScreen(
         verticalArrangement = Arrangement.spacedBy(16.dp)
     ) {
         Text(
-            text = stringResource(id = R.string.book_appointment_title),
+            text = "Reserva de Hora",
             style = MaterialTheme.typography.headlineSmall,
             fontWeight = FontWeight.Bold
         )
         Text(
-            text = stringResource(id = R.string.book_appointment_subtitle),
+            text = "Seleccione el área, el doctor, la fecha y la hora para su cita médica.",
             style = MaterialTheme.typography.bodyMedium
         )
 
-        // Selección de departamento
+        // Selección del area
         ExposedDropdownMenuBox(
             expanded = departmentExpanded,
             onExpandedChange = { departmentExpanded = !departmentExpanded }
@@ -212,7 +214,7 @@ fun BookAppointmentScreen(
 
         selectedDoctor?.let {
             Text(
-                text = stringResource(id = R.string.book_appointment_doctor_since, it.since),
+                text = "Atiende desde: ${it.since}",
                 style = MaterialTheme.typography.labelMedium
             )
         }
@@ -220,6 +222,9 @@ fun BookAppointmentScreen(
         // INPUT DE FECHA MANUAL (DD/MM/YYYY)
         val dateFieldEnabled = selectedDepartment != null && selectedDoctor != null
 
+
+
+        //Fecha de la reserva
         OutlinedTextField(
             value = selectedDateText,
             onValueChange = { raw ->
@@ -252,12 +257,14 @@ fun BookAppointmentScreen(
             readOnly = false,
             enabled = dateFieldEnabled,
             label = { Text(stringResource(id = R.string.book_appointment_date)) },
-            placeholder = { Text("DD/MM/YYYY") },
+            placeholder = { Text("Mantenga el formato DD/MM/YYYY") },
             leadingIcon = { Icon(Icons.Default.Event, contentDescription = null) },
             isError = dateError != null,
             supportingText = { if (dateError != null) Text(dateError!!) },
             singleLine = true,
-            modifier = Modifier.fillMaxWidth()
+            modifier = Modifier
+                .fillMaxWidth()
+
         )
 
         // Selección de hora
@@ -268,20 +275,20 @@ fun BookAppointmentScreen(
                 if (timeFieldEnabled) timeExpanded = !timeExpanded
             }
         ) {
+
+            //Hora de la Reserva
             OutlinedTextField(
                 value = selectedTime?.format(timeFormatter).orEmpty(),
                 onValueChange = {},
                 readOnly = true,
                 label = { Text(text = stringResource(id = R.string.book_appointment_time)) },
-                placeholder = { Text(text = stringResource(id = R.string.book_appointment_time_placeholder)) },
                 leadingIcon = { Icon(Icons.Default.AccessTime, contentDescription = null) },
                 trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded = timeExpanded && timeFieldEnabled) },
                 enabled = timeFieldEnabled,
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .menuAnchor(),
+                modifier = Modifier.fillMaxWidth().menuAnchor(),
                 singleLine = true
             )
+
             ExposedDropdownMenu(
                 expanded = timeExpanded && timeFieldEnabled,
                 onDismissRequest = { timeExpanded = false }
