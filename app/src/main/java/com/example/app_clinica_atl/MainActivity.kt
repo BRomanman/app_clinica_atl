@@ -13,10 +13,20 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.compose.rememberNavController
 import com.example.app_clinica_atl.data.local.database.AppDatabase
+// Importaciones de Repositorio
+import com.example.app_clinica_atl.data.repository.PatientRepository // <-- NUEVO
 import com.example.app_clinica_atl.data.repository.UserRepository
 import com.example.app_clinica_atl.navigation.AppNavGraph
+<<<<<<< HEAD
+=======
+// Importa tu Tema
+import com.example.app_clinica_atl.ui.theme.AppClinicaATLTheme
+// Importaciones de ViewModels y Factories
+>>>>>>> 48b8491 (agregado de buscador para doctores/admin para buscar pacientes)
 import com.example.app_clinica_atl.ui.viewmodel.AuthViewModel
 import com.example.app_clinica_atl.ui.viewmodel.AuthViewModelFactory
+import com.example.app_clinica_atl.ui.viewmodel.PatientViewModel     // <-- NUEVO
+import com.example.app_clinica_atl.ui.viewmodel.PatientViewModelFactory // <-- NUEVO
 
 class MainActivity : ComponentActivity() {
     @RequiresApi(Build.VERSION_CODES.O)
@@ -29,6 +39,7 @@ class MainActivity : ComponentActivity() {
     }
 }
 
+<<<<<<< HEAD
 
 /*
 * En Compose, Surface es un contenedor visual que viene de Material 3.Crea un bloque
@@ -45,26 +56,33 @@ Piensa en él como una “lona base” sobre la cual vas a pintar tu UI.
 fun AppRoot() {
 
     // ====== NUEVO: construcción de dependencias (Composition Root) ======
+=======
+@RequiresApi(Build.VERSION_CODES.O)
+@Composable
+fun AppRoot() {
+    // --- 1. Construcción de Dependencias ---
+>>>>>>> 48b8491 (agregado de buscador para doctores/admin para buscar pacientes)
     val context = LocalContext.current.applicationContext
-    // ^ Obtenemos el applicationContext para construir la base de datos de Room.
-
     val db = AppDatabase.getInstance(context)
-    // ^ Singleton de Room. No crea múltiples instancias.
-
     val userDao = db.userDao()
-    // ^ Obtenemos el DAO de usuarios desde la DB.
 
+    // Repositorio de Autenticación (como en 2.0)
     val userRepository = UserRepository(userDao)
-    // ^ Repositorio que encapsula la lógica de login/registro contra Room.
+
+<<<<<<< HEAD
 
 
+=======
+    // Repositorio de Pacientes (NUEVO)
+    val patientRepository = PatientRepository()
 
+    // ViewModel de Autenticación (como en 2.0)
+>>>>>>> 48b8491 (agregado de buscador para doctores/admin para buscar pacientes)
     val authViewModel: AuthViewModel = viewModel(
         factory = AuthViewModelFactory(userRepository)
     )
-    // ^ Creamos el ViewModel con factory para inyectar el repositorio.
-    //   Esto reemplaza cualquier uso anterior de listas en memoria (USERS).
 
+<<<<<<< HEAD
 
     val navController = rememberNavController() // Controlador de navegación (igual que antes)
     MaterialTheme {
@@ -74,7 +92,23 @@ fun AppRoot() {
                 authViewModel = authViewModel
             )
 
+=======
+    // ViewModel de Pacientes (NUEVO, con su propia factory)
+    val patientViewModel: PatientViewModel = viewModel(
+        factory = PatientViewModelFactory(patientRepository)
+    )
+
+    val navController = rememberNavController()
+
+    // --- 2. Aplicar el Tema Correcto ---
+    AppClinicaATLTheme {
+        Surface(color = MaterialTheme.colorScheme.background) {
+            AppNavGraph(
+                navController = navController,
+                authViewModel = authViewModel,     // Pasa el VM de Auth
+                patientViewModel = patientViewModel  // <-- Pasa el VM de Pacientes
+            )
+>>>>>>> 48b8491 (agregado de buscador para doctores/admin para buscar pacientes)
         }
     }
-
 }

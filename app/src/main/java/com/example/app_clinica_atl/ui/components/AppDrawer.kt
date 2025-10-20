@@ -16,6 +16,8 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.vector.ImageVector
 
+import androidx.compose.material.icons.filled.Search
+
 data class DrawerItem(
     val label: String,
     val icon: ImageVector,
@@ -50,6 +52,7 @@ fun defaultDrawerItems(
     onInsurance: () -> Unit,
     onBookAppointment: () -> Unit,
     onProfile: () -> Unit,
+    onGoToPatientSearch: () -> Unit,
     onLogin: () -> Unit,
     onRegister: () -> Unit
 ): List<DrawerItem> = listOf(
@@ -57,6 +60,8 @@ fun defaultDrawerItems(
     DrawerItem("Seguros", Icons.Filled.Lock, onInsurance),
     DrawerItem("Reservar Hora", Icons.Filled.Book, onBookAppointment),
     DrawerItem("Perfil", Icons.Filled.Person, onProfile),
+    // --- 2. AÑADE ESTE ITEM ---
+    DrawerItem("Buscar Paciente", Icons.Filled.Search, onGoToPatientSearch),
     DrawerItem("Login", Icons.Filled.AccountCircle, onLogin),
     DrawerItem("Registro", Icons.Filled.PersonAdd, onRegister)
 )
