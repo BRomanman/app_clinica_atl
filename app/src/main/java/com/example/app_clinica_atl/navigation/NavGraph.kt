@@ -18,7 +18,7 @@ import com.example.app_clinica_atl.ui.components.AppTopBar
 import com.example.app_clinica_atl.ui.components.defaultDrawerItems
 import com.example.app_clinica_atl.ui.screen.* // Importa todas tus pantallas
 import com.example.app_clinica_atl.ui.viewmodel.AuthViewModel
-import com.example.app_clinica_atl.ui.viewmodel.PatientViewModel // <-- AÑADE ESTA LÍNEA
+import com.example.app_clinica_atl.ui.viewmodel.PatientViewModel
 import kotlinx.coroutines.launch
 
 @RequiresApi(Build.VERSION_CODES.O)
@@ -26,7 +26,7 @@ import kotlinx.coroutines.launch
 fun AppNavGraph(
     navController: NavHostController,
     authViewModel: AuthViewModel,
-    patientViewModel: PatientViewModel // <-- 1. RECIBE EL NUEVO VM
+    patientViewModel: PatientViewModel
 ) {
     val drawerState = rememberDrawerState(initialValue = DrawerValue.Closed)
     val scope = rememberCoroutineScope()
@@ -39,7 +39,6 @@ fun AppNavGraph(
     val goInsurance: () -> Unit = { navController.navigate(Route.Insurance.path) { launchSingleTop = true } }
     val goProfile: () -> Unit = { navController.navigate(Route.Profile.path) { launchSingleTop = true } }
 
-    // --- 2. AÑADE LA NUEVA ACCIÓN DE NAVEGACIÓN ---
     val goPatientSearch: () -> Unit = {
         navController.navigate(Route.PatientSearch.path) {
             launchSingleTop = true
@@ -56,7 +55,7 @@ fun AppNavGraph(
                     onInsurance = { scope.launch { drawerState.close() }; goInsurance() },
                     onBookAppointment = { scope.launch { drawerState.close() }; goBookAppointment() },
                     onProfile = { scope.launch { drawerState.close() }; goProfile() },
-                    onGoToPatientSearch = { // <-- 3. CONECTA LA ACCIÓN
+                    onGoToPatientSearch = {
                         scope.launch { drawerState.close() }
                         goPatientSearch()
                     },
@@ -69,16 +68,12 @@ fun AppNavGraph(
         Scaffold(
             topBar = {
                 AppTopBar(
-<<<<<<< HEAD
-                    onOpenDrawer = { scope.launch { drawerState.open() } }
-=======
-                    onOpenDrawer = { scope.launch { drawerState.open() } },
+                    onOpenDrawer = { scope.launch { drawerState.open() } }, // <-- ¡COMA AÑADIDA!
                     onHome = goHome,
                     onInsurance = goInsurance,
                     onBookAppointment = goBookAppointment,
                     onProfile = goProfile,
-                    onGoToPatientSearch = goPatientSearch // <-- 4. CONECTA LA ACCIÓN
->>>>>>> 48b8491 (agregado de buscador para doctores/admin para buscar pacientes)
+                    onGoToPatientSearch = goPatientSearch
                 )
             }
         ) { innerPadding ->
@@ -87,7 +82,6 @@ fun AppNavGraph(
                 startDestination = Route.Home.path,
                 modifier = Modifier.padding(innerPadding)
             ) {
-                // (Tus 7 composables existentes: Home, Login, Register, Book, Insurance, InsuranceForm, Profile)
                 composable(Route.Home.path) {
                     HomeScreen(onBookAppointment = goBookAppointment)
                 }
@@ -117,8 +111,6 @@ fun AppNavGraph(
                 composable(Route.Profile.path) {
                     PatientProfileScreen()
                 }
-
-                // --- 5. AÑADE EL NUEVO COMPOSABLE ---
                 composable(Route.PatientSearch.path) {
                     PatientSearchScreenVm(
                         vm = patientViewModel
