@@ -48,7 +48,7 @@ fun FormularioSeguroScreen(navController: NavController) {
             .fillMaxSize()
             .padding(20.dp)
             .background(
-                color = Color(0xFF57CBDD),
+                color = Color(0xFF57CBDD), // modificar color de fondo
                 shape = RoundedCornerShape(16.dp)
             )
             .padding(20.dp)

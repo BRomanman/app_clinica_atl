@@ -79,12 +79,5 @@ fun AppRoot() { // Raíz de la app para separar responsabilidades (se conserva)
             // y luego pasar ese authViewModel a las pantallas Login/Register donde se use.
         }
     }
-    AppClinicaATLTheme { // <--- ¡CÁMBIALO A ESTO!
-        Surface(color = MaterialTheme.colorScheme.background) {
-            AppNavGraph(
-                navController = navController,
-                authViewModel = authViewModel
-            )
-        }
-    }
+
 }

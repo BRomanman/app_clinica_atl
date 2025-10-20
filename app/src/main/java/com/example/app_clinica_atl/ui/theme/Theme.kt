@@ -54,27 +54,3 @@ private val DarkColorScheme = darkColorScheme(
     surface = Color(0xFF2C2C2E), // Fondo oscuro ligeramente más claro para 'Cards'
     onSurface = NeutralLight, // Texto claro para 'Cards'
 )
-
-@Composable
-fun AppClinicaATLTheme( // <-- CAMBIO: Nombre de la función actualizado
-    darkTheme: Boolean = isSystemInDarkTheme(),
-    // Dynamic color (Android 12+) lo dejamos activado
-    dynamicColor: Boolean = false,
-    content: @Composable () -> Unit
-) {
-    val colorScheme = when {
-        dynamicColor && Build.VERSION.SDK_INT >= Build.VERSION_CODES.S -> {
-            val context = LocalContext.current
-            if (darkTheme) dynamicDarkColorScheme(context) else dynamicLightColorScheme(context)
-        }
-        // Si no hay color dinámico, usamos nuestros esquemas personalizados
-        darkTheme -> DarkColorScheme
-        else -> LightColorScheme
-    }
-
-    MaterialTheme(
-        colorScheme = colorScheme,
-        typography = Typography, // (Esto viene de tu archivo Typography.kt)
-        content = content
-    )
-}
