@@ -23,16 +23,18 @@ fun validatePhoneDigitsOnly(phone: String): String? {
     return null
 }
 
-// --- CAMBIO: Nuevo validador para Fecha de Nacimiento ---
+
 fun validateFechaNacimiento(fecha: String): String? {
     if (fecha.isBlank()) return "La fecha es obligatoria"
-    // Regex simple para YYYY-MM-DD
-    val regex = Regex("^\\d{4}-\\d{2}-\\d{2}$")
-    if (!regex.matches(fecha)) return "Formato debe ser YYYY-MM-DD"
+    // Regex simple para DD-MM-YYYY
+    val regex = Regex("^\\d{2}-\\d{2}-\\d{4}$")
+    if (!regex.matches(fecha)) return "Formato debe ser DD-MM-YYYY"
+
     // (Se podrían añadir validaciones de fecha real, ej: que no sea en el futuro)
+
     return null
 }
-// --- FIN DE CAMBIO ---
+
 
 fun validateStrongPassword(pass: String): String? {
     if (pass.isBlank()) return "La contraseña es obligatoria"

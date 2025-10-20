@@ -9,4 +9,7 @@ sealed class Route(val path: String) {
     data object InsuranceForm : Route("insurance_form")
     data object Profile : Route("profile")
     data object PatientSearch : Route("patient_search")
+    data object DoctorMenu : Route("doctor_menu")
+    data object DoctorAppointments : Route("doctor_appointments")
+    data object DoctorProfile : Route("doctor_profile")
 }

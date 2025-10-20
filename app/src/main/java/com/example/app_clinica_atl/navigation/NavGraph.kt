@@ -39,6 +39,9 @@ fun AppNavGraph(
     val goInsurance: () -> Unit = { navController.navigate(Route.Insurance.path) { launchSingleTop = true } }
     val goInsuranceForm: () -> Unit = { navController.navigate(Route.InsuranceForm.path) { launchSingleTop = true } }
     val goProfile: () -> Unit = { navController.navigate(Route.Profile.path) { launchSingleTop = true } }
+    val goDoctorMenu: () -> Unit = { navController.navigate(Route.DoctorMenu.path) { launchSingleTop = true } }
+    val goDoctorAppointments: () -> Unit = { navController.navigate(Route.DoctorAppointments.path) { launchSingleTop = true } }
+    val goDoctorProfile: () -> Unit = { navController.navigate(Route.DoctorProfile.path) { launchSingleTop = true } }
 
     val goPatientSearch: () -> Unit = {
         navController.navigate(Route.PatientSearch.path) {
@@ -56,6 +59,7 @@ fun AppNavGraph(
                     onInsurance = { scope.launch { drawerState.close() }; goInsurance() },
                     onBookAppointment = { scope.launch { drawerState.close() }; goBookAppointment() },
                     onProfile = { scope.launch { drawerState.close() }; goProfile() },
+                    onDoctorMenu = { scope.launch { drawerState.close() }; goDoctorMenu() },
                     onGoToPatientSearch = {
                         scope.launch { drawerState.close() }
                         goPatientSearch()
@@ -114,6 +118,19 @@ fun AppNavGraph(
                     PatientSearchScreenVm(
                         vm = patientViewModel
                     )
+                }
+                composable(Route.DoctorMenu.path) {
+                    DoctorMenuScreen(
+                        onGoAppointments = goDoctorAppointments,
+                        onGoHistories = goPatientSearch,
+                        onGoProfile = goDoctorProfile
+                    )
+                }
+                composable(Route.DoctorAppointments.path) {
+                    DoctorAppointmentsScreen()
+                }
+                composable(Route.DoctorProfile.path) {
+                    DoctorProfileScreen()
                 }
             }
         }

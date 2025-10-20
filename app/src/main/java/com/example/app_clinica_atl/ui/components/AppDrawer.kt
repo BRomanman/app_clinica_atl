@@ -5,8 +5,10 @@ import androidx.compose.material.icons.filled.AccountCircle
 import androidx.compose.material.icons.filled.Book
 import androidx.compose.material.icons.filled.Home
 import androidx.compose.material.icons.filled.Lock
+import androidx.compose.material.icons.filled.MedicalServices
 import androidx.compose.material.icons.filled.Person
 import androidx.compose.material.icons.filled.PersonAdd
+import androidx.compose.material.icons.filled.Search
 import androidx.compose.material3.Icon
 import androidx.compose.material3.ModalDrawerSheet
 import androidx.compose.material3.NavigationDrawerItem
@@ -15,8 +17,6 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.vector.ImageVector
-
-import androidx.compose.material.icons.filled.Search
 
 data class DrawerItem(
     val label: String,
@@ -30,9 +30,7 @@ fun AppDrawer(
     items: List<DrawerItem>,
     modifier: Modifier = Modifier
 ) {
-    ModalDrawerSheet(
-        modifier = modifier
-    ) {
+    ModalDrawerSheet(modifier = modifier) {
         items.forEach { item ->
             NavigationDrawerItem(
                 label = { Text(item.label) },
@@ -52,6 +50,7 @@ fun defaultDrawerItems(
     onInsurance: () -> Unit,
     onBookAppointment: () -> Unit,
     onProfile: () -> Unit,
+    onDoctorMenu: () -> Unit,
     onGoToPatientSearch: () -> Unit,
     onLogin: () -> Unit,
     onRegister: () -> Unit
@@ -60,8 +59,7 @@ fun defaultDrawerItems(
     DrawerItem("Seguros", Icons.Filled.Lock, onInsurance),
     DrawerItem("Reservar Hora", Icons.Filled.Book, onBookAppointment),
     DrawerItem("Perfil", Icons.Filled.Person, onProfile),
-
-    // --- 2. AÑADE ESTE ITEM ---
+    DrawerItem("Menu Doctor", Icons.Filled.MedicalServices, onDoctorMenu),
     DrawerItem("Buscar Paciente", Icons.Filled.Search, onGoToPatientSearch),
     DrawerItem("Login", Icons.Filled.AccountCircle, onLogin),
     DrawerItem("Registro", Icons.Filled.PersonAdd, onRegister)

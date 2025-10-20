@@ -68,12 +68,10 @@ private val DarkColorScheme = darkColorScheme(
 )
 
 
-// --- ¡ESTA ES LA PARTE QUE TE FALTABA! ---
-// Esta es la función "AppClinicaATLTheme" que yo mencionaba.
-// Es la que "activa" los colores de arriba.
+
 @Composable
 fun AppClinicaATLTheme(
-    darkTheme: Boolean = isSystemInDarkTheme(),
+    darkTheme: Boolean = false,
     // Pongo 'dynamicColor' en 'false' para que TUS colores azules
     // siempre ganen y no sean reemplazados por el color del fondo de pantalla
     // del teléfono (que es lo que causa el morado).

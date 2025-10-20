@@ -16,6 +16,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import com.example.app_clinica_atl.R
+import com.example.app_clinica_atl.domain.validation.validateFechaNacimiento
 import java.time.LocalDate
 import java.time.LocalTime
 import java.time.format.DateTimeFormatter
@@ -102,7 +103,7 @@ fun BookAppointmentScreen(
 
     val doctorOptions = selectedDepartment?.let { DoctorDirectory.doctorsByDepartment[it] }.orEmpty()
 
-    val dateFormatter = remember { DateTimeFormatter.ofPattern("dd/MM/yyyy") }
+    val dateFormatter = remember { DateTimeFormatter.ISO_LOCAL_DATE }
     val timeFormatter = remember { DateTimeFormatter.ofPattern("HH:mm") }
 
     var selectedDateText by remember { mutableStateOf("") }
@@ -231,36 +232,45 @@ fun BookAppointmentScreen(
                 if (!dateFieldEnabled) return@OutlinedTextField
 
                 val digits = raw.filter(Char::isDigit).take(8)
-                val withSlashes = buildString {
-                    for ((i, c) in digits.withIndex()) {
-                        append(c)
-                        if (i == 1 || i == 3) append('/')
+                val withHyphen = buildString {
+                    for ((index, char) in digits.withIndex()) {
+                        append(char)
+                        if (index == 3 || index == 5) append('-')
                     }
                 }
 
-                selectedDateText = withSlashes
-                dateError = null
+                selectedDateText = withHyphen
 
-                if (withSlashes.length == 10) {
-                    try {
-                        val parsed = LocalDate.parse(withSlashes, dateFormatter)
-                        selectedDate = parsed
-                        dateError = null
-                    } catch (_: Exception) {
+                if (withHyphen.length == 10) {
+                    val validation = validateFechaNacimiento(withHyphen)
+                    if (validation == null) {
+                        try {
+                            val parsed = LocalDate.parse(withHyphen, dateFormatter)
+                            selectedDate = parsed
+                            dateError = null
+                        } catch (_: Exception) {
+                            selectedDate = null
+                            dateError = "Fecha invalida. Usa YYYY-MM-DD."
+                        }
+                    } else {
                         selectedDate = null
-                        dateError = "Fecha inválida. Usa DD/MM/YYYY."
+                        dateError = validation
                     }
                 } else {
                     selectedDate = null
+                    dateError = null
                 }
             },
             readOnly = false,
             enabled = dateFieldEnabled,
             label = { Text(stringResource(id = R.string.book_appointment_date)) },
-            placeholder = { Text("Mantenga el formato DD/MM/YYYY") },
+            placeholder = { Text("Mantenga el formato YYYY-MM-DD") },
             leadingIcon = { Icon(Icons.Default.Event, contentDescription = null) },
             isError = dateError != null,
-            supportingText = { if (dateError != null) Text(dateError!!) },
+            supportingText = {
+                val error = dateError
+                if (error != null) Text(error)
+            },
             singleLine = true,
             modifier = Modifier
                 .fillMaxWidth()
@@ -325,7 +335,8 @@ fun BookAppointmentScreen(
             enabled = selectedDepartment != null &&
                     selectedDoctor != null &&
                     selectedDate != null &&
-                    selectedTime != null,
+                    selectedTime != null &&
+                    dateError == null,
             modifier = Modifier.fillMaxWidth()
         ) {
             Text(text = stringResource(id = R.string.book_appointment_submit))
@@ -364,3 +375,4 @@ fun BookAppointmentScreenPreview() {
         }
     )
 }
+
