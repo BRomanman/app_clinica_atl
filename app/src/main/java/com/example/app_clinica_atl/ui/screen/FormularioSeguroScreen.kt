@@ -1,246 +1,197 @@
 package com.example.app_clinica_atl.ui.screen
 
-import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
-import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
+import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
+import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
-import androidx.compose.material3.TextFieldDefaults
 import androidx.compose.material3.TextButton
+import androidx.compose.material3.TextFieldDefaults
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
-import androidx.compose.runtime.getValue
 import androidx.compose.runtime.setValue
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.input.TextFieldValue
-import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.navigation.NavController
 import androidx.navigation.compose.rememberNavController
-import com.example.app_clinica_atl.R
 
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun FormularioSeguroScreen(navController: NavController) {
-    var nombre by remember { mutableStateOf(TextFieldValue()) }
-    var apellido by remember { mutableStateOf(TextFieldValue()) }
-    var fechaNacimiento by remember { mutableStateOf(TextFieldValue()) }
-    var correo by remember { mutableStateOf(TextFieldValue()) }
-    var telefono by remember { mutableStateOf(TextFieldValue()) }
-
-    var nombreError by remember { mutableStateOf<String?>(null) }
-    var apellidoError by remember { mutableStateOf<String?>(null) }
-    var fechaNacimientoError by remember { mutableStateOf<String?>(null) }
-    var correoError by remember { mutableStateOf<String?>(null) }
-    var telefonoError by remember { mutableStateOf<String?>(null) }
+    var nombre by remember { mutableStateOf(TextFieldValue("")) }
+    var apellido by remember { mutableStateOf(TextFieldValue("")) }
+    var fechaNacimiento by remember { mutableStateOf(TextFieldValue("")) }
+    var correo by remember { mutableStateOf(TextFieldValue("")) }
+    var telefono by remember { mutableStateOf(TextFieldValue("")) }
     var showConfirmationDialog by remember { mutableStateOf(false) }
 
-    Box(
-        modifier = Modifier
-            .fillMaxSize()
-            .padding(20.dp)
-            .background(
-                color = Color(0xFF57CBDD), // modificar color de fondo
-                shape = RoundedCornerShape(16.dp)
-            )
-            .padding(20.dp)
-    ) {
+    val textFieldColors = TextFieldDefaults.colors(
+        focusedContainerColor = Color.White,
+        unfocusedContainerColor = Color.White,
+        cursorColor = Color.Black,
+        focusedIndicatorColor = Color(0xFF2196F3),
+        unfocusedIndicatorColor = Color.Gray,
+        focusedLabelColor = Color(0xFF2196F3),
+        unfocusedLabelColor = Color.DarkGray
+    )
+
+    // Regex que acepta letras, tildes, diéresis, ñ y espacios
+    val letrasRegex = Regex("^[a-zA-ZáéíóúÁÉÍÓÚüÜñÑ\\s]*$")
+
+    Scaffold(containerColor = Color(0xFFF5F5F5)) { padding ->
         Column(
-            verticalArrangement = Arrangement.spacedBy(16.dp),
-            modifier = Modifier.fillMaxWidth()
+            modifier = Modifier
+                .fillMaxSize()
+                .padding(padding)
+                .padding(20.dp),
+            verticalArrangement = Arrangement.spacedBy(20.dp),
+            horizontalAlignment = Alignment.CenterHorizontally
         ) {
             Text(
-                text = "Formulario de Contratacion",
+                text = "Formulario de Contratación",
                 style = MaterialTheme.typography.headlineSmall,
-                color = Color.Black
+                fontWeight = FontWeight.Bold,
+                color = Color(0xFF0D47A1)
+            )
+            Text(
+                text = "Completa tus datos para continuar con el proceso.",
+                style = MaterialTheme.typography.bodyMedium,
+                color = Color.Gray
             )
 
-            val textFieldColors = TextFieldDefaults.colors(
-                focusedContainerColor = Color.White,
-                unfocusedContainerColor = Color.White,
-                cursorColor = Color.Black,
-                focusedIndicatorColor = Color.Black,
-                unfocusedIndicatorColor = Color.Gray,
-                focusedTextColor = Color.Black,
-                unfocusedTextColor = Color.Black,
-                focusedLabelColor = Color.Black,
-                unfocusedLabelColor = Color.Black
-            )
-
+            // NOMBRE: acepta letras con acentos y espacios
             OutlinedTextField(
                 value = nombre,
-                onValueChange = {
-                    nombre = it
-                    nombreError = null
+                onValueChange = { input ->
+                    val filtrado = input.text.filter { it.toString().matches(Regex("[a-zA-ZáéíóúÁÉÍÓÚüÜñÑ\\s]")) }
+                    nombre = input.copy(
+                        text = filtrado,
+                        selection = androidx.compose.ui.text.TextRange(filtrado.length)
+                    )
                 },
-                label = { Text("Nombre", color = Color.Black) },
+                label = { Text("Nombre") },
                 modifier = Modifier.fillMaxWidth(),
                 colors = textFieldColors,
-                isError = nombreError != null,
                 singleLine = true,
+                shape = RoundedCornerShape(10.dp),
                 keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Text)
             )
-            nombreError?.let {
-                Text(
-                    text = it,
-                    color = Color.Red,
-                    style = MaterialTheme.typography.labelSmall
-                )
-            }
 
+            // APELLIDO: igual que nombre
             OutlinedTextField(
                 value = apellido,
-                onValueChange = {
-                    apellido = it
-                    apellidoError = null
+                onValueChange = { input ->
+                    val filtrado = input.text.filter { it.toString().matches(Regex("[a-zA-ZáéíóúÁÉÍÓÚüÜñÑ\\s]")) }
+                    apellido = input.copy(
+                        text = filtrado,
+                        selection = androidx.compose.ui.text.TextRange(filtrado.length)
+                    )
                 },
-                label = { Text("Apellido", color = Color.Black) },
+                label = { Text("Apellido") },
                 modifier = Modifier.fillMaxWidth(),
                 colors = textFieldColors,
-                isError = apellidoError != null,
                 singleLine = true,
+                shape = RoundedCornerShape(10.dp),
                 keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Text)
             )
-            apellidoError?.let {
-                Text(
-                    text = it,
-                    color = Color.Red,
-                    style = MaterialTheme.typography.labelSmall
-                )
-            }
 
+            // FECHA: máximo 10 caracteres (DD/MM/YYYY)
             OutlinedTextField(
                 value = fechaNacimiento,
-                onValueChange = {
-                    fechaNacimiento = it
-                    fechaNacimientoError = null
+                onValueChange = { input ->
+                    val texto = input.text.take(10)
+                    fechaNacimiento = input.copy(
+                        text = texto,
+                        selection = androidx.compose.ui.text.TextRange(texto.length)
+                    )
                 },
-                label = { Text("Fecha de nacimiento (dd/mm/aaaa)", color = Color.Black) },
+                label = { Text("Fecha de nacimiento (DD/MM/YYYY)") },
                 modifier = Modifier.fillMaxWidth(),
                 colors = textFieldColors,
-                isError = fechaNacimientoError != null,
                 singleLine = true,
+                shape = RoundedCornerShape(10.dp),
                 keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number)
             )
-            fechaNacimientoError?.let {
-                Text(
-                    text = it,
-                    color = Color.Red,
-                    style = MaterialTheme.typography.labelSmall
-                )
-            }
 
+            // CORREO
             OutlinedTextField(
                 value = correo,
-                onValueChange = {
-                    correo = it
-                    correoError = null
-                },
-                label = { Text("Correo electronico", color = Color.Black) },
+                onValueChange = { correo = it },
+                label = { Text("Correo electrónico") },
                 modifier = Modifier.fillMaxWidth(),
                 colors = textFieldColors,
-                isError = correoError != null,
                 singleLine = true,
+                shape = RoundedCornerShape(10.dp),
                 keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Email)
             )
-            correoError?.let {
-                Text(
-                    text = it,
-                    color = Color.Red,
-                    style = MaterialTheme.typography.labelSmall
-                )
-            }
 
+            // TELÉFONO: solo números, máximo 9 dígitos
             OutlinedTextField(
                 value = telefono,
-                onValueChange = {
-                    telefono = it
-                    telefonoError = null
+                onValueChange = { input ->
+                    val soloNumeros = input.text.filter { it.isDigit() }.take(9)
+                    telefono = input.copy(
+                        text = soloNumeros,
+                        selection = androidx.compose.ui.text.TextRange(soloNumeros.length)
+                    )
                 },
-                label = { Text("Telefono", color = Color.Black) },
+                label = { Text("Teléfono") },
                 modifier = Modifier.fillMaxWidth(),
                 colors = textFieldColors,
-                isError = telefonoError != null,
                 singleLine = true,
+                shape = RoundedCornerShape(10.dp),
                 keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number)
             )
-            telefonoError?.let {
-                Text(
-                    text = it,
-                    color = Color.Red,
-                    style = MaterialTheme.typography.labelSmall
-                )
-            }
 
-            Text(
-                text = "El usuario creado tendra una contrasena temporal compuesta por las dos primeras letras del nombre, el primer apellido y los ultimos dos digitos del telefono.",
-                color = Color.Black
-            )
+            Spacer(modifier = Modifier.height(8.dp))
 
             Button(
-                onClick = {
-                    when {
-                        nombre.text.isBlank() -> nombreError = "El nombre es obligatorio."
-                        apellido.text.isBlank() -> apellidoError = "El apellido es obligatorio."
-                        !fechaNacimiento.text.matches(Regex("\\d{2}/\\d{2}/\\d{4}")) ->
-                            fechaNacimientoError = "La fecha debe tener formato dd/mm/aaaa."
-                        !correo.text.contains("@") || !correo.text.contains(".") ->
-                            correoError = "Correo invalido."
-                        !telefono.text.matches(Regex("\\d{8,}")) ->
-                            telefonoError = "El telefono debe contener al menos 8 numeros."
-                        else -> {
-                            nombreError = null
-                            apellidoError = null
-                            fechaNacimientoError = null
-                            correoError = null
-                            telefonoError = null
-                            showConfirmationDialog = true
-                        }
-                    }
-                },
-                modifier = Modifier.fillMaxWidth(),
+                onClick = { showConfirmationDialog = true },
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .height(50.dp),
+                shape = RoundedCornerShape(10.dp),
                 colors = ButtonDefaults.buttonColors(
-                    containerColor = Color.Blue,
+                    containerColor = Color(0xFF1565C0),
                     contentColor = Color.White
                 )
             ) {
-                Text("Confirmar Seguro")
+                Text(text = "Confirmar seguro")
             }
         }
     }
 
+    // Diálogo de confirmación
     if (showConfirmationDialog) {
         AlertDialog(
             onDismissRequest = { showConfirmationDialog = false },
             confirmButton = {
-                TextButton(
-                    onClick = {
-                        showConfirmationDialog = false
-                        navController.popBackStack()
-                    }
-                ) {
-                    Text(text = stringResource(id = R.string.common_ok))
+                TextButton(onClick = { showConfirmationDialog = false }) {
+                    Text("Entendido")
                 }
             },
-            title = {
-                Text(text = stringResource(id = R.string.insurance_form_confirmation_title))
-            },
-            text = {
-                Text(text = stringResource(id = R.string.insurance_form_confirmation_body))
-            }
+            title = { Text("Tus datos se han enviado correctamente.") },
+            text = { Text("Nos contactaremos contigo para confirmar la solicitud.") }
         )
     }
 }

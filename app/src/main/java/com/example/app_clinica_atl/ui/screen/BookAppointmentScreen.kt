@@ -285,8 +285,11 @@ fun BookAppointmentScreen(
                 leadingIcon = { Icon(Icons.Default.AccessTime, contentDescription = null) },
                 trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded = timeExpanded && timeFieldEnabled) },
                 enabled = timeFieldEnabled,
-                modifier = Modifier.fillMaxWidth().menuAnchor(),
-                singleLine = true
+                singleLine = true,
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .menuAnchor()
+
             )
 
             ExposedDropdownMenu(

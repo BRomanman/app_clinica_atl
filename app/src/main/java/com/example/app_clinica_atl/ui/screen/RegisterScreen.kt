@@ -97,7 +97,7 @@ private fun RegisterScreen(
     onSubmit: () -> Unit,
     onGoLogin: () -> Unit
 ) {
-    val bg = MaterialTheme.colorScheme.tertiaryContainer
+    val bg = MaterialTheme.colorScheme.primaryContainer
     var showPass by remember { mutableStateOf(false) }
     var showConfirm by remember { mutableStateOf(false) }
 
