@@ -9,12 +9,14 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardOptions
+import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextFieldDefaults
+import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -24,10 +26,12 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.input.TextFieldValue
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.navigation.NavController
 import androidx.navigation.compose.rememberNavController
+import com.example.app_clinica_atl.R
 
 @Composable
 fun FormularioSeguroScreen(navController: NavController) {
@@ -42,6 +46,7 @@ fun FormularioSeguroScreen(navController: NavController) {
     var fechaNacimientoError by remember { mutableStateOf<String?>(null) }
     var correoError by remember { mutableStateOf<String?>(null) }
     var telefonoError by remember { mutableStateOf<String?>(null) }
+    var showConfirmationDialog by remember { mutableStateOf(false) }
 
     Box(
         modifier = Modifier
@@ -202,7 +207,7 @@ fun FormularioSeguroScreen(navController: NavController) {
                             fechaNacimientoError = null
                             correoError = null
                             telefonoError = null
-                            navController.popBackStack()
+                            showConfirmationDialog = true
                         }
                     }
                 },
@@ -215,6 +220,28 @@ fun FormularioSeguroScreen(navController: NavController) {
                 Text("Confirmar Seguro")
             }
         }
+    }
+
+    if (showConfirmationDialog) {
+        AlertDialog(
+            onDismissRequest = { showConfirmationDialog = false },
+            confirmButton = {
+                TextButton(
+                    onClick = {
+                        showConfirmationDialog = false
+                        navController.popBackStack()
+                    }
+                ) {
+                    Text(text = stringResource(id = R.string.common_ok))
+                }
+            },
+            title = {
+                Text(text = stringResource(id = R.string.insurance_form_confirmation_title))
+            },
+            text = {
+                Text(text = stringResource(id = R.string.insurance_form_confirmation_body))
+            }
+        )
     }
 }
 

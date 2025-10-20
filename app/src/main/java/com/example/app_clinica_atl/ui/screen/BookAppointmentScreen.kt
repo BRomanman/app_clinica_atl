@@ -1,55 +1,24 @@
 package com.example.app_clinica_atl.ui.screen
 
-
 import android.os.Build
 import androidx.annotation.RequiresApi
-import androidx.compose.foundation.clickable
-import androidx.compose.foundation.layout.Arrangement
-import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.Spacer
-import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.height
-import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.*
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.AccessTime
 import androidx.compose.material.icons.filled.Event
 import androidx.compose.material.icons.filled.Person
-import androidx.compose.material3.Button
-import androidx.compose.material3.DropdownMenuItem
-import androidx.compose.material3.ExperimentalMaterial3Api
-import androidx.compose.material3.ExposedDropdownMenuBox
-import androidx.compose.material3.ExposedDropdownMenuDefaults
-import androidx.compose.material3.Icon
-import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.OutlinedTextField
-import androidx.compose.material3.Text
-import androidx.compose.material3.TextButton
-import androidx.compose.material3.rememberDatePickerState
-import androidx.compose.material3.DatePicker
-import androidx.compose.material3.DatePickerDialog
-import androidx.compose.runtime.Composable
-import androidx.compose.runtime.LaunchedEffect
-import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.remember
-import androidx.compose.runtime.setValue
+import androidx.compose.material3.*
+import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
-import androidx.compose.ui.unit.dp
-import androidx.compose.foundation.interaction.MutableInteractionSource
-import androidx.compose.material3.MenuAnchorType
 import androidx.compose.ui.tooling.preview.Preview
+import androidx.compose.ui.unit.dp
 import com.example.app_clinica_atl.R
-
-
-import java.time.Instant
 import java.time.LocalDate
 import java.time.LocalTime
-import java.time.ZoneId
 import java.time.format.DateTimeFormatter
-
 
 data class AppointmentRequest(
     val department: String,
@@ -127,18 +96,15 @@ fun BookAppointmentScreen(
     var selectedDoctor by remember { mutableStateOf<DoctorInfo?>(null) }
     var selectedDate by remember { mutableStateOf<LocalDate?>(null) }
     var selectedTime by remember { mutableStateOf<LocalTime?>(null) }
+    var showConfirmationDialog by remember { mutableStateOf(false) }
 
     val doctorOptions = selectedDepartment?.let { DoctorDirectory.doctorsByDepartment[it] }.orEmpty()
 
-    val dateFormatter = remember {
-        DateTimeFormatter.ofPattern("dd MMM yyyy")
-    }
-    val timeFormatter = remember {
-        DateTimeFormatter.ofPattern("HH:mm")
-    }
+    val dateFormatter = remember { DateTimeFormatter.ofPattern("dd/MM/yyyy") }
+    val timeFormatter = remember { DateTimeFormatter.ofPattern("HH:mm") }
 
-    var showDatePicker by remember { mutableStateOf(false) }
-    val datePickerState = rememberDatePickerState()
+    var selectedDateText by remember { mutableStateOf("") }
+    var dateError by remember { mutableStateOf<String?>(null) }
 
     val availableTimes = remember {
         listOf(
@@ -151,38 +117,12 @@ fun BookAppointmentScreen(
             LocalTime.of(17, 0)
         )
     }
+
     var timeExpanded by remember { mutableStateOf(false) }
 
     LaunchedEffect(selectedDepartment) {
         if (selectedDoctor != null && selectedDoctor !in doctorOptions) {
             selectedDoctor = null
-        }
-    }
-
-    if (showDatePicker) {
-        DatePickerDialog(
-            onDismissRequest = { showDatePicker = false },
-            confirmButton = {
-                TextButton(
-                    onClick = {
-                        datePickerState.selectedDateMillis?.let { millis ->
-                            selectedDate = Instant.ofEpochMilli(millis)
-                                .atZone(ZoneId.systemDefault())
-                                .toLocalDate()
-                        }
-                        showDatePicker = false
-                    }
-                ) {
-                    Text(text = stringResource(id = R.string.common_confirm))
-                }
-            },
-            dismissButton = {
-                TextButton(onClick = { showDatePicker = false }) {
-                    Text(text = stringResource(id = R.string.common_cancel))
-                }
-            }
-        ) {
-            DatePicker(state = datePickerState)
         }
     }
 
@@ -202,6 +142,7 @@ fun BookAppointmentScreen(
             style = MaterialTheme.typography.bodyMedium
         )
 
+        // Selección de departamento
         ExposedDropdownMenuBox(
             expanded = departmentExpanded,
             onExpandedChange = { departmentExpanded = !departmentExpanded }
@@ -214,7 +155,7 @@ fun BookAppointmentScreen(
                 trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded = departmentExpanded) },
                 modifier = Modifier
                     .fillMaxWidth()
-                    .menuAnchor(type = MenuAnchorType.PrimaryNotEditable)
+                    .menuAnchor()
             )
             ExposedDropdownMenu(
                 expanded = departmentExpanded,
@@ -232,6 +173,7 @@ fun BookAppointmentScreen(
             }
         }
 
+        // Selección de doctor
         ExposedDropdownMenuBox(
             expanded = doctorExpanded,
             onExpandedChange = {
@@ -250,10 +192,7 @@ fun BookAppointmentScreen(
                 enabled = doctorOptions.isNotEmpty(),
                 modifier = Modifier
                     .fillMaxWidth()
-                    .menuAnchor(
-                        type = MenuAnchorType.PrimaryNotEditable,
-                        enabled = doctorOptions.isNotEmpty()
-                    )
+                    .menuAnchor()
             )
             ExposedDropdownMenu(
                 expanded = doctorExpanded,
@@ -273,48 +212,60 @@ fun BookAppointmentScreen(
 
         selectedDoctor?.let {
             Text(
-                text = stringResource(
-                    id = R.string.book_appointment_doctor_since,
-                    it.since
-                ),
+                text = stringResource(id = R.string.book_appointment_doctor_since, it.since),
                 style = MaterialTheme.typography.labelMedium
             )
         }
 
+        // INPUT DE FECHA MANUAL (DD/MM/YYYY)
         val dateFieldEnabled = selectedDepartment != null && selectedDoctor != null
-        val dateInteractionSource = remember { MutableInteractionSource() }
+
         OutlinedTextField(
-            value = selectedDate?.format(dateFormatter).orEmpty(),
-            onValueChange = {},
-            readOnly = true,
-            label = { Text(text = stringResource(id = R.string.book_appointment_date)) },
-            placeholder = { Text(text = stringResource(id = R.string.book_appointment_date_placeholder)) },
-            leadingIcon = { Icon(Icons.Default.Event, contentDescription = null) },
-            trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded = showDatePicker) },
-            enabled = dateFieldEnabled,
-            modifier = Modifier
-                .fillMaxWidth()
-                .let { base ->
-                    if (dateFieldEnabled) {
-                        base.clickable(
-                            interactionSource = dateInteractionSource,
-                            indication = null
-                        ) { showDatePicker = true }
-                    } else {
-                        base
+            value = selectedDateText,
+            onValueChange = { raw ->
+                if (!dateFieldEnabled) return@OutlinedTextField
+
+                val digits = raw.filter(Char::isDigit).take(8)
+                val withSlashes = buildString {
+                    for ((i, c) in digits.withIndex()) {
+                        append(c)
+                        if (i == 1 || i == 3) append('/')
                     }
-                },
-            interactionSource = dateInteractionSource,
-            singleLine = true
+                }
+
+                selectedDateText = withSlashes
+                dateError = null
+
+                if (withSlashes.length == 10) {
+                    try {
+                        val parsed = LocalDate.parse(withSlashes, dateFormatter)
+                        selectedDate = parsed
+                        dateError = null
+                    } catch (_: Exception) {
+                        selectedDate = null
+                        dateError = "Fecha inválida. Usa DD/MM/YYYY."
+                    }
+                } else {
+                    selectedDate = null
+                }
+            },
+            readOnly = false,
+            enabled = dateFieldEnabled,
+            label = { Text(stringResource(id = R.string.book_appointment_date)) },
+            placeholder = { Text("DD/MM/YYYY") },
+            leadingIcon = { Icon(Icons.Default.Event, contentDescription = null) },
+            isError = dateError != null,
+            supportingText = { if (dateError != null) Text(dateError!!) },
+            singleLine = true,
+            modifier = Modifier.fillMaxWidth()
         )
 
+        // Selección de hora
         val timeFieldEnabled = selectedDate != null
         ExposedDropdownMenuBox(
             expanded = timeExpanded && timeFieldEnabled,
             onExpandedChange = {
-                if (timeFieldEnabled) {
-                    timeExpanded = !timeExpanded
-                }
+                if (timeFieldEnabled) timeExpanded = !timeExpanded
             }
         ) {
             OutlinedTextField(
@@ -328,13 +279,9 @@ fun BookAppointmentScreen(
                 enabled = timeFieldEnabled,
                 modifier = Modifier
                     .fillMaxWidth()
-                    .menuAnchor(
-                        type = MenuAnchorType.PrimaryNotEditable,
-                        enabled = timeFieldEnabled
-                    )
-                ,singleLine = true
+                    .menuAnchor(),
+                singleLine = true
             )
-
             ExposedDropdownMenu(
                 expanded = timeExpanded && timeFieldEnabled,
                 onDismissRequest = { timeExpanded = false }
@@ -353,6 +300,7 @@ fun BookAppointmentScreen(
 
         Spacer(modifier = Modifier.height(8.dp))
 
+        // Botón de confirmación
         Button(
             onClick = {
                 val department = selectedDepartment
@@ -361,15 +309,37 @@ fun BookAppointmentScreen(
                 val time = selectedTime
                 if (department != null && doctor != null && date != null && time != null) {
                     onSubmit(AppointmentRequest(department, doctor, date, time))
+                    showConfirmationDialog = true
                 }
             },
             enabled = selectedDepartment != null &&
-                selectedDoctor != null &&
-                selectedDate != null &&
-                selectedTime != null,
+                    selectedDoctor != null &&
+                    selectedDate != null &&
+                    selectedTime != null,
             modifier = Modifier.fillMaxWidth()
         ) {
             Text(text = stringResource(id = R.string.book_appointment_submit))
+        }
+
+        // Diálogo de confirmación
+        if (showConfirmationDialog) {
+            AlertDialog(
+                onDismissRequest = { showConfirmationDialog = false },
+                confirmButton = {
+                    TextButton(onClick = { showConfirmationDialog = false }) {
+                        Text(text = stringResource(id = R.string.common_ok))
+                    }
+                },
+                title = {
+                    Text(
+                        text = stringResource(id = R.string.book_appointment_confirmation_title),
+                        fontWeight = FontWeight.Bold
+                    )
+                },
+                text = {
+                    Text(text = stringResource(id = R.string.book_appointment_confirmation_body))
+                }
+            )
         }
     }
 }

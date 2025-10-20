@@ -2,6 +2,7 @@
     <string name="app_name">Clínica ATL</string>
     <string name="common_confirm">Confirmar</string>
     <string name="common_cancel">Cancelar</string>
+    <string name="common_ok">Entendido</string>
     <string name="book_appointment_title">Reserva de hora</string>
     <string name="book_appointment_subtitle">Selecciona el área, profesional y horario</string>
     <string name="book_appointment_department">Área de atención</string>
@@ -12,6 +13,10 @@
     <string name="book_appointment_time">Hora de la reserva</string>
     <string name="book_appointment_time_placeholder">Selecciona la hora</string>
     <string name="book_appointment_submit">Confirmar reserva</string>
+    <string name="book_appointment_confirmation_title">Reserva confirmada</string>
+    <string name="book_appointment_confirmation_body">Tu solicitud de reserva fue enviada correctamente.</string>
+    <string name="insurance_form_confirmation_title">Formulario confirmado</string>
+    <string name="insurance_form_confirmation_body">Tus datos fueron enviados para gestionar el seguro.</string>
     <string name="profile_header_title">Perfil del paciente</string>
     <string name="profile_header_subtitle">Actualizar información</string>
     <string name="profile_delete_cta">Eliminar cuenta</string>
