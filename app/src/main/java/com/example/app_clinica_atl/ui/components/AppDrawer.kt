@@ -60,6 +60,7 @@ fun defaultDrawerItems(
     DrawerItem("Seguros", Icons.Filled.Lock, onInsurance),
     DrawerItem("Reservar Hora", Icons.Filled.Book, onBookAppointment),
     DrawerItem("Perfil", Icons.Filled.Person, onProfile),
+
     // --- 2. AÑADE ESTE ITEM ---
     DrawerItem("Buscar Paciente", Icons.Filled.Search, onGoToPatientSearch),
     DrawerItem("Login", Icons.Filled.AccountCircle, onLogin),

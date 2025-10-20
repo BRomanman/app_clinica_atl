@@ -19,12 +19,7 @@ import androidx.compose.ui.text.style.TextOverflow
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun AppTopBar(
-    onOpenDrawer: () -> Unit,
-    onHome: () -> Unit,
-    onInsurance: () -> Unit,
-    onBookAppointment: () -> Unit,
-    onProfile: () -> Unit,
-    onGoToPatientSearch: () -> Unit
+    onOpenDrawer: () -> Unit
 ) {
     CenterAlignedTopAppBar(
         colors = TopAppBarDefaults.centerAlignedTopAppBarColors(
