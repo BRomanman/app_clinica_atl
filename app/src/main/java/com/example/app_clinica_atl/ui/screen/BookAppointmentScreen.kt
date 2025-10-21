@@ -2,6 +2,8 @@ package com.example.app_clinica_atl.ui.screen
 
 import android.os.Build
 import androidx.annotation.RequiresApi
+import androidx.compose.foundation.clickable
+import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.*
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.AccessTime
@@ -10,369 +12,205 @@ import androidx.compose.material.icons.filled.Person
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.example.app_clinica_atl.R
-import com.example.app_clinica_atl.domain.validation.validateFechaNacimiento
+import com.example.app_clinica_atl.data.model.DoctorInfo
+import com.example.app_clinica_atl.ui.theme.AppClinicaATLTheme
+import com.example.app_clinica_atl.ui.viewmodel.BookAppointmentUiState
+import com.example.app_clinica_atl.ui.viewmodel.BookAppointmentViewModel
 import java.time.LocalDate
 import java.time.LocalTime
 import java.time.format.DateTimeFormatter
 
-data class AppointmentRequest(
-    val department: String,
-    val doctor: DoctorInfo,
-    val date: LocalDate,
-    val time: LocalTime
-)
+// 1. Composable "Inteligente"
+@RequiresApi(Build.VERSION_CODES.O)
+@Composable
+fun BookAppointmentScreenVm(vm: BookAppointmentViewModel) {
+    val uiState by vm.uiState.collectAsStateWithLifecycle()
 
-data class DoctorInfo(
-    val name: String,
-    val specialty: String,
-    val since: Int
-)
-
-private object DoctorDirectory {
-    val departments = listOf(
-        "Medicina General",
-        "Cardiología",
-        "Dermatología",
-        "Pediatría",
-        "Psicología",
-        "Nutrición"
-    )
-
-    val doctorsByDepartment = mapOf(
-        "Medicina General" to listOf(
-            DoctorInfo("Dra. Ana Pérez", "Traumatóloga", 2012),
-            DoctorInfo("Dra. Juana Pérez", "Médico de familia", 2010),
-            DoctorInfo("Dra. Marcela Ruiz", "Ginecóloga", 2015),
-            DoctorInfo("Dra. Alejandra Peña", "Médico de atención primaria", 2011),
-            DoctorInfo("Dr. Ignacio Fuentes", "Traumatólogo", 2013)
-        ),
-        "Cardiología" to listOf(
-            DoctorInfo("Dr. Juan Torres", "Cardiólogo", 2012),
-            DoctorInfo("Dra. Marcela Ruiz", "Cardióloga", 2015),
-            DoctorInfo("Dra. Ricarda Gómez", "Cardióloga", 2016),
-            DoctorInfo("Dra. Valentina Castro", "Cardióloga", 2013)
-        ),
-        "Dermatología" to listOf(
-            DoctorInfo("Dra. Ana Pérez", "Dermatóloga", 2011),
-            DoctorInfo("Dr. Nicolás Díaz", "Dermatólogo", 2012),
-            DoctorInfo("Dra. Isabel Soto", "Dermatóloga", 2014),
-            DoctorInfo("Dr. Paulo Bravo", "Dermatólogo", 2013),
-            DoctorInfo("Dra. Lorena Salazar", "Dermatóloga", 2015)
-        ),
-        "Pediatría" to listOf(
-            DoctorInfo("Dr. Gabriel Molina", "Pediatra", 2010),
-            DoctorInfo("Dra. Fernanda Morales", "Pediatra", 2011),
-            DoctorInfo("Dra. Natalia Carrasco", "Pediatra", 2012)
-        ),
-        "Psicología" to listOf(
-            DoctorInfo("Dr. Sebastián Flores", "Psicólogo", 2013),
-            DoctorInfo("Dra. Catalina Reyes", "Psicóloga", 2014),
-            DoctorInfo("Dr. Esteban Rivas", "Psicólogo", 2015),
-            DoctorInfo("Dr. Marcelo Duarte", "Psicólogo", 2012)
-        ),
-        "Nutrición" to listOf(
-            DoctorInfo("Dra. Verónica Contreras", "Nutrióloga", 2011),
-            DoctorInfo("Dr. Felipe Lagos", "Nutriólogo", 2012)
-        )
+    BookAppointmentScreen(
+        state = uiState,
+        onDepartmentSelected = vm::onDepartmentSelected,
+        onDoctorSelected = vm::onDoctorSelected,
+        onDateSelected = vm::onDateSelected, // Para DatePicker
+        onTimeSelected = vm::onTimeSelected,
+        onDepartmentExpandedChange = vm::onDepartmentExpandedChange,
+        onDoctorExpandedChange = vm::onDoctorExpandedChange,
+        onTimeExpandedChange = vm::onTimeExpandedChange,
+        onShowDatePicker = vm::showDatePicker, // Para abrir/cerrar DatePicker
+        onSubmit = vm::submitAppointment,
+        onDismissConfirmation = vm::dismissConfirmationDialog
     )
 }
 
-
-
+// 2. Composable "Tonto"
 @RequiresApi(Build.VERSION_CODES.O)
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun BookAppointmentScreen(
-    modifier: Modifier = Modifier,
-    onSubmit: (AppointmentRequest) -> Unit = {}
+private fun BookAppointmentScreen(
+    state: BookAppointmentUiState,
+    onDepartmentSelected: (String) -> Unit,
+    onDoctorSelected: (DoctorInfo) -> Unit,
+    onDateSelected: (Long?) -> Unit, // Recibe millis del DatePicker
+    onTimeSelected: (LocalTime) -> Unit,
+    onDepartmentExpandedChange: (Boolean) -> Unit,
+    onDoctorExpandedChange: (Boolean) -> Unit,
+    onTimeExpandedChange: (Boolean) -> Unit,
+    onShowDatePicker: (Boolean) -> Unit, // Lambda para mostrar/ocultar DatePicker
+    onSubmit: () -> Unit,
+    onDismissConfirmation: () -> Unit,
+    modifier: Modifier = Modifier
 ) {
-    var departmentExpanded by remember { mutableStateOf(false) }
-    var doctorExpanded by remember { mutableStateOf(false) }
-
-    var selectedDepartment by remember { mutableStateOf<String?>(null) }
-    var selectedDoctor by remember { mutableStateOf<DoctorInfo?>(null) }
-    var selectedDate by remember { mutableStateOf<LocalDate?>(null) }
-    var selectedTime by remember { mutableStateOf<LocalTime?>(null) }
-    var showConfirmationDialog by remember { mutableStateOf(false) }
-
-    val doctorOptions = selectedDepartment?.let { DoctorDirectory.doctorsByDepartment[it] }.orEmpty()
-
-    val dateFormatter = remember { DateTimeFormatter.ISO_LOCAL_DATE }
+    // Formateadores para mostrar fecha y hora
+    val dateFormatter = remember { DateTimeFormatter.ofPattern("dd MMM yyyy") }
     val timeFormatter = remember { DateTimeFormatter.ofPattern("HH:mm") }
 
-    var selectedDateText by remember { mutableStateOf("") }
-    var dateError by remember { mutableStateOf<String?>(null) }
+    // Estado para el DatePickerDialog
+    val datePickerState = rememberDatePickerState()
 
-    val availableTimes = remember {
-        listOf(
-            LocalTime.of(9, 0),
-            LocalTime.of(10, 0),
-            LocalTime.of(11, 30),
-            LocalTime.of(12, 30),
-            LocalTime.of(14, 0),
-            LocalTime.of(15, 30),
-            LocalTime.of(17, 0)
-        )
-    }
-
-    var timeExpanded by remember { mutableStateOf(false) }
-
-    LaunchedEffect(selectedDepartment) {
-        if (selectedDoctor != null && selectedDoctor !in doctorOptions) {
-            selectedDoctor = null
+    // --- DatePickerDialog ---
+    if (state.showDatePicker) {
+        DatePickerDialog(
+            onDismissRequest = { onShowDatePicker(false) },
+            confirmButton = {
+                TextButton(onClick = { onDateSelected(datePickerState.selectedDateMillis) }) {
+                    Text(text = stringResource(id = R.string.common_confirm))
+                }
+            },
+            dismissButton = {
+                TextButton(onClick = { onShowDatePicker(false) }) {
+                    Text(text = stringResource(id = R.string.common_cancel))
+                }
+            }
+        ) {
+            DatePicker(state = datePickerState)
         }
     }
 
+    // --- Contenido Principal ---
     Column(
-        modifier = modifier
-            .fillMaxSize()
-            .padding(16.dp),
+        modifier = modifier.fillMaxSize().padding(16.dp),
         verticalArrangement = Arrangement.spacedBy(16.dp)
     ) {
-        Text(
-            text = "Reserva de Hora",
-            style = MaterialTheme.typography.headlineSmall,
-            fontWeight = FontWeight.Bold
-        )
-        Text(
-            text = "Seleccione el área, el doctor, la fecha y la hora para su cita médica.",
-            style = MaterialTheme.typography.bodyMedium
-        )
+        Text(stringResource(id = R.string.book_appointment_title), style = MaterialTheme.typography.headlineSmall, fontWeight = FontWeight.Bold)
+        Text(stringResource(id = R.string.book_appointment_subtitle), style = MaterialTheme.typography.bodyMedium)
 
-        // Selección del area
-        ExposedDropdownMenuBox(
-            expanded = departmentExpanded,
-            onExpandedChange = { departmentExpanded = !departmentExpanded }
-        ) {
+        // --- Departamento ---
+        ExposedDropdownMenuBox(expanded = state.departmentExpanded, onExpandedChange = onDepartmentExpandedChange) {
             OutlinedTextField(
-                value = selectedDepartment.orEmpty(),
-                onValueChange = {},
-                readOnly = true,
-                label = { Text(text = stringResource(id = R.string.book_appointment_department)) },
-                trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded = departmentExpanded) },
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .menuAnchor()
+                value = state.selectedDepartment.orEmpty(), onValueChange = {}, readOnly = true,
+                label = { Text(stringResource(id = R.string.book_appointment_department)) },
+                trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded = state.departmentExpanded) },
+                modifier = Modifier.fillMaxWidth().menuAnchor()
             )
-            ExposedDropdownMenu(
-                expanded = departmentExpanded,
-                onDismissRequest = { departmentExpanded = false }
-            ) {
-                DoctorDirectory.departments.forEach { department ->
-                    DropdownMenuItem(
-                        text = { Text(department) },
-                        onClick = {
-                            selectedDepartment = department
-                            departmentExpanded = false
-                        }
-                    )
+            ExposedDropdownMenu(expanded = state.departmentExpanded, onDismissRequest = { onDepartmentExpandedChange(false) }) {
+                state.departments.forEach { department ->
+                    DropdownMenuItem(text = { Text(department) }, onClick = { onDepartmentSelected(department) })
                 }
             }
         }
 
-        // Selección de doctor
-        ExposedDropdownMenuBox(
-            expanded = doctorExpanded,
-            onExpandedChange = {
-                if (doctorOptions.isNotEmpty()) {
-                    doctorExpanded = !doctorExpanded
-                }
-            }
-        ) {
+        // --- Doctor ---
+        ExposedDropdownMenuBox(expanded = state.doctorExpanded, onExpandedChange = onDoctorExpandedChange) {
             OutlinedTextField(
-                value = selectedDoctor?.name.orEmpty(),
-                onValueChange = {},
-                readOnly = true,
-                label = { Text(text = stringResource(id = R.string.book_appointment_doctor)) },
-                leadingIcon = { Icon(Icons.Default.Person, contentDescription = null) },
-                trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded = doctorExpanded) },
-                enabled = doctorOptions.isNotEmpty(),
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .menuAnchor()
+                value = state.selectedDoctor?.name.orEmpty(), onValueChange = {}, readOnly = true,
+                label = { Text(stringResource(id = R.string.book_appointment_doctor)) },
+                leadingIcon = { Icon(Icons.Default.Person, null) },
+                trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded = state.doctorExpanded) },
+                enabled = state.doctors.isNotEmpty(),
+                modifier = Modifier.fillMaxWidth().menuAnchor()
             )
-            ExposedDropdownMenu(
-                expanded = doctorExpanded,
-                onDismissRequest = { doctorExpanded = false }
-            ) {
-                doctorOptions.forEach { doctor ->
-                    DropdownMenuItem(
-                        text = { Text("${doctor.name} - ${doctor.specialty}") },
-                        onClick = {
-                            selectedDoctor = doctor
-                            doctorExpanded = false
-                        }
-                    )
+            ExposedDropdownMenu(expanded = state.doctorExpanded, onDismissRequest = { onDoctorExpandedChange(false) }) {
+                state.doctors.forEach { doctor ->
+                    DropdownMenuItem(text = { Text("${doctor.name} - ${doctor.specialty}") }, onClick = { onDoctorSelected(doctor) })
                 }
             }
         }
+        state.selectedDoctor?.let { Text(stringResource(id = R.string.book_appointment_doctor_since, it.since), style = MaterialTheme.typography.labelMedium) }
 
-        selectedDoctor?.let {
-            Text(
-                text = "Atiende desde: ${it.since}",
-                style = MaterialTheme.typography.labelMedium
-            )
-        }
-
-        // INPUT DE FECHA MANUAL (DD/MM/YYYY)
-        val dateFieldEnabled = selectedDepartment != null && selectedDoctor != null
-
-
-
-        //Fecha de la reserva
+        // --- Fecha (usando DatePickerDialog) ---
+        val dateFieldEnabled = state.selectedDepartment != null && state.selectedDoctor != null
+        val dateInteractionSource = remember { MutableInteractionSource() }
         OutlinedTextField(
-            value = selectedDateText,
-            onValueChange = { raw ->
-                if (!dateFieldEnabled) return@OutlinedTextField
-
-                val digits = raw.filter(Char::isDigit).take(8)
-                val withHyphen = buildString {
-                    for ((index, char) in digits.withIndex()) {
-                        append(char)
-                        if (index == 3 || index == 5) append('-')
-                    }
-                }
-
-                selectedDateText = withHyphen
-
-                if (withHyphen.length == 10) {
-                    val validation = validateFechaNacimiento(withHyphen)
-                    if (validation == null) {
-                        try {
-                            val parsed = LocalDate.parse(withHyphen, dateFormatter)
-                            selectedDate = parsed
-                            dateError = null
-                        } catch (_: Exception) {
-                            selectedDate = null
-                            dateError = "Fecha invalida. Usa YYYY-MM-DD."
-                        }
-                    } else {
-                        selectedDate = null
-                        dateError = validation
-                    }
-                } else {
-                    selectedDate = null
-                    dateError = null
-                }
-            },
-            readOnly = false,
-            enabled = dateFieldEnabled,
+            value = state.selectedDate?.format(dateFormatter).orEmpty(), // Muestra fecha formateada
+            onValueChange = {}, readOnly = true,
             label = { Text(stringResource(id = R.string.book_appointment_date)) },
-            placeholder = { Text("Mantenga el formato YYYY-MM-DD") },
-            leadingIcon = { Icon(Icons.Default.Event, contentDescription = null) },
-            isError = dateError != null,
-            supportingText = {
-                val error = dateError
-                if (error != null) Text(error)
-            },
-            singleLine = true,
-            modifier = Modifier
-                .fillMaxWidth()
-
+            placeholder = { Text(stringResource(id = R.string.book_appointment_date_placeholder)) },
+            leadingIcon = { Icon(Icons.Default.Event, null) },
+            trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded = state.showDatePicker) },
+            enabled = dateFieldEnabled,
+            modifier = Modifier.fillMaxWidth().clickable( // Clickable para abrir el DatePicker
+                interactionSource = dateInteractionSource,
+                indication = null, // Sin efecto visual de click
+                enabled = dateFieldEnabled,
+                onClick = { onShowDatePicker(true) } // Llama al VM para mostrar el diálogo
+            ),
+            interactionSource = dateInteractionSource,
+            singleLine = true
         )
 
-        // Selección de hora
-        val timeFieldEnabled = selectedDate != null
-        ExposedDropdownMenuBox(
-            expanded = timeExpanded && timeFieldEnabled,
-            onExpandedChange = {
-                if (timeFieldEnabled) timeExpanded = !timeExpanded
-            }
-        ) {
-
-            //Hora de la Reserva
+        // --- Hora ---
+        val timeFieldEnabled = state.selectedDate != null
+        ExposedDropdownMenuBox(expanded = state.timeExpanded && timeFieldEnabled, onExpandedChange = onTimeExpandedChange) {
             OutlinedTextField(
-                value = selectedTime?.format(timeFormatter).orEmpty(),
-                onValueChange = {},
-                readOnly = true,
-                label = { Text(text = stringResource(id = R.string.book_appointment_time)) },
-                leadingIcon = { Icon(Icons.Default.AccessTime, contentDescription = null) },
-                trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded = timeExpanded && timeFieldEnabled) },
-                enabled = timeFieldEnabled,
-                singleLine = true,
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .menuAnchor()
-
+                value = state.selectedTime?.format(timeFormatter).orEmpty(), onValueChange = {}, readOnly = true,
+                label = { Text(stringResource(id = R.string.book_appointment_time)) },
+                leadingIcon = { Icon(Icons.Default.AccessTime, null) },
+                trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded = state.timeExpanded && timeFieldEnabled) },
+                enabled = timeFieldEnabled, singleLine = true,
+                modifier = Modifier.fillMaxWidth().menuAnchor()
             )
-
-            ExposedDropdownMenu(
-                expanded = timeExpanded && timeFieldEnabled,
-                onDismissRequest = { timeExpanded = false }
-            ) {
-                availableTimes.forEach { time ->
-                    DropdownMenuItem(
-                        text = { Text(time.format(timeFormatter)) },
-                        onClick = {
-                            selectedTime = time
-                            timeExpanded = false
-                        }
-                    )
+            ExposedDropdownMenu(expanded = state.timeExpanded && timeFieldEnabled, onDismissRequest = { onTimeExpandedChange(false) }) {
+                state.availableTimes.forEach { time ->
+                    DropdownMenuItem(text = { Text(time.format(timeFormatter)) }, onClick = { onTimeSelected(time) })
                 }
             }
         }
 
         Spacer(modifier = Modifier.height(8.dp))
 
-        // Botón de confirmación
+        // --- Botón Submit ---
         Button(
-            onClick = {
-                val department = selectedDepartment
-                val doctor = selectedDoctor
-                val date = selectedDate
-                val time = selectedTime
-                if (department != null && doctor != null && date != null && time != null) {
-                    onSubmit(AppointmentRequest(department, doctor, date, time))
-                    showConfirmationDialog = true
-                }
-            },
-            enabled = selectedDepartment != null &&
-                    selectedDoctor != null &&
-                    selectedDate != null &&
-                    selectedTime != null &&
-                    dateError == null,
+            onClick = onSubmit,
+            enabled = state.selectedDepartment != null && state.selectedDoctor != null && state.selectedDate != null && state.selectedTime != null && !state.isSubmitting,
             modifier = Modifier.fillMaxWidth()
         ) {
-            Text(text = stringResource(id = R.string.book_appointment_submit))
+            if (state.isSubmitting) CircularProgressIndicator(modifier = Modifier.size(24.dp), strokeWidth = 2.dp)
+            else Text(stringResource(id = R.string.book_appointment_submit))
         }
+        state.submissionError?.let { Text(it, color = MaterialTheme.colorScheme.error, modifier = Modifier.padding(top = 8.dp)) }
 
-        // Diálogo de confirmación
-        if (showConfirmationDialog) {
+        // --- Diálogo de Confirmación ---
+        if (state.showConfirmationDialog) {
             AlertDialog(
-                onDismissRequest = { showConfirmationDialog = false },
-                confirmButton = {
-                    TextButton(onClick = { showConfirmationDialog = false }) {
-                        Text(text = stringResource(id = R.string.common_ok))
-                    }
-                },
-                title = {
-                    Text(
-                        text = stringResource(id = R.string.book_appointment_confirmation_title),
-                        fontWeight = FontWeight.Bold
-                    )
-                },
-                text = {
-                    Text(text = stringResource(id = R.string.book_appointment_confirmation_body))
-                }
+                onDismissRequest = onDismissConfirmation,
+                confirmButton = { TextButton(onClick = onDismissConfirmation) { Text(stringResource(id = R.string.common_ok)) } },
+                title = { Text(stringResource(id = R.string.book_appointment_confirmation_title), fontWeight = FontWeight.Bold) },
+                text = { Text(stringResource(id = R.string.book_appointment_confirmation_body)) }
             )
         }
     }
 }
 
+// 3. Preview (Se mantiene funcional)
 @RequiresApi(Build.VERSION_CODES.O)
 @Preview(showBackground = true)
 @Composable
 fun BookAppointmentScreenPreview() {
-    BookAppointmentScreen(
-        onSubmit = { appointment ->
-            println("Appointment submitted: $appointment")
-        }
+    val previewState = BookAppointmentUiState(
+        departments = listOf("Medicina General", "Cardiología"),
+        availableTimes = listOf(LocalTime.of(9,0), LocalTime.of(10,30))
     )
+    AppClinicaATLTheme {
+        BookAppointmentScreen(
+            state = previewState, onDepartmentSelected = {}, onDoctorSelected = {},
+            onDateSelected = {}, onTimeSelected = {}, onDepartmentExpandedChange = {},
+            onDoctorExpandedChange = {}, onTimeExpandedChange = {}, onShowDatePicker = {},
+            onSubmit = {}, onDismissConfirmation = {}
+        )
+    }
 }
-
