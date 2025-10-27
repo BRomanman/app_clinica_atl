@@ -73,4 +73,10 @@ dependencies {
 
     // Compilador de Room vía KSP
     ksp("androidx.room:room-compiler:2.6.1")               // <-- NUEVO
+
+    //cargar imagenes (para mostrarlas en la UI)
+    implementation("io.coil-kt:coil-compose:2.7.0")
+
+    //Data Store Preferencia
+    implementation("androidx.datastore:datastore-preferences:1.1.1")
 }

@@ -9,10 +9,13 @@ import androidx.annotation.RequiresApi // Necesario para la anotación
 import androidx.compose.material3.MaterialTheme // Necesario para Surface
 import androidx.compose.material3.Surface
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.remember // <-- AÑADIDO: Para recordar UserPreferences
 import androidx.compose.ui.platform.LocalContext // Necesario para obtener el contexto
 import androidx.lifecycle.viewmodel.compose.viewModel // Necesario para crear ViewModels
 import androidx.navigation.compose.rememberNavController // Necesario para la navegación
 import com.example.app_clinica_atl.data.local.database.AppDatabase // Base de datos Room
+// Importaciones de Storage (DataStore)
+import com.example.app_clinica_atl.data.local.storage.UserPreferences // <-- AÑADIDO: Importa UserPreferences
 // Importaciones de Repositorios
 import com.example.app_clinica_atl.data.repository.AppointmentRepository // Repositorio de Citas
 import com.example.app_clinica_atl.data.repository.PatientRepository // Repositorio de Pacientes
@@ -29,56 +32,56 @@ import com.example.app_clinica_atl.ui.viewmodel.PatientViewModel
 import com.example.app_clinica_atl.ui.viewmodel.PatientViewModelFactory
 
 class MainActivity : ComponentActivity() {
-    // La anotación @RequiresApi indica que esta Activity (y lo que llama)
-    // requiere Android Oreo (API 26) o superior debido a BookAppointmentScreen
     @RequiresApi(Build.VERSION_CODES.O)
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        enableEdgeToEdge() // Habilita el modo borde a borde (opcional)
+        enableEdgeToEdge()
         setContent {
-            // Llama a la función Composable raíz
-            AppRoot()
+            AppRoot() // Llama a AppRoot una sola vez
         }
     }
 }
 
-// La anotación se propaga a la función raíz Composable
+/*
+* ... (Tu comentario sobre Surface)
+*/
 @RequiresApi(Build.VERSION_CODES.O)
 @Composable
-fun AppRoot() {
+fun AppRoot() { // Se define AppRoot UNA SOLA VEZ
 
     // --- 1. Construcción de Dependencias (Composition Root) ---
-    // Se crean aquí para que haya una única instancia compartida en la app
-    val context = LocalContext.current.applicationContext // Contexto para Room
-    val db = AppDatabase.getInstance(context) // Instancia única de la BD
-    val userDao = db.userDao() // DAO para usuarios
+    val context = LocalContext.current.applicationContext // Contexto para Room y DataStore
+    val db = AppDatabase.getInstance(context)
+    val userDao = db.userDao()
 
-    // Repositorios: Encapsulan el acceso a datos
+    // Repositorios
     val userRepository = UserRepository(userDao)
-    val patientRepository = PatientRepository() // Repositorio con datos fijos de pacientes
-    val appointmentRepository = AppointmentRepository() // Repositorio con datos fijos de doctores/citas
+    val patientRepository = PatientRepository()
+    val appointmentRepository = AppointmentRepository()
 
-    // ViewModels: Contienen la lógica de negocio y el estado de la UI
-    // Se crean usando `viewModel()` y sus respectivas Factories para inyectar los repositorios
+    // --- ¡NUEVO! Instancia de UserPreferences ---
+    // Usamos remember para que la instancia no se cree en cada recomposición
+    val userPreferences = remember { UserPreferences(context) }
+
+    // ViewModels
     val authViewModel: AuthViewModel = viewModel(factory = AuthViewModelFactory(userRepository))
     val patientViewModel: PatientViewModel = viewModel(factory = PatientViewModelFactory(patientRepository))
     val bookAppointmentViewModel: BookAppointmentViewModel = viewModel(
         factory = BookAppointmentViewModelFactory(appointmentRepository)
     )
 
-    // Controlador de Navegación: Gestiona las pantallas
+    // Controlador de Navegación
     val navController = rememberNavController()
 
-    // --- 2. Aplicar el Tema Personalizado y Configurar la Navegación ---
-    AppClinicaATLTheme { // Envuelve toda la UI con tu tema (colores, tipografía)
-        // Surface actúa como el lienzo principal con el color de fondo del tema
+    // --- 2. Aplicar el Tema Correcto y Configurar la Navegación ---
+    AppClinicaATLTheme {
         Surface(color = MaterialTheme.colorScheme.background) {
-            // AppNavGraph define todas las pantallas y cómo navegar entre ellas
             AppNavGraph(
                 navController = navController,
-                authViewModel = authViewModel,          // Pasa el ViewModel de Autenticación
-                patientViewModel = patientViewModel,      // Pasa el ViewModel de Búsqueda de Pacientes
-                bookAppointmentViewModel = bookAppointmentViewModel // Pasa el ViewModel de Reserva de Hora
+                authViewModel = authViewModel,
+                patientViewModel = patientViewModel,
+                bookAppointmentViewModel = bookAppointmentViewModel
+                // Aún no pasamos userPreferences aquí. Se inyectará en el ViewModel que lo necesite.
             )
         }
     }

@@ -15,7 +15,6 @@ import java.time.Instant
 import java.time.LocalDate
 import java.time.LocalTime
 import java.time.ZoneId
-import java.time.format.DateTimeFormatter
 
 // Data class para la solicitud (la mantenemos aquí por simplicidad)
 data class AppointmentRequest(
