@@ -9,6 +9,7 @@ import androidx.compose.material.icons.filled.MedicalServices
 import androidx.compose.material.icons.filled.Person
 import androidx.compose.material.icons.filled.PersonAdd
 import androidx.compose.material.icons.filled.Search
+import androidx.compose.material.icons.filled.Settings
 import androidx.compose.material3.Icon
 import androidx.compose.material3.ModalDrawerSheet
 import androidx.compose.material3.NavigationDrawerItem
@@ -51,6 +52,7 @@ fun defaultDrawerItems(
     onBookAppointment: () -> Unit,
     onProfile: () -> Unit,
     onDoctorMenu: () -> Unit,
+    onAdminMenu: () -> Unit,
     onGoToPatientSearch: () -> Unit,
     onLogin: () -> Unit,
     onRegister: () -> Unit
@@ -60,6 +62,7 @@ fun defaultDrawerItems(
     DrawerItem("Reservar Hora", Icons.Filled.Book, onBookAppointment),
     DrawerItem("Perfil", Icons.Filled.Person, onProfile),
     DrawerItem("Menu Doctor", Icons.Filled.MedicalServices, onDoctorMenu),
+    DrawerItem("Menu Administrador", Icons.Filled.Settings, onAdminMenu),
     DrawerItem("Buscar Paciente", Icons.Filled.Search, onGoToPatientSearch),
     DrawerItem("Login", Icons.Filled.AccountCircle, onLogin),
     DrawerItem("Registro", Icons.Filled.PersonAdd, onRegister)

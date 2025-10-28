@@ -12,4 +12,9 @@ sealed class Route(val path: String) {
     data object DoctorMenu : Route("doctor_menu")
     data object DoctorAppointments : Route("doctor_appointments")
     data object DoctorProfile : Route("doctor_profile")
+    data object AdminMenu : Route("admin_menu")
+    data object AdminDoctorSchedule : Route("admin_doctor_schedule")
+    data object AdminUserHistories : Route("admin_user_histories")
+    data object AdminManageDoctor : Route("admin_manage_doctor")
+    data object AdminAddDoctor : Route("admin_add_doctor")
 }
