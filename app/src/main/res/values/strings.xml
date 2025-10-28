@@ -25,6 +25,7 @@
     <string name="profile_field_address">Dirección</string>
     <string name="profile_field_phone">Número de contacto</string>
     <string name="profile_field_email">Correo electrónico</string>
+    <string name="profile_edit_photo">Editar foto de perfil</string>
     <string name="profile_upload_section_title">Agregar historial médico</string>
     <string name="profile_upload_placeholder">Adjuntar archivo…</string>
     <string name="profile_upload_cta">Agregar archivo</string>

@@ -1,12 +1,12 @@
 package com.example.app_clinica_atl.ui.screen
 
+import android.Manifest
 import android.content.Context
+import android.content.pm.PackageManager
 import android.net.Uri
-import android.os.Build
 import android.widget.Toast
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
-import androidx.annotation.RequiresApi
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
@@ -24,7 +24,6 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.CameraAlt
 import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.Edit
 import androidx.compose.material.icons.filled.Person
@@ -59,6 +58,7 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.core.content.ContextCompat
 import androidx.core.content.FileProvider
 import coil.compose.AsyncImage
 import coil.request.ImageRequest
@@ -130,6 +130,23 @@ fun PatientProfileScreen(
             // Si se cancela, limpiamos la Uri temporal
             pendingCaptureUri = null
             Toast.makeText(context, "Captura cancelada", Toast.LENGTH_SHORT).show()
+        }
+    }
+
+    val openCamera: () -> Unit = {
+        val file = createTempImageFile(context)
+        val uri = getImageUriFile(context, file)
+        pendingCaptureUri = uri
+        takePictureLauncher.launch(uri)
+    }
+
+    val cameraPermissionLauncher = rememberLauncherForActivityResult(
+        contract = ActivityResultContracts.RequestPermission()
+    ) { isGranted ->
+        if (isGranted) {
+            openCamera()
+        } else {
+            Toast.makeText(context, "Permiso de camara denegado", Toast.LENGTH_SHORT).show()
         }
     }
 
@@ -246,10 +263,16 @@ fun PatientProfileScreen(
                 onDismiss = { showPictureSourceDialog = false },
                 onCameraSelected = {
                     showPictureSourceDialog = false
-                    val file = createTempImageFile(context)
-                    val uri = getImageUriFile(context, file)
-                    pendingCaptureUri = uri
-                    takePictureLauncher.launch(uri) // Lanza la cámara
+                    val hasPermission = ContextCompat.checkSelfPermission(
+                        context,
+                        Manifest.permission.CAMERA
+                    ) == PackageManager.PERMISSION_GRANTED
+
+                    if (hasPermission) {
+                        openCamera()
+                    } else {
+                        cameraPermissionLauncher.launch(Manifest.permission.CAMERA)
+                    }
                 },
                 onGallerySelected = {
                     showPictureSourceDialog = false
