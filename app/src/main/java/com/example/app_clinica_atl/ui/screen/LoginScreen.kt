@@ -21,15 +21,16 @@ import com.example.app_clinica_atl.ui.viewmodel.AuthViewModel         // Nuestro
 @Composable                                                  // Pantalla Login conectada al VM
 fun LoginScreenVm(
     vm: AuthViewModel,                            // MOD: recibimos el VM desde NavGraph
-    onLoginOkNavigateHome: () -> Unit,                       // Navega a Home cuando el login es exitoso
+    onNavigateAfterLogin: (Long) -> Unit,                    // Navega según rol cuando el login es exitoso
     onGoRegister: () -> Unit                                 // Navega a Registro
 ) {
 
     val state by vm.login.collectAsStateWithLifecycle()      // Observa el StateFlow en tiempo real
 
-    if (state.success) {                                     // Si login fue exitoso…
+    val loggedUser = state.loggedUser
+    if (state.success && loggedUser != null) {               // Si login fue exitoso y tenemos usuario
+        onNavigateAfterLogin(loggedUser.id_rol)              // Navega según el rol del usuario
         vm.clearLoginResult()                                // Limpia banderas
-        onLoginOkNavigateHome()                              // Navega a Home
     }
 
     LoginScreen(                                             // Delegamos a UI presentacional
@@ -46,6 +47,13 @@ fun LoginScreenVm(
         onGoRegister = onGoRegister                          // Ir a Registro
     )
 }
+
+
+
+
+
+
+
 
 
 //2 modificamos la funcion principal haciendo private y agregando variable y elementos dle fiormulario
@@ -65,6 +73,20 @@ private fun LoginScreen(
     onGoRegister: () -> Unit                                 // Acción ir a registro
 ) {
     val bg = MaterialTheme.colorScheme.secondaryContainer // Fondo distinto para contraste
+
+
+
+
+
+
+
+
+
+
+
+
+
+
     //4 Agregamos la siguiente linea
     var showPass by remember { mutableStateOf(false) }        // Estado local para mostrar/ocultar contraseña
 
@@ -92,6 +114,16 @@ private fun LoginScreen(
             )
             Spacer(Modifier.height(20.dp)) // Separación
 
+
+
+
+
+
+
+
+
+
+
             //5 Borramos los elementos anteriores y comenzamos a agregar los elementos dle formulario
 // ---------- EMAIL ----------
             OutlinedTextField(
@@ -110,6 +142,19 @@ private fun LoginScreen(
             }
 
             Spacer(Modifier.height(8.dp))                    // Espacio
+
+
+
+
+
+
+
+
+
+
+
+
+
 
             // ---------- PASSWORD (oculta por defecto) ----------
             OutlinedTextField(
@@ -134,6 +179,14 @@ private fun LoginScreen(
             }
 
             Spacer(Modifier.height(16.dp))                   // Espacio
+
+
+
+
+
+
+
+
 
             // ---------- BOTÓN ENTRAR ----------
             Button(

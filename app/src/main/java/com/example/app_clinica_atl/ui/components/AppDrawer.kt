@@ -1,14 +1,11 @@
 package com.example.app_clinica_atl.ui.components
 
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.AccountCircle
 import androidx.compose.material.icons.filled.Book
 import androidx.compose.material.icons.filled.Home
 import androidx.compose.material.icons.filled.Lock
 import androidx.compose.material.icons.filled.MedicalServices
 import androidx.compose.material.icons.filled.Person
-import androidx.compose.material.icons.filled.PersonAdd
-import androidx.compose.material.icons.filled.Search
 import androidx.compose.material.icons.filled.Settings
 import androidx.compose.material3.Icon
 import androidx.compose.material3.ModalDrawerSheet
@@ -51,19 +48,11 @@ fun defaultDrawerItems(
     onInsurance: () -> Unit,
     onBookAppointment: () -> Unit,
     onProfile: () -> Unit,
-    onDoctorMenu: () -> Unit,
-    onAdminMenu: () -> Unit,
-    onGoToPatientSearch: () -> Unit,
-    onLogin: () -> Unit,
-    onRegister: () -> Unit
+
 ): List<DrawerItem> = listOf(
     DrawerItem("Home", Icons.Filled.Home, onHome),
     DrawerItem("Seguros", Icons.Filled.Lock, onInsurance),
     DrawerItem("Reservar Hora", Icons.Filled.Book, onBookAppointment),
-    DrawerItem("Perfil", Icons.Filled.Person, onProfile),
-    DrawerItem("Menu Doctor", Icons.Filled.MedicalServices, onDoctorMenu),
-    DrawerItem("Menu Administrador", Icons.Filled.Settings, onAdminMenu),
-    DrawerItem("Buscar Paciente", Icons.Filled.Search, onGoToPatientSearch),
-    DrawerItem("Login", Icons.Filled.AccountCircle, onLogin),
-    DrawerItem("Registro", Icons.Filled.PersonAdd, onRegister)
+    DrawerItem("Perfil", Icons.Filled.Person, onProfile)
+
 )

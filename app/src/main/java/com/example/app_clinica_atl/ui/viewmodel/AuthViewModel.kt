@@ -2,6 +2,7 @@ package com.example.app_clinica_atl.ui.viewmodel
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.example.app_clinica_atl.data.local.user.UserEntity
 import com.example.app_clinica_atl.data.repository.UserRepository
 import com.example.app_clinica_atl.domain.validation.*
 import kotlinx.coroutines.delay
@@ -19,7 +20,8 @@ data class LoginUiState(
     val isSubmitting: Boolean = false,
     val canSubmit: Boolean = false,
     val success: Boolean = false,
-    val errorMsg: String? = null
+    val errorMsg: String? = null,
+    val loggedUser: UserEntity? = null
 )
 
 // --- CAMBIO: RegisterUiState actualizado ---
@@ -79,18 +81,34 @@ class AuthViewModel(
             _login.update { it.copy(isSubmitting = true, errorMsg = null, success = false) }
             delay(500)
             val result = repository.login(s.email.trim(), s.pass)
+            val user = result.getOrNull()
+            val errorMessage = result.exceptionOrNull()?.message ?: "Error de autenticación"
             _login.update {
-                if (result.isSuccess) {
-                    it.copy(isSubmitting = false, success = true, errorMsg = null)
+                if (user != null) {
+                    it.copy(
+                        isSubmitting = false,
+                        success = true,
+                        errorMsg = null,
+                        loggedUser = user
+                    )
                 } else {
-                    it.copy(isSubmitting = false, success = false,
-                        errorMsg = result.exceptionOrNull()?.message ?: "Error de autenticación")
+                    it.copy(
+                        isSubmitting = false,
+                        success = false,
+                        errorMsg = errorMessage,
+                        loggedUser = null
+                    )
                 }
             }
         }
     }
     fun clearLoginResult() {
-        _login.update { it.copy(success = false, errorMsg = null) }
+        _login.update { it.copy(success = false, errorMsg = null, loggedUser = null) }
+    }
+
+    fun logout() {
+        _login.value = LoginUiState()
+        _register.value = RegisterUiState()
     }
 
 

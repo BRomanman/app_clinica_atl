@@ -3,6 +3,7 @@
     <string name="common_confirm">Confirmar</string>
     <string name="common_cancel">Cancelar</string>
     <string name="common_ok">Entendido</string>
+    <string name="common_logout">Cerrar sesión</string>
     <string name="book_appointment_title">Reserva de hora</string>
     <string name="book_appointment_subtitle">Selecciona el área, profesional y horario</string>
     <string name="book_appointment_department">Área de atención</string>

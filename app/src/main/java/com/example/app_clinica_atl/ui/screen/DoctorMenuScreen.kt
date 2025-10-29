@@ -17,6 +17,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.tooling.preview.Preview
@@ -29,6 +30,7 @@ fun DoctorMenuScreen(
     onGoAppointments: () -> Unit,
     onGoHistories: () -> Unit,
     onGoProfile: () -> Unit,
+    onLogout: () -> Unit,
     modifier: Modifier = Modifier
 ) {
     Column(
@@ -70,7 +72,21 @@ fun DoctorMenuScreen(
             DoctorMenuButton(text = "Mi Perfil", onClick = onGoProfile)
         }
 
-        Spacer(modifier = Modifier.height(24.dp))
+        Button(
+            onClick = onLogout,
+            modifier = Modifier.fillMaxWidth(),
+            colors = ButtonDefaults.buttonColors(
+                containerColor = MaterialTheme.colorScheme.error,
+                contentColor = MaterialTheme.colorScheme.onError
+            )
+        ) {
+            Text(
+                text = stringResource(id = R.string.common_logout),
+                fontSize = 16.sp,
+                textAlign = TextAlign.Center,
+                modifier = Modifier.fillMaxWidth()
+            )
+        }
     }
 }
 
@@ -104,6 +120,7 @@ private fun DoctorMenuScreenPreview() {
     DoctorMenuScreen(
         onGoAppointments = {},
         onGoHistories = {},
-        onGoProfile = {}
+        onGoProfile = {},
+        onLogout = {}
     )
 }

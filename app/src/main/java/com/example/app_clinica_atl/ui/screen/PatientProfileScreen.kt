@@ -24,18 +24,17 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.Edit
 import androidx.compose.material.icons.filled.Person
 import androidx.compose.material.icons.filled.Upload
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
+import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.DividerDefaults
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
-import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Text
@@ -95,8 +94,8 @@ private fun getImageUriFile(context: Context, file: File): Uri {
 @Composable
 fun PatientProfileScreen(
     modifier: Modifier = Modifier,
-    onDeleteProfile: () -> Unit = {},
-    onUploadMedicalHistory: () -> Unit = {}
+    onUploadMedicalHistory: () -> Unit = {},
+    onLogout: () -> Unit = {}
 ) {
     val context = LocalContext.current
     val headerColor = Color(0xFF4CB4B6)
@@ -246,13 +245,6 @@ fun PatientProfileScreen(
                             style = MaterialTheme.typography.bodyMedium
                         )
                     }
-                    IconButton(onClick = onDeleteProfile) {
-                        Icon(
-                            imageVector = Icons.Default.Delete,
-                            contentDescription = stringResource(id = R.string.profile_delete_cta),
-                            tint = Color(0xFFB00020)
-                        )
-                    }
                 }
             }
         }
@@ -396,10 +388,23 @@ fun PatientProfileScreen(
             onClick = { /* TODO: handle save */ },
             modifier = Modifier
                 .fillMaxWidth()
-                .padding(bottom = 16.dp),
+                .padding(bottom = 8.dp),
             shape = RoundedCornerShape(12.dp)
         ) {
             Text(text = stringResource(id = R.string.profile_save_cta))
+        }
+        Button(
+            onClick = onLogout,
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(bottom = 16.dp),
+            colors = ButtonDefaults.buttonColors(
+                containerColor = MaterialTheme.colorScheme.error,
+                contentColor = MaterialTheme.colorScheme.onError
+            ),
+            shape = RoundedCornerShape(12.dp)
+        ) {
+            Text(text = stringResource(id = R.string.common_logout))
         }
     }
 }

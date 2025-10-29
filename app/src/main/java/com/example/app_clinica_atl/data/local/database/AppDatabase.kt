@@ -40,24 +40,40 @@ abstract class AppDatabase : RoomDatabase() {
 
                                 // --- CAMBIO: Datos de prueba actualizados ---
                                 val seed = listOf(
+
+                                    //Funcional
                                     UserEntity(
                                         nombre = "Admin",
                                         apellido = "Root",
                                         fecha_nacimiento = "1990-01-01",
-                                        email = "admin@duoc.cl",
+                                        email = "admin@duocuc.cl",
                                         phone = "+56911111111",
                                         password = "Admin123!",
-                                        id_rol = 1L // Rol 1 = Admin
+                                        id_rol = 3L // Rol 3 = Admin
                                     ),
+
+                                    //Funcional
                                     UserEntity(
                                         nombre = "Víctor",
                                         apellido = "Rosendo",
                                         fecha_nacimiento = "2000-05-10",
-                                        email = "victor@duoc.cl",
+                                        email = "victor@duocuc.cl",
                                         phone = "+56922222222",
                                         password = "123456",
-                                        id_rol = 2L // Rol 2 = Paciente
+                                        id_rol = 2L // Rol 2 = Doctor
+                                    ),
+
+                                    //Funcional
+                                    UserEntity(
+                                        nombre = "Carlos",
+                                        apellido = "Sainz",
+                                        fecha_nacimiento = "1997-08-11",
+                                        email = "csainz@duocuc.cl",
+                                        phone = "+56933333333",
+                                        password = "123456",
+                                        id_rol = 1L // Rol 1 = Paciente
                                     )
+
                                 )
                                 // --- FIN DE CAMBIO ---
 

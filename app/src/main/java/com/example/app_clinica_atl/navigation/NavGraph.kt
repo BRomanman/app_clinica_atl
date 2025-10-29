@@ -64,6 +64,14 @@ fun AppNavGraph(
     val goAdminUserHistories: () -> Unit = { navController.navigate(Route.AdminUserHistories.path) { launchSingleTop = true } }
     val goAdminManageDoctor: () -> Unit = { navController.navigate(Route.AdminManageDoctor.path) { launchSingleTop = true } }
     val goAdminAddDoctor: () -> Unit = { navController.navigate(Route.AdminAddDoctor.path) { launchSingleTop = true } }
+    val logoutAndNavigate: () -> Unit = {
+        authViewModel.logout()
+        scope.launch { drawerState.close() }
+        navController.navigate(Route.Login.path) {
+            popUpTo(navController.graph.startDestinationId) { inclusive = true }
+            launchSingleTop = true
+        }
+    }
 
     ModalNavigationDrawer(
         drawerState = drawerState,
@@ -74,12 +82,8 @@ fun AppNavGraph(
                     onHome = { scope.launch { drawerState.close() }; goHome() },
                     onInsurance = { scope.launch { drawerState.close() }; goInsurance() },
                     onBookAppointment = { scope.launch { drawerState.close() }; goBookAppointment() },
-                    onProfile = { scope.launch { drawerState.close() }; goProfile() },
-                    onDoctorMenu = { scope.launch { drawerState.close() }; goDoctorMenu() },
-                    onAdminMenu = { scope.launch { drawerState.close() }; goAdminMenu() },
-                    onGoToPatientSearch = { scope.launch { drawerState.close() }; goPatientSearch() },
-                    onLogin = { scope.launch { drawerState.close() }; goLogin() },
-                    onRegister = { scope.launch { drawerState.close() }; goRegister() }
+                    onProfile = { scope.launch { drawerState.close() }; goProfile() }
+
                 )
             )
         }
@@ -91,7 +95,7 @@ fun AppNavGraph(
         ) { innerPadding ->
             NavHost(
                 navController = navController,
-                startDestination = Route.Home.path,
+                startDestination = Route.Login.path, // el inicio de la app es el login
                 modifier = Modifier.padding(innerPadding)
             ) {
                 composable(Route.Home.path) {
@@ -103,7 +107,18 @@ fun AppNavGraph(
                 composable(Route.Login.path) {
                     LoginScreenVm(
                         vm = authViewModel,
-                        onLoginOkNavigateHome = goHome,
+                        onNavigateAfterLogin = { role ->
+                            val targetRoute = when (role) {
+                                1L -> Route.Home.path
+                                2L -> Route.DoctorMenu.path
+                                3L -> Route.AdminMenu.path
+                                else -> Route.Home.path
+                            }
+                            navController.navigate(targetRoute) {
+                                popUpTo(Route.Login.path) { inclusive = true }
+                                launchSingleTop = true
+                            }
+                        },
                         onGoRegister = goRegister
                     )
                 }
@@ -124,7 +139,9 @@ fun AppNavGraph(
                     FormularioSeguroScreen(navController = navController)
                 }
                 composable(Route.Profile.path) {
-                    PatientProfileScreen()
+                    PatientProfileScreen(
+                        onLogout = logoutAndNavigate
+                    )
                 }
                 composable(Route.PatientSearch.path) {
                     PatientSearchScreenVm(vm = patientViewModel)
@@ -133,7 +150,8 @@ fun AppNavGraph(
                     DoctorMenuScreen(
                         onGoAppointments = goDoctorAppointments,
                         onGoHistories = goPatientSearch,
-                        onGoProfile = goDoctorProfile
+                        onGoProfile = goDoctorProfile,
+                        onLogout = logoutAndNavigate
                     )
                 }
                 composable(Route.DoctorAppointments.path) {
@@ -147,7 +165,8 @@ fun AppNavGraph(
                         onViewDoctorSchedules = goAdminDoctorSchedule,
                         onViewUserHistories = goAdminUserHistories,
                         onManageDoctors = goAdminManageDoctor,
-                        onAddDoctor = goAdminAddDoctor
+                        onAddDoctor = goAdminAddDoctor,
+                        onLogout = logoutAndNavigate
                     )
                 }
                 composable(Route.AdminDoctorSchedule.path) {
