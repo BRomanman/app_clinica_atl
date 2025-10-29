@@ -69,11 +69,56 @@ class AuthViewModel(
         _login.update { it.copy(pass = value) }
         recomputeLoginCanSubmit()
     }
+
+
+
+
+
+
+
+
+
+
     private fun recomputeLoginCanSubmit() {
         val s = _login.value
         val can = s.emailError == null && s.email.isNotBlank() && s.pass.isNotBlank()
         _login.update { it.copy(canSubmit = can) }
     }
+
+
+/*Esta es una funcion de validaicion de variables.
+ empieza con una lista de noErrors vacia para  verificar que no haya errores en los campos del formulario
+ cuando se rellenan los campos, si existe algun error en los campos, la variable noErrors se pone en false.
+ Luego, verifica que todos los campos obligatorios esten llenos.
+y */
+    private fun recomputeRegisterCanSubmit() {
+        val s = _register.value
+
+        // --- CAMBIO: Añadidos nuevos campos a la validación ---
+        val noErrors = listOf(
+            s.nombreError, s.apellidoError, s.fechaNacimientoError, s.emailError,
+            s.phoneError, s.passError, s.confirmError
+        ).all { it == null }
+
+        val filled = s.nombre.isNotBlank() && s.apellido.isNotBlank() &&
+                s.fecha_nacimiento.isNotBlank() && s.email.isNotBlank() &&
+                s.phone.isNotBlank() && s.pass.isNotBlank() && s.confirm.isNotBlank()
+        // --- FIN DE CAMBIO ---
+        _register.update { it.copy(canSubmit = noErrors && filled) }
+    }
+
+
+
+
+
+
+
+
+
+
+
+
+
     fun submitLogin() {
         val s = _login.value
         if (!s.canSubmit || s.isSubmitting) return
@@ -110,6 +155,24 @@ class AuthViewModel(
         _login.value = LoginUiState()
         _register.value = RegisterUiState()
     }
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
     // ----------------- REGISTRO: handlers y envío -----------------
@@ -166,19 +229,12 @@ class AuthViewModel(
         recomputeRegisterCanSubmit()
     }
 
-    private fun recomputeRegisterCanSubmit() {
-        val s = _register.value
-        // --- CAMBIO: Añadidos nuevos campos a la validación ---
-        val noErrors = listOf(
-            s.nombreError, s.apellidoError, s.fechaNacimientoError, s.emailError,
-            s.phoneError, s.passError, s.confirmError
-        ).all { it == null }
-        val filled = s.nombre.isNotBlank() && s.apellido.isNotBlank() &&
-                s.fecha_nacimiento.isNotBlank() && s.email.isNotBlank() &&
-                s.phone.isNotBlank() && s.pass.isNotBlank() && s.confirm.isNotBlank()
-        // --- FIN DE CAMBIO ---
-        _register.update { it.copy(canSubmit = noErrors && filled) }
-    }
+
+
+
+
+
+
 
     fun submitRegister() {
         val s = _register.value

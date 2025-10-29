@@ -4,6 +4,7 @@ import android.os.Build
 import androidx.annotation.RequiresApi
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.interaction.MutableInteractionSource
+import androidx.compose.foundation.interaction.PressInteraction
 import androidx.compose.foundation.layout.*
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.AccessTime
@@ -12,6 +13,7 @@ import androidx.compose.material.icons.filled.Person
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.tooling.preview.Preview
@@ -132,26 +134,63 @@ private fun BookAppointmentScreen(
         }
         state.selectedDoctor?.let { Text(stringResource(id = R.string.book_appointment_doctor_since, it.since), style = MaterialTheme.typography.labelMedium) }
 
-        // --- Fecha (usando DatePickerDialog) ---
+
+
+
+
+
+
+
         val dateFieldEnabled = state.selectedDepartment != null && state.selectedDoctor != null
-        val dateInteractionSource = remember { MutableInteractionSource() }
-        OutlinedTextField(
-            value = state.selectedDate?.format(dateFormatter).orEmpty(), // Muestra fecha formateada
-            onValueChange = {}, readOnly = true,
-            label = { Text(stringResource(id = R.string.book_appointment_date)) },
-            placeholder = { Text(stringResource(id = R.string.book_appointment_date_placeholder)) },
-            leadingIcon = { Icon(Icons.Default.Event, null) },
-            trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded = state.showDatePicker) },
-            enabled = dateFieldEnabled,
-            modifier = Modifier.fillMaxWidth().clickable( // Clickable para abrir el DatePicker
-                interactionSource = dateInteractionSource,
-                indication = null, // Sin efecto visual de click
+
+// Ya no necesitas 'dateClickInteraction' para esto
+
+        ExposedDropdownMenuBox(
+            // 1. Vincula el estado "expanded" a la visibilidad de tu DatePicker
+            expanded = state.showDatePicker,
+            // 2. Usa onExpandedChange como tu nuevo 'onClick'
+            onExpandedChange = {
+                // 'it' será 'true' cuando se haga clic para abrir
+                if (dateFieldEnabled) {
+                    onShowDatePicker(it)
+                }
+            },
+            modifier = Modifier.fillMaxWidth()
+        ) {
+            OutlinedTextField(
+                value = state.selectedDate?.format(dateFormatter).orEmpty(),
+                onValueChange = {},
+                readOnly = true,
+                label = { Text(stringResource(id = R.string.book_appointment_date)) },
+                placeholder = { Text(stringResource(id = R.string.book_appointment_date_placeholder)) },
+                leadingIcon = { Icon(Icons.Default.Event, null) },
+                trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded = state.showDatePicker) },
                 enabled = dateFieldEnabled,
-                onClick = { onShowDatePicker(true) } // Llama al VM para mostrar el diálogo
-            ),
-            interactionSource = dateInteractionSource,
-            singleLine = true
-        )
+                colors = ExposedDropdownMenuDefaults.outlinedTextFieldColors(), // Opcional, pero recomendado
+                modifier = Modifier
+                    .fillMaxWidth()
+
+                    //    Le dice al Box que ESTE campo es el ancla que debe ser clicable.
+                    .menuAnchor(),
+                singleLine = true
+            )
+
+
+            //    El DatePicker es un Dialog, así que no mostramos nada aquí.
+            //    Esto te da un onDismissRequest (clic fuera) gratis.
+            ExposedDropdownMenu(
+                expanded = state.showDatePicker,
+                onDismissRequest = { onShowDatePicker(false) }
+            ) {
+                // No se necesita contenido aquí para el DatePicker
+            }
+        }
+
+
+
+
+
+
 
         // --- Hora ---
         val timeFieldEnabled = state.selectedDate != null

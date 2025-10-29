@@ -46,7 +46,7 @@ abstract class AppDatabase : RoomDatabase() {
                                         nombre = "Admin",
                                         apellido = "Root",
                                         fecha_nacimiento = "1990-01-01",
-                                        email = "admin@duocuc.cl",
+                                        email = "admin@duoc.cl",
                                         phone = "+56911111111",
                                         password = "Admin123!",
                                         id_rol = 3L // Rol 3 = Admin
@@ -57,7 +57,7 @@ abstract class AppDatabase : RoomDatabase() {
                                         nombre = "Víctor",
                                         apellido = "Rosendo",
                                         fecha_nacimiento = "2000-05-10",
-                                        email = "victor@duocuc.cl",
+                                        email = "victor@duoc.cl",
                                         phone = "+56922222222",
                                         password = "123456",
                                         id_rol = 2L // Rol 2 = Doctor
@@ -68,7 +68,7 @@ abstract class AppDatabase : RoomDatabase() {
                                         nombre = "Carlos",
                                         apellido = "Sainz",
                                         fecha_nacimiento = "1997-08-11",
-                                        email = "csainz@duocuc.cl",
+                                        email = "csainz@duoc.cl",
                                         phone = "+56933333333",
                                         password = "123456",
                                         id_rol = 1L // Rol 1 = Paciente

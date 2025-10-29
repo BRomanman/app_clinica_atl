@@ -68,8 +68,9 @@ fun AdminMenuScreen(
             modifier = Modifier.fillMaxWidth(),
             verticalArrangement = Arrangement.spacedBy(24.dp)
         ) {
-            AdminMenuButton(text = "Ver Horarios por Doctor", onClick = onViewDoctorSchedules)
-            AdminMenuButton(text = "Historiales Usuario", onClick = onViewUserHistories)
+            AdminMenuButton(text = "Ver Horarios Doctor", onClick = onViewDoctorSchedules)
+            AdminMenuButton(text = "Búsqueda Usuarios", onClick = onViewUserHistories)
+            AdminMenuButton(text = "Búsqueda Doctores", onClick = onViewUserHistories)
             AdminMenuButton(text = "Administrar Doctores", onClick = onManageDoctors)
             AdminMenuButton(text = "Agregar Doctor", onClick = onAddDoctor)
         }
