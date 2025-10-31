@@ -27,7 +27,7 @@ fun AppTopBar(
         ),
         title = {
             Text(
-                text = "Clinica ATL",
+                text = "Mi ATL",
                 style = MaterialTheme.typography.titleLarge,
                 maxLines = 1,
                 overflow = TextOverflow.Ellipsis

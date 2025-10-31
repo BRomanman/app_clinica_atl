@@ -10,6 +10,12 @@ import kotlinx.coroutines.flow.map
 // Crea el DataStore asociado al contexto de la app
 val Context.dataStore by preferencesDataStore(name = "user_prefs")
 
+
+
+
+
+
+//LOGIN
 class UserPreferences (private val context: Context){
     // Define una "llave" para saber si el usuario está logueado
     private val isLoggedInKey = booleanPreferencesKey("is_logged_in") // Corregido: nombre de variable

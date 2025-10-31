@@ -20,6 +20,7 @@ import com.example.app_clinica_atl.data.local.storage.UserPreferences // <-- AÑ
 import com.example.app_clinica_atl.data.repository.AppointmentRepository // Repositorio de Citas
 import com.example.app_clinica_atl.data.repository.PatientRepository // Repositorio de Pacientes
 import com.example.app_clinica_atl.data.repository.UserRepository // Repositorio de Usuarios
+import com.example.app_clinica_atl.data.repository.DoctorRepository
 import com.example.app_clinica_atl.navigation.AppNavGraph // El grafo de navegación
 import com.example.app_clinica_atl.notifications.NotificationHelper
 // Importa tu Tema
@@ -31,6 +32,8 @@ import com.example.app_clinica_atl.ui.viewmodel.BookAppointmentViewModel
 import com.example.app_clinica_atl.ui.viewmodel.BookAppointmentViewModelFactory
 import com.example.app_clinica_atl.ui.viewmodel.PatientViewModel
 import com.example.app_clinica_atl.ui.viewmodel.PatientViewModelFactory
+import com.example.app_clinica_atl.ui.viewmodel.DoctorSearchViewModel
+import com.example.app_clinica_atl.ui.viewmodel.DoctorSearchViewModelFactory
 
 class MainActivity : ComponentActivity() {
     @RequiresApi(Build.VERSION_CODES.O)
@@ -59,7 +62,8 @@ fun AppRoot() { // Se define AppRoot UNA SOLA VEZ
     // Repositorios
     val userRepository = UserRepository(userDao)
     val patientRepository = PatientRepository()
-    val appointmentRepository = AppointmentRepository()
+    val doctorRepository = DoctorRepository()
+    val appointmentRepository = AppointmentRepository(doctorRepository)
 
     // --- ¡NUEVO! Instancia de UserPreferences ---
     // Usamos remember para que la instancia no se cree en cada recomposición
@@ -68,6 +72,7 @@ fun AppRoot() { // Se define AppRoot UNA SOLA VEZ
     // ViewModels
     val authViewModel: AuthViewModel = viewModel(factory = AuthViewModelFactory(userRepository))
     val patientViewModel: PatientViewModel = viewModel(factory = PatientViewModelFactory(patientRepository))
+    val doctorSearchViewModel: DoctorSearchViewModel = viewModel(factory = DoctorSearchViewModelFactory(doctorRepository))
     val bookAppointmentViewModel: BookAppointmentViewModel = viewModel(
         factory = BookAppointmentViewModelFactory(appointmentRepository)
     )
@@ -82,7 +87,8 @@ fun AppRoot() { // Se define AppRoot UNA SOLA VEZ
                 navController = navController,
                 authViewModel = authViewModel,
                 patientViewModel = patientViewModel,
-                bookAppointmentViewModel = bookAppointmentViewModel
+                bookAppointmentViewModel = bookAppointmentViewModel,
+                doctorSearchViewModel = doctorSearchViewModel
                 // Aún no pasamos userPreferences aquí. Se inyectará en el ViewModel que lo necesite.
             )
         }

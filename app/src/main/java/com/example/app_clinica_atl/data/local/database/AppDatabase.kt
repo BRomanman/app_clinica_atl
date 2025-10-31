@@ -38,7 +38,7 @@ abstract class AppDatabase : RoomDatabase() {
                             CoroutineScope(Dispatchers.IO).launch {
                                 val dao = getInstance(context).userDao()
 
-                                // --- CAMBIO: Datos de prueba actualizados ---
+
                                 val seed = listOf(
 
                                     //Funcional
@@ -75,7 +75,7 @@ abstract class AppDatabase : RoomDatabase() {
                                     )
 
                                 )
-                                // --- FIN DE CAMBIO ---
+
 
                                 if (dao.count() == 0) {
                                     seed.forEach { dao.insert(it) }

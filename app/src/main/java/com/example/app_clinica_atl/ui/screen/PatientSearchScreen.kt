@@ -60,6 +60,17 @@ private fun PatientSearchScreen(
             )
         )
 
+
+
+
+
+
+
+
+
+
+
+
         // --- LISTA DE RESULTADOS ---
         LazyColumn(
             modifier = Modifier.fillMaxSize(),
@@ -128,6 +139,8 @@ private fun PatientInfoCard(patient: Patient) {
 
 // Helper para mostrar una fila de "Etiqueta: Valor"
 @Composable
+
+
 private fun InfoRow(label: String, value: String) {
     Row(
         modifier = Modifier.fillMaxWidth(),
