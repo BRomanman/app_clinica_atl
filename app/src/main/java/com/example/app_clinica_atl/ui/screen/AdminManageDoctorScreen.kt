@@ -17,6 +17,7 @@ import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
+import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
@@ -85,32 +86,51 @@ fun AdminManageDoctorScreen(
 
         Spacer(modifier = Modifier.height(24.dp))
 
-        AdminSectionHeader(title = "Informacion Personal")
+        Surface(
+            color = MaterialTheme.colorScheme.primaryContainer,
+            shape = MaterialTheme.shapes.small,
+            modifier = Modifier.fillMaxWidth()
+        ) {
+            Text(
+                text = "Informacion Personal",
+                style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold),
+                color = MaterialTheme.colorScheme.onPrimaryContainer,
+                modifier = Modifier.padding(horizontal = 16.dp, vertical = 12.dp)
+            )
+        }
 
         Spacer(modifier = Modifier.height(20.dp))
 
-        AdminLabeledField(
-            label = "Nombre",
+        OutlinedTextField(
             value = name,
-            onValueChange = { name = it }
+            onValueChange = { name = it },
+            modifier = Modifier.fillMaxWidth(),
+            label = { Text("Nombre") },
+            singleLine = true
         )
         Spacer(modifier = Modifier.height(16.dp))
-        AdminLabeledField(
-            label = "Direccion",
+        OutlinedTextField(
             value = address,
-            onValueChange = { address = it }
+            onValueChange = { address = it },
+            modifier = Modifier.fillMaxWidth(),
+            label = { Text("Direccion") },
+            singleLine = true
         )
         Spacer(modifier = Modifier.height(16.dp))
-        AdminLabeledField(
-            label = "Numero de contacto",
+        OutlinedTextField(
             value = contactNumber,
-            onValueChange = { contactNumber = it }
+            onValueChange = { contactNumber = it },
+            modifier = Modifier.fillMaxWidth(),
+            label = { Text("Numero de contacto") },
+            singleLine = true
         )
         Spacer(modifier = Modifier.height(16.dp))
-        AdminLabeledField(
-            label = "Correo Electronico",
+        OutlinedTextField(
             value = email,
-            onValueChange = { email = it }
+            onValueChange = { email = it },
+            modifier = Modifier.fillMaxWidth(),
+            label = { Text("Correo Electronico") },
+            singleLine = true
         )
 
         Spacer(modifier = Modifier.height(32.dp))

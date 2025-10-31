@@ -28,6 +28,7 @@ import com.example.app_clinica_atl.R
 fun AdminMenuScreen(
     onViewDoctorSchedules: () -> Unit,
     onViewUserHistories: () -> Unit,
+    onViewDoctorSearch: () -> Unit,
     onManageDoctors: () -> Unit,
     onAddDoctor: () -> Unit,
     onLogout: () -> Unit,
@@ -44,7 +45,7 @@ fun AdminMenuScreen(
         Column(horizontalAlignment = Alignment.CenterHorizontally) {
             Image(
                 painter = painterResource(id = R.drawable.logo),
-                contentDescription = "Logo Clínica",
+                contentDescription = "Logo Clinica",
                 modifier = Modifier.height(90.dp)
             )
             Spacer(modifier = Modifier.height(24.dp))
@@ -57,7 +58,7 @@ fun AdminMenuScreen(
                 color = MaterialTheme.colorScheme.onBackground
             )
             Text(
-                text = "Menú Perfil de Administrador",
+                text = "Menu Perfil de Administrador",
                 style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold),
                 color = MaterialTheme.colorScheme.onBackground,
                 textAlign = TextAlign.Center
@@ -69,8 +70,8 @@ fun AdminMenuScreen(
             verticalArrangement = Arrangement.spacedBy(24.dp)
         ) {
             AdminMenuButton(text = "Ver Horarios Doctor", onClick = onViewDoctorSchedules)
-            AdminMenuButton(text = "Búsqueda Usuarios", onClick = onViewUserHistories)
-            AdminMenuButton(text = "Búsqueda Doctores", onClick = onViewUserHistories)
+            AdminMenuButton(text = "Busqueda Usuarios", onClick = onViewUserHistories)
+            AdminMenuButton(text = "Busqueda Doctores", onClick = onViewDoctorSearch)
             AdminMenuButton(text = "Administrar Doctores", onClick = onManageDoctors)
             AdminMenuButton(text = "Agregar Doctor", onClick = onAddDoctor)
         }

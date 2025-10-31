@@ -18,11 +18,12 @@ import com.example.app_clinica_atl.ui.components.AppTopBar
 import com.example.app_clinica_atl.ui.components.defaultDrawerItems
 import com.example.app_clinica_atl.ui.screen.AdminAddDoctorScreen
 import com.example.app_clinica_atl.ui.screen.AdminDoctorScheduleScreen
+import com.example.app_clinica_atl.ui.screen.AdminDoctorSearchScreen
 import com.example.app_clinica_atl.ui.screen.AdminManageDoctorScreen
 import com.example.app_clinica_atl.ui.screen.AdminMenuScreen
 import com.example.app_clinica_atl.ui.screen.AdminUserHistoriesScreen
 import com.example.app_clinica_atl.ui.screen.BookAppointmentScreenVm
-import com.example.app_clinica_atl.ui.screen.DoctorAppointmentsScreen
+import com.example.app_clinica_atl.ui.screen.DoctorScheduleScreen
 import com.example.app_clinica_atl.ui.screen.DoctorMenuScreen
 import com.example.app_clinica_atl.ui.screen.DoctorProfileScreen
 import com.example.app_clinica_atl.ui.screen.FormularioSeguroScreen
@@ -48,6 +49,7 @@ fun AppNavGraph(
     val drawerState = rememberDrawerState(initialValue = DrawerValue.Closed)
     val scope = rememberCoroutineScope()
 
+    // Rutas Paciente
     val goHome: () -> Unit = { navController.navigate(Route.Home.path) { launchSingleTop = true } }
     val goLogin: () -> Unit = { navController.navigate(Route.Login.path) { launchSingleTop = true } }
     val goRegister: () -> Unit = { navController.navigate(Route.Register.path) { launchSingleTop = true } }
@@ -55,15 +57,25 @@ fun AppNavGraph(
     val goInsurance: () -> Unit = { navController.navigate(Route.Insurance.path) { launchSingleTop = true } }
     val goInsuranceForm: () -> Unit = { navController.navigate(Route.InsuranceForm.path) { launchSingleTop = true } }
     val goProfile: () -> Unit = { navController.navigate(Route.Profile.path) { launchSingleTop = true } }
+
+
+    // Rutas Doctor
     val goPatientSearch: () -> Unit = { navController.navigate(Route.PatientSearch.path) { launchSingleTop = true } }
     val goDoctorMenu: () -> Unit = { navController.navigate(Route.DoctorMenu.path) { launchSingleTop = true } }
     val goDoctorAppointments: () -> Unit = { navController.navigate(Route.DoctorAppointments.path) { launchSingleTop = true } }
     val goDoctorProfile: () -> Unit = { navController.navigate(Route.DoctorProfile.path) { launchSingleTop = true } }
+
+
+    //Rutas Administrador
     val goAdminMenu: () -> Unit = { navController.navigate(Route.AdminMenu.path) { launchSingleTop = true } }
     val goAdminDoctorSchedule: () -> Unit = { navController.navigate(Route.AdminDoctorSchedule.path) { launchSingleTop = true } }
     val goAdminUserHistories: () -> Unit = { navController.navigate(Route.AdminUserHistories.path) { launchSingleTop = true } }
+    val goAdminDoctorSearch: () -> Unit = { navController.navigate(Route.AdminDoctorSearch.path) { launchSingleTop = true } }
     val goAdminManageDoctor: () -> Unit = { navController.navigate(Route.AdminManageDoctor.path) { launchSingleTop = true } }
     val goAdminAddDoctor: () -> Unit = { navController.navigate(Route.AdminAddDoctor.path) { launchSingleTop = true } }
+
+
+    //Función de logout para todos los roles
     val logoutAndNavigate: () -> Unit = {
         authViewModel.logout()
         scope.launch { drawerState.close() }
@@ -155,7 +167,7 @@ fun AppNavGraph(
                     )
                 }
                 composable(Route.DoctorAppointments.path) {
-                    DoctorAppointmentsScreen()
+                    DoctorScheduleScreen()
                 }
                 composable(Route.DoctorProfile.path) {
                     DoctorProfileScreen()
@@ -164,6 +176,7 @@ fun AppNavGraph(
                     AdminMenuScreen(
                         onViewDoctorSchedules = goAdminDoctorSchedule,
                         onViewUserHistories = goAdminUserHistories,
+                        onViewDoctorSearch = goAdminDoctorSearch,
                         onManageDoctors = goAdminManageDoctor,
                         onAddDoctor = goAdminAddDoctor,
                         onLogout = logoutAndNavigate
@@ -175,11 +188,14 @@ fun AppNavGraph(
                 composable(Route.AdminUserHistories.path) {
                     AdminUserHistoriesScreen()
                 }
+                composable(Route.AdminDoctorSearch.path) {
+                    AdminDoctorSearchScreen()
+                }
                 composable(Route.AdminManageDoctor.path) {
                     AdminManageDoctorScreen()
                 }
                 composable(Route.AdminAddDoctor.path) {
-                    AdminAddDoctorScreen()
+                    AdminAddDoctorScreen(onCreateDoctor = goAdminMenu)
                 }
             }
         }
