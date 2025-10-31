@@ -1,7 +1,11 @@
 package com.example.app_clinica_atl.ui.screen
 
+import android.Manifest
+import android.content.pm.PackageManager
 import android.os.Build
 import androidx.annotation.RequiresApi
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.interaction.PressInteraction
@@ -14,13 +18,16 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.alpha
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import androidx.core.content.ContextCompat
 import com.example.app_clinica_atl.R
 import com.example.app_clinica_atl.data.model.DoctorInfo
+import com.example.app_clinica_atl.notifications.NotificationHelper
 import com.example.app_clinica_atl.ui.theme.AppClinicaATLTheme
 import com.example.app_clinica_atl.ui.viewmodel.BookAppointmentUiState
 import com.example.app_clinica_atl.ui.viewmodel.BookAppointmentViewModel
@@ -32,7 +39,72 @@ import java.time.format.DateTimeFormatter
 @RequiresApi(Build.VERSION_CODES.O)
 @Composable
 fun BookAppointmentScreenVm(vm: BookAppointmentViewModel) {
+    val context = LocalContext.current
+    val appContext = remember(context) { context.applicationContext }
     val uiState by vm.uiState.collectAsStateWithLifecycle()
+
+    val permissionRequired = Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU
+    var notificationPermissionGranted by remember {
+        mutableStateOf(
+            !permissionRequired || ContextCompat.checkSelfPermission(
+                context,
+                Manifest.permission.POST_NOTIFICATIONS
+            ) == PackageManager.PERMISSION_GRANTED
+        )
+    }
+    var pendingNotification by remember { mutableStateOf<AppointmentNotificationData?>(null) }
+
+    val permissionLauncher = rememberLauncherForActivityResult(
+        ActivityResultContracts.RequestPermission()
+    ) { granted ->
+        notificationPermissionGranted = granted
+        if (granted) {
+            pendingNotification?.let { data ->
+                NotificationHelper.showAppointmentConfirmation(
+                    appContext,
+                    data.doctorName,
+                    data.date,
+                    data.time
+                )
+                pendingNotification = null
+            }
+        } else {
+            pendingNotification = null
+        }
+    }
+
+    LaunchedEffect(uiState.showConfirmationDialog) {
+        if (uiState.showConfirmationDialog) {
+            val doctor = uiState.selectedDoctor
+            val date = uiState.selectedDate
+            val time = uiState.selectedTime
+
+            if (doctor != null && date != null && time != null) {
+                if (permissionRequired && !notificationPermissionGranted) {
+                    val hasPermission = ContextCompat.checkSelfPermission(
+                        context,
+                        Manifest.permission.POST_NOTIFICATIONS
+                    ) == PackageManager.PERMISSION_GRANTED
+                    if (hasPermission) {
+                        notificationPermissionGranted = true
+                    }
+                }
+
+                if (permissionRequired && !notificationPermissionGranted) {
+                    pendingNotification = AppointmentNotificationData(doctor.name, date, time)
+                    permissionLauncher.launch(Manifest.permission.POST_NOTIFICATIONS)
+                } else {
+                    NotificationHelper.showAppointmentConfirmation(
+                        appContext,
+                        doctor.name,
+                        date,
+                        time
+                    )
+                    pendingNotification = null
+                }
+            }
+        }
+    }
 
     BookAppointmentScreen(
         state = uiState,
@@ -234,6 +306,12 @@ private fun BookAppointmentScreen(
         }
     }
 }
+
+private data class AppointmentNotificationData(
+    val doctorName: String,
+    val date: LocalDate,
+    val time: LocalTime
+)
 
 // 3. Preview (Se mantiene funcional)
 @RequiresApi(Build.VERSION_CODES.O)

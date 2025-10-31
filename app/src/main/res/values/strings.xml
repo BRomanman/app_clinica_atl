@@ -16,6 +16,10 @@
     <string name="book_appointment_submit">Confirmar reserva</string>
     <string name="book_appointment_confirmation_title">Reserva confirmada</string>
     <string name="book_appointment_confirmation_body">Tu solicitud de reserva fue enviada correctamente.</string>
+    <string name="book_appointment_notification_title">Reserva confirmada</string>
+    <string name="book_appointment_notification_body">Tu cita con %1$s el %2$s a las %3$s fue registrada correctamente.</string>
+    <string name="book_appointment_notification_channel_name">Confirmaciones de reserva</string>
+    <string name="book_appointment_notification_channel_description">Avisos cuando una reserva se confirma.</string>
     <string name="insurance_form_confirmation_title">Formulario confirmado</string>
     <string name="insurance_form_confirmation_body">Tus datos fueron enviados para gestionar el seguro.</string>
     <string name="profile_header_title">Perfil del paciente</string>

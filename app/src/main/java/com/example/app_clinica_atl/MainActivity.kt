@@ -21,6 +21,7 @@ import com.example.app_clinica_atl.data.repository.AppointmentRepository // Repo
 import com.example.app_clinica_atl.data.repository.PatientRepository // Repositorio de Pacientes
 import com.example.app_clinica_atl.data.repository.UserRepository // Repositorio de Usuarios
 import com.example.app_clinica_atl.navigation.AppNavGraph // El grafo de navegación
+import com.example.app_clinica_atl.notifications.NotificationHelper
 // Importa tu Tema
 import com.example.app_clinica_atl.ui.theme.AppClinicaATLTheme
 // Importaciones de ViewModels y Factories
@@ -35,6 +36,7 @@ class MainActivity : ComponentActivity() {
     @RequiresApi(Build.VERSION_CODES.O)
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+        NotificationHelper.createNotificationChannel(applicationContext)
         enableEdgeToEdge()
         setContent {
             AppRoot() // Llama a AppRoot una sola vez
