@@ -10,8 +10,8 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
+import com.example.app_clinica_atl.data.model.RoleOption // <--- CAMBIO: Nuevo Import desde data.model
 
-// LoginUiState no cambia
 data class LoginUiState(
     val email: String = "",
     val pass: String = "",
@@ -24,17 +24,19 @@ data class LoginUiState(
     val loggedUser: UserEntity? = null
 )
 
-// --- CAMBIO: RegisterUiState actualizado ---
+// --- CAMBIO: RegisterUiState actualizado (Usa RoleOption importado) ---
 data class RegisterUiState(
-    val nombre: String = "",           // 1) Renombrado de 'name'
-    val apellido: String = "",         // 2) Nuevo campo
-    val fecha_nacimiento: String = "", // 3) Nuevo campo
-    val email: String = "",            // 4)
-    val phone: String = "",            // 5)
-    val pass: String = "",             // 6)
-    val confirm: String = "",          // 7)
+    val nombre: String = "",
+    val apellido: String = "",
+    val fecha_nacimiento: String = "",
+    val email: String = "",
+    val phone: String = "",
+    val pass: String = "",
+    val confirm: String = "",
 
-    val nombreError: String? = null,   // Errores
+    val selectedRole: RoleOption = RoleOption(1L, "Paciente"),
+
+    val nombreError: String? = null,
     val apellidoError: String? = null,
     val fechaNacimientoError: String? = null,
     val emailError: String? = null,
@@ -60,7 +62,12 @@ class AuthViewModel(
     private val _register = MutableStateFlow(RegisterUiState())
     val register: StateFlow<RegisterUiState> = _register
 
-    // ... (Sección de Login se mantiene igual) ...
+    // --- CAMBIO: Usa RoleOption importado ---
+    val availableRoles: List<RoleOption> = listOf(
+        RoleOption(id = 1L, name = "Paciente"),
+        RoleOption(id = 2L, name = "Doctor")
+    )
+    // ... (rest of the file remains the same logic)
     fun onLoginEmailChange(value: String) {
         _login.update { it.copy(email = value, emailError = validateEmail(value)) }
         recomputeLoginCanSubmit()
@@ -69,32 +76,14 @@ class AuthViewModel(
         _login.update { it.copy(pass = value) }
         recomputeLoginCanSubmit()
     }
-
-
-
-
-
-
-
-
-
-
     private fun recomputeLoginCanSubmit() {
         val s = _login.value
         val can = s.emailError == null && s.email.isNotBlank() && s.pass.isNotBlank()
         _login.update { it.copy(canSubmit = can) }
     }
-
-
-/*Esta es una funcion de validaicion de variables.
- empieza con una lista de noErrors vacia para  verificar que no haya errores en los campos del formulario
- cuando se rellenan los campos, si existe algun error en los campos, la variable noErrors se pone en false.
- Luego, verifica que todos los campos obligatorios esten llenos.
-y */
     private fun recomputeRegisterCanSubmit() {
         val s = _register.value
 
-        // --- CAMBIO: Añadidos nuevos campos a la validación ---
         val noErrors = listOf(
             s.nombreError, s.apellidoError, s.fechaNacimientoError, s.emailError,
             s.phoneError, s.passError, s.confirmError
@@ -103,22 +92,9 @@ y */
         val filled = s.nombre.isNotBlank() && s.apellido.isNotBlank() &&
                 s.fecha_nacimiento.isNotBlank() && s.email.isNotBlank() &&
                 s.phone.isNotBlank() && s.pass.isNotBlank() && s.confirm.isNotBlank()
-        // --- FIN DE CAMBIO ---
+
         _register.update { it.copy(canSubmit = noErrors && filled) }
     }
-
-
-
-
-
-
-
-
-
-
-
-
-
     fun submitLogin() {
         val s = _login.value
         if (!s.canSubmit || s.isSubmitting) return
@@ -156,28 +132,8 @@ y */
         _register.value = RegisterUiState()
     }
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
     // ----------------- REGISTRO: handlers y envío -----------------
 
-    // --- CAMBIO: onNameChange -> onNombreChange ---
     fun onNombreChange(value: String) {
         val filtered = value.filter { it.isLetter() || it.isWhitespace() }
         _register.update {
@@ -185,8 +141,6 @@ y */
         }
         recomputeRegisterCanSubmit()
     }
-
-    // --- CAMBIO: Nuevo handler para Apellido ---
     fun onApellidoChange(value: String) {
         val filtered = value.filter { it.isLetter() || it.isWhitespace() }
         _register.update {
@@ -194,22 +148,16 @@ y */
         }
         recomputeRegisterCanSubmit()
     }
-
-    // --- CAMBIO: Nuevo handler para Fecha de Nacimiento ---
     fun onFechaNacimientoChange(value: String) {
-        // (Podríamos filtrar para auto-formatear YYYY-MM-DD, pero
-        // por ahora solo validamos el input directo)
         _register.update {
             it.copy(fecha_nacimiento = value, fechaNacimientoError = validateFechaNacimiento(value))
         }
         recomputeRegisterCanSubmit()
     }
-
     fun onRegisterEmailChange(value: String) {
         _register.update { it.copy(email = value, emailError = validateEmail(value)) }
         recomputeRegisterCanSubmit()
     }
-
     fun onPhoneChange(value: String) {
         val digitsOnly = value.filter { it.isDigit() }
         _register.update {
@@ -217,24 +165,21 @@ y */
         }
         recomputeRegisterCanSubmit()
     }
-
     fun onRegisterPassChange(value: String) {
         _register.update { it.copy(pass = value, passError = validateStrongPassword(value)) }
         _register.update { it.copy(confirmError = validateConfirm(it.pass, it.confirm)) }
         recomputeRegisterCanSubmit()
     }
-
     fun onConfirmChange(value: String) {
         _register.update { it.copy(confirm = value, confirmError = validateConfirm(it.pass, value)) }
         recomputeRegisterCanSubmit()
     }
 
-
-
-
-
-
-
+    // --- CAMBIO: Usa RoleOption importado ---
+    fun onRoleSelect(role: RoleOption) {
+        _register.update { it.copy(selectedRole = role) }
+        recomputeRegisterCanSubmit()
+    }
 
     fun submitRegister() {
         val s = _register.value
@@ -243,16 +188,15 @@ y */
             _register.update { it.copy(isSubmitting = true, errorMsg = null, success = false) }
             delay(700)
 
-            // --- CAMBIO: Llamada al repositorio actualizada ---
             val result = repository.register(
                 nombre = s.nombre.trim(),
                 apellido = s.apellido.trim(),
                 fecha_nacimiento = s.fecha_nacimiento.trim(),
                 email = s.email.trim(),
                 phone = s.phone.trim(),
-                password = s.pass
+                password = s.pass,
+                id_rol = s.selectedRole.id
             )
-            // --- FIN DE CAMBIO ---
 
             _register.update {
                 if (result.isSuccess) {

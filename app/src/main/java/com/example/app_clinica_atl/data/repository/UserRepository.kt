@@ -24,14 +24,15 @@ class UserRepository(
         fecha_nacimiento: String,
         email: String,
         phone: String,
-        password: String
+        password: String,
+        // *** CAMBIO CLAVE: Nuevo argumento para el rol ***
+        id_rol: Long
     ): Result<Long> {
         val exists = userDao.getByEmail(email) != null
         if (exists) {
             return Result.failure(IllegalStateException("El correo ya está registrado"))
         }
 
-        // --- CAMBIO: Creación de UserEntity actualizada ---
         val id = userDao.insert(
             UserEntity(
                 nombre = nombre,
@@ -40,7 +41,8 @@ class UserRepository(
                 email = email,
                 phone = phone,
                 password = password,
-                id_rol = 2L // Asumimos rol 2 = "Paciente" para todos los registros nuevos
+                // *** CAMBIO: Usamos el ID de rol que se pasa ***
+                id_rol = id_rol
             )
         )
         return Result.success(id)

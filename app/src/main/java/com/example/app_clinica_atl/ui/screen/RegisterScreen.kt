@@ -1,10 +1,12 @@
+// Archivo: com.example.app_clinica_atl.ui.screen.RegisterScreen.kt
+
 package com.example.app_clinica_atl.ui.screen
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
-import androidx.compose.foundation.rememberScrollState // <-- CAMBIO: Importar
+import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.text.KeyboardOptions
-import androidx.compose.foundation.verticalScroll // <-- CAMBIO: Importar
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Visibility
 import androidx.compose.material.icons.filled.VisibilityOff
@@ -16,8 +18,9 @@ import androidx.compose.ui.text.input.*
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.example.app_clinica_atl.ui.viewmodel.AuthViewModel
+import com.example.app_clinica_atl.data.model.RoleOption // <--- CAMBIO: Import ajustado
 
-// --- CAMBIO: Firma de RegisterScreenVm actualizada ---
+// --- CAMBIO: Firma de RegisterScreenVm actualizada (Añadir roles) ---
 @Composable
 fun RegisterScreenVm(
     vm: AuthViewModel,
@@ -26,6 +29,7 @@ fun RegisterScreenVm(
 ) {
 
     val state by vm.register.collectAsStateWithLifecycle()
+    val roles = vm.availableRoles
 
     if (state.success) {
         vm.clearRegisterResult()
@@ -33,15 +37,15 @@ fun RegisterScreenVm(
     }
 
     RegisterScreen(
-        nombre = state.nombre,               // 1) Renombrado
-        apellido = state.apellido,           // 2) Nuevo
-        fecha_nacimiento = state.fecha_nacimiento, // 3) Nuevo
-        email = state.email,                 // 4)
-        phone = state.phone,                 // 5)
-        pass = state.pass,                   // 6)
-        confirm = state.confirm,             // 7)
+        nombre = state.nombre,
+        apellido = state.apellido,
+        fecha_nacimiento = state.fecha_nacimiento,
+        email = state.email,
+        phone = state.phone,
+        pass = state.pass,
+        confirm = state.confirm,
 
-        nombreError = state.nombreError,     // Errores
+        nombreError = state.nombreError,
         apellidoError = state.apellidoError,
         fechaNacimientoError = state.fechaNacimientoError,
         emailError = state.emailError,
@@ -53,13 +57,18 @@ fun RegisterScreenVm(
         isSubmitting = state.isSubmitting,
         errorMsg = state.errorMsg,
 
-        onNombreChange = vm::onNombreChange, // Handlers
+        // --- NUEVOS PARÁMETROS DE ROL ---
+        selectedRole = state.selectedRole,
+        availableRoles = roles,
+
+        onNombreChange = vm::onNombreChange,
         onApellidoChange = vm::onApellidoChange,
         onFechaNacimientoChange = vm::onFechaNacimientoChange,
         onEmailChange = vm::onRegisterEmailChange,
         onPhoneChange = vm::onPhoneChange,
         onPassChange = vm::onRegisterPassChange,
         onConfirmChange = vm::onConfirmChange,
+        onRoleSelect = vm::onRoleSelect,
 
         onSubmit = vm::submitRegister,
         onGoLogin = onGoLogin
@@ -67,17 +76,17 @@ fun RegisterScreenVm(
 }
 
 
-// --- CAMBIO: Firma de RegisterScreen actualizada ---
+// --- CAMBIO: Firma de RegisterScreen actualizada (Añadir roles) ---
 @Composable
 private fun RegisterScreen(
-    nombre: String,                 // 1) Renombrado
-    apellido: String,               // 2) Nuevo
-    fecha_nacimiento: String,       // 3) Nuevo
-    email: String,                  // 4)
-    phone: String,                  // 5)
-    pass: String,                   // 6)
-    confirm: String,                // 7)
-    nombreError: String?,           // Errores
+    nombre: String,
+    apellido: String,
+    fecha_nacimiento: String,
+    email: String,
+    phone: String,
+    pass: String,
+    confirm: String,
+    nombreError: String?,
     apellidoError: String?,
     fechaNacimientoError: String?,
     emailError: String?,
@@ -87,7 +96,13 @@ private fun RegisterScreen(
     canSubmit: Boolean,
     isSubmitting: Boolean,
     errorMsg: String?,
-    onNombreChange: (String) -> Unit, // Handlers
+
+    // --- NUEVOS PARÁMETROS DE ROL ---
+    selectedRole: RoleOption,
+    availableRoles: List<RoleOption>,
+    onRoleSelect: (RoleOption) -> Unit,
+
+    onNombreChange: (String) -> Unit,
     onApellidoChange: (String) -> Unit,
     onFechaNacimientoChange: (String) -> Unit,
     onEmailChange: (String) -> Unit,
@@ -108,11 +123,10 @@ private fun RegisterScreen(
             .padding(16.dp),
         contentAlignment = Alignment.Center
     ) {
-        // --- CAMBIO: Añadido .verticalScroll() para evitar que el teclado tape los campos ---
         Column(
             modifier = Modifier
                 .fillMaxWidth()
-                .verticalScroll(rememberScrollState()) // <-- AÑADIDO
+                .verticalScroll(rememberScrollState())
         ) {
             Text(
                 text = "Registro",
@@ -122,21 +136,21 @@ private fun RegisterScreen(
 
             // ---------- 1. NOMBRE ----------
             OutlinedTextField(
-                value = nombre, // <-- CAMBIO
-                onValueChange = onNombreChange, // <-- CAMBIO
+                value = nombre,
+                onValueChange = onNombreChange,
                 label = { Text("Nombre") },
                 singleLine = true,
-                isError = nombreError != null, // <-- CAMBIO
+                isError = nombreError != null,
                 keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Text),
                 modifier = Modifier.fillMaxWidth()
             )
-            if (nombreError != null) { // <-- CAMBIO
+            if (nombreError != null) {
                 Text(nombreError, color = MaterialTheme.colorScheme.error, style = MaterialTheme.typography.labelSmall)
             }
 
             Spacer(Modifier.height(8.dp))
 
-            // ---------- 2. APELLIDO (NUEVO) ----------
+            // ---------- 2. APELLIDO ----------
             OutlinedTextField(
                 value = apellido,
                 onValueChange = onApellidoChange,
@@ -152,15 +166,15 @@ private fun RegisterScreen(
 
             Spacer(Modifier.height(8.dp))
 
-            // ---------- 3. FECHA DE NACIMIENTO (NUEVO) ----------
+            // ---------- 3. FECHA DE NACIMIENTO ----------
             OutlinedTextField(
                 value = fecha_nacimiento,
                 onValueChange = onFechaNacimientoChange,
                 label = { Text("Fecha de Nacimiento") },
-                placeholder = { Text("YYYY-MM-DD") }, // Placeholder para guiar
+                placeholder = { Text("DD-MM-YYYY") },
                 singleLine = true,
                 isError = fechaNacimientoError != null,
-                keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Text), // Usar Text para los guiones
+                keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Text),
                 modifier = Modifier.fillMaxWidth()
             )
             if (fechaNacimientoError != null) {
@@ -200,6 +214,15 @@ private fun RegisterScreen(
             }
 
             Spacer(Modifier.height(8.dp))
+
+            // ---------- NUEVO: SELECCIÓN DE ROL ----------
+            RoleSelector(
+                selectedRole = selectedRole,
+                availableRoles = availableRoles,
+                onRoleSelect = onRoleSelect
+            )
+            Spacer(Modifier.height(8.dp))
+            // ---------------------------------------------
 
             // ---------- 6. PASSWORD ----------
             OutlinedTextField(
@@ -274,6 +297,47 @@ private fun RegisterScreen(
             // ---------- BOTÓN IR A LOGIN ----------
             OutlinedButton(onClick = onGoLogin, modifier = Modifier.fillMaxWidth()) {
                 Text("Ir a Login")
+            }
+        }
+    }
+}
+
+
+// --- NUEVO COMPOSABLE: Componente de selección de rol (Usa RoleOption importado) ---
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+fun RoleSelector(
+    selectedRole: RoleOption,
+    availableRoles: List<RoleOption>,
+    onRoleSelect: (RoleOption) -> Unit
+) {
+    var expanded by remember { mutableStateOf(false) }
+
+    ExposedDropdownMenuBox(
+        expanded = expanded,
+        onExpandedChange = { expanded = !expanded },
+        modifier = Modifier.fillMaxWidth()
+    ) {
+        OutlinedTextField(
+            value = selectedRole.name,
+            onValueChange = {},
+            readOnly = true,
+            label = { Text("Tipo de Usuario") },
+            trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded = expanded) },
+            modifier = Modifier.menuAnchor().fillMaxWidth()
+        )
+        ExposedDropdownMenu(
+            expanded = expanded,
+            onDismissRequest = { expanded = false }
+        ) {
+            availableRoles.forEach { role ->
+                DropdownMenuItem(
+                    text = { Text(role.name) },
+                    onClick = {
+                        onRoleSelect(role)
+                        expanded = false
+                    }
+                )
             }
         }
     }
