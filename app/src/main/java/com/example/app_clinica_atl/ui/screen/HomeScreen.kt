@@ -22,18 +22,42 @@ import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue // <--- SOLUCIÓN ERROR 'Type androidx.compose.runtime.State has no method getValue'
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
-import androidx.compose.ui.unit.dp
-import androidx.compose.ui.unit.sp
+import androidx.compose.ui.unit.dp // <--- SOLUCIÓN ERROR 'Unresolved reference dp'
+import androidx.compose.ui.unit.sp // <--- SOLUCIÓN ERROR 'Unresolved reference sp'
+import androidx.lifecycle.compose.collectAsStateWithLifecycle // <--- NECESARIO PARA EL VM
 import com.example.app_clinica_atl.R
+import com.example.app_clinica_atl.ui.viewmodel.AuthViewModel // <--- NECESARIO PARA INYECTAR EL VM
 
+
+// --- FUNCIÓN PRINCIPAL CON VIEWMODEL (VM) ---
 @Composable
-fun HomeScreen(
+fun HomeScreenVm(
+    vm: AuthViewModel, // Recibe el ViewModel
+    onBookAppointment: () -> Unit,
+    onInsuranceSelected: () -> Unit
+) {
+    // 1. Obtener el nombre de usuario de forma reactiva y segura
+    // Esto requiere el import de 'getValue'
+    val displayName by vm.userDisplayName.collectAsStateWithLifecycle()
+
+    HomeScreen(
+        displayName = displayName, // Pasa el nombre al composable presentacional
+        onBookAppointment = onBookAppointment,
+        onInsuranceSelected = onInsuranceSelected
+    )
+}
+
+// --- FUNCIÓN PRESENTACIONAL (Recibe el saludo) ---
+@Composable
+private fun HomeScreen(
+    displayName: String, // Recibe el saludo formateado: "Hola Nombre (Rol)."
     onBookAppointment: () -> Unit,
     onInsuranceSelected: () -> Unit
 ) {
@@ -41,21 +65,20 @@ fun HomeScreen(
         modifier = Modifier
             .fillMaxSize()
             .verticalScroll(rememberScrollState())
-            // --- CAMBIO: Usa el color de fondo del tema ---
             .background(MaterialTheme.colorScheme.background)
     ) {
-        HeaderSection()
+        HeaderSection(displayName) // Pasa el saludo
         MainActionCard(onBookAppointment)
         InsuranceSection(onInsuranceSelected = onInsuranceSelected)
     }
 }
 
+// --- SECCIÓN DE CABECERA (Muestra el saludo) ---
 @Composable
-private fun HeaderSection() {
+private fun HeaderSection(displayName: String) { // Recibe el saludo
     Column(
         modifier = Modifier
             .fillMaxWidth()
-            // --- CAMBIO: Usa el color primario del tema ---
             .background(MaterialTheme.colorScheme.primary),
         horizontalAlignment = Alignment.CenterHorizontally
     ) {
@@ -67,14 +90,16 @@ private fun HeaderSection() {
         )
         Spacer(modifier = Modifier.height(8.dp))
         Text(
-            text = "Hola Nombre_Usuario.",
-            // --- CAMBIO: Usa el color de texto "sobre primario" ---
+            // Muestra el saludo dinámico
+            text = displayName,
             color = MaterialTheme.colorScheme.onPrimary,
             fontSize = 18.sp
         )
         Spacer(modifier = Modifier.height(16.dp))
     }
 }
+
+private data class InsuranceHighlight(val imageRes: Int, val title: String)
 
 @Composable
 private fun MainActionCard(onBookAppointment: () -> Unit) {
@@ -93,7 +118,6 @@ private fun MainActionCard(onBookAppointment: () -> Unit) {
         Button(
             onClick = onBookAppointment,
             shape = RoundedCornerShape(8.dp),
-            // --- CAMBIO: Usa el color secundario del tema ---
             colors = ButtonDefaults.buttonColors(
                 containerColor = MaterialTheme.colorScheme.secondary
             ),
@@ -101,7 +125,6 @@ private fun MainActionCard(onBookAppointment: () -> Unit) {
                 .padding(bottom = 16.dp)
                 .width(200.dp)
         ) {
-            // --- CAMBIO: Usa el color de texto "sobre secundario" ---
             Text(
                 text = "Reserva tu Hora",
                 color = MaterialTheme.colorScheme.onSecondary,
@@ -110,8 +133,6 @@ private fun MainActionCard(onBookAppointment: () -> Unit) {
         }
     }
 }
-
-private data class InsuranceHighlight(val imageRes: Int, val title: String)
 
 @Composable
 private fun InsuranceSection(onInsuranceSelected: () -> Unit) {
@@ -152,7 +173,6 @@ private fun InsuranceSection(onInsuranceSelected: () -> Unit) {
             text = "Seguros",
             fontSize = 22.sp,
             fontWeight = FontWeight.Bold,
-            // --- CAMBIO: Usa el color de texto "sobre fondo" ---
             color = MaterialTheme.colorScheme.onBackground
         )
         Spacer(modifier = Modifier.height(16.dp))
@@ -183,7 +203,6 @@ private fun InsuranceCard(
             .clickable(onClick = onClick),
         shape = RoundedCornerShape(12.dp),
         elevation = CardDefaults.cardElevation(defaultElevation = 4.dp),
-        // --- CAMBIO: Define los colores de la Card desde el tema ---
         colors = CardDefaults.cardColors(
             containerColor = MaterialTheme.colorScheme.surface
         )
@@ -202,7 +221,6 @@ private fun InsuranceCard(
                 modifier = Modifier.padding(16.dp),
                 fontSize = 16.sp,
                 textAlign = TextAlign.Center,
-                // --- CAMBIO: Usa el color de texto "sobre superficie" ---
                 color = MaterialTheme.colorScheme.onSurface
             )
         }

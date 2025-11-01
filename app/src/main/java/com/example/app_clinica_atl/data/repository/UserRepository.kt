@@ -17,16 +17,15 @@ class UserRepository(
         }
     }
 
-    // --- CAMBIO: Firma de register actualizada ---
+    // --- CAMBIO: Firma de register simplificada (Sin id_rol) ---
     suspend fun register(
         nombre: String,
         apellido: String,
         fecha_nacimiento: String,
         email: String,
         phone: String,
-        password: String,
-        // *** CAMBIO CLAVE: Nuevo argumento para el rol ***
-        id_rol: Long
+        password: String
+        // ELIMINADO: id_rol: Long
     ): Result<Long> {
         val exists = userDao.getByEmail(email) != null
         if (exists) {
@@ -41,8 +40,8 @@ class UserRepository(
                 email = email,
                 phone = phone,
                 password = password,
-                // *** CAMBIO: Usamos el ID de rol que se pasa ***
-                id_rol = id_rol
+                // *** CAMBIO CLAVE: Rol 1L (Paciente) asignado permanentemente ***
+                id_rol = 1L
             )
         )
         return Result.success(id)

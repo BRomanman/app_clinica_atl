@@ -2,6 +2,7 @@ package com.example.app_clinica_atl.ui.viewmodel
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.example.app_clinica_atl.data.local.storage.UserPreferences
 import com.example.app_clinica_atl.data.local.user.UserEntity
 import com.example.app_clinica_atl.data.repository.UserRepository
 import com.example.app_clinica_atl.domain.validation.*
@@ -10,7 +11,8 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
-import com.example.app_clinica_atl.data.model.RoleOption // <--- CAMBIO: Nuevo Import desde data.model
+
+// ... (Data classes LoginUiState y RegisterUiState se mantienen igual) ...
 
 data class LoginUiState(
     val email: String = "",
@@ -24,7 +26,6 @@ data class LoginUiState(
     val loggedUser: UserEntity? = null
 )
 
-// --- CAMBIO: RegisterUiState actualizado (Usa RoleOption importado) ---
 data class RegisterUiState(
     val nombre: String = "",
     val apellido: String = "",
@@ -33,8 +34,6 @@ data class RegisterUiState(
     val phone: String = "",
     val pass: String = "",
     val confirm: String = "",
-
-    val selectedRole: RoleOption = RoleOption(1L, "Paciente"),
 
     val nombreError: String? = null,
     val apellidoError: String? = null,
@@ -49,11 +48,11 @@ data class RegisterUiState(
     val success: Boolean = false,
     val errorMsg: String? = null
 )
-// --- FIN DE CAMBIO ---
 
 
 class AuthViewModel(
-    private val repository: UserRepository
+    private val repository: UserRepository,
+    private val userPreferences: UserPreferences
 ) : ViewModel() {
 
     private val _login = MutableStateFlow(LoginUiState())
@@ -62,12 +61,11 @@ class AuthViewModel(
     private val _register = MutableStateFlow(RegisterUiState())
     val register: StateFlow<RegisterUiState> = _register
 
-    // --- CAMBIO: Usa RoleOption importado ---
-    val availableRoles: List<RoleOption> = listOf(
-        RoleOption(id = 1L, name = "Paciente"),
-        RoleOption(id = 2L, name = "Doctor")
-    )
-    // ... (rest of the file remains the same logic)
+    private val _userDisplayName = MutableStateFlow("Bienvenido/a a la Clínica")
+    val userDisplayName: StateFlow<String> = _userDisplayName
+
+
+    // ----------------- LOGIN: Handlers -----------------
     fun onLoginEmailChange(value: String) {
         _login.update { it.copy(email = value, emailError = validateEmail(value)) }
         recomputeLoginCanSubmit()
@@ -76,11 +74,13 @@ class AuthViewModel(
         _login.update { it.copy(pass = value) }
         recomputeLoginCanSubmit()
     }
+
     private fun recomputeLoginCanSubmit() {
         val s = _login.value
         val can = s.emailError == null && s.email.isNotBlank() && s.pass.isNotBlank()
         _login.update { it.copy(canSubmit = can) }
     }
+
     private fun recomputeRegisterCanSubmit() {
         val s = _register.value
 
@@ -95,6 +95,7 @@ class AuthViewModel(
 
         _register.update { it.copy(canSubmit = noErrors && filled) }
     }
+
     fun submitLogin() {
         val s = _login.value
         if (!s.canSubmit || s.isSubmitting) return
@@ -106,6 +107,9 @@ class AuthViewModel(
             val errorMessage = result.exceptionOrNull()?.message ?: "Error de autenticación"
             _login.update {
                 if (user != null) {
+                    userPreferences.setLoggedIn(true)
+                    _userDisplayName.value = "Hola, ${user.nombre} (${if(user.id_rol == 1L) "Paciente" else if(user.id_rol == 2L) "Doctor" else "Admin"})."
+
                     it.copy(
                         isSubmitting = false,
                         success = true,
@@ -123,17 +127,24 @@ class AuthViewModel(
             }
         }
     }
+
     fun clearLoginResult() {
         _login.update { it.copy(success = false, errorMsg = null, loggedUser = null) }
     }
 
-    fun logout() {
+    // *** CAMBIO CRÍTICO: Función suspendida para esperar el DataStore ***
+    suspend fun logout() {
+        // 1. Limpiar estado local
         _login.value = LoginUiState()
         _register.value = RegisterUiState()
+        _userDisplayName.value = "Bienvenido/a a la Clínica"
+
+        // 2. Limpiar DataStore (EJECUCIÓN DIRECTA, NO EN UN NUEVO LAUNCH)
+        userPreferences.setLoggedIn(false) // <-- ESTO AHORA ES SINCRÓNICO CON LA LLAMADA EXTERNA
     }
+    // *************************************
 
-    // ----------------- REGISTRO: handlers y envío -----------------
-
+    // ... (el resto de funciones de Registro se mantienen) ...
     fun onNombreChange(value: String) {
         val filtered = value.filter { it.isLetter() || it.isWhitespace() }
         _register.update {
@@ -175,12 +186,6 @@ class AuthViewModel(
         recomputeRegisterCanSubmit()
     }
 
-    // --- CAMBIO: Usa RoleOption importado ---
-    fun onRoleSelect(role: RoleOption) {
-        _register.update { it.copy(selectedRole = role) }
-        recomputeRegisterCanSubmit()
-    }
-
     fun submitRegister() {
         val s = _register.value
         if (!s.canSubmit || s.isSubmitting) return
@@ -194,8 +199,7 @@ class AuthViewModel(
                 fecha_nacimiento = s.fecha_nacimiento.trim(),
                 email = s.email.trim(),
                 phone = s.phone.trim(),
-                password = s.pass,
-                id_rol = s.selectedRole.id
+                password = s.pass
             )
 
             _register.update {

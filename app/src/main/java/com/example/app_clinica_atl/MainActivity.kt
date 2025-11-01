@@ -9,13 +9,13 @@ import androidx.annotation.RequiresApi // Necesario para la anotación
 import androidx.compose.material3.MaterialTheme // Necesario para Surface
 import androidx.compose.material3.Surface
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.remember // <-- AÑADIDO: Para recordar UserPreferences
+import androidx.compose.runtime.remember // Para recordar UserPreferences
 import androidx.compose.ui.platform.LocalContext // Necesario para obtener el contexto
 import androidx.lifecycle.viewmodel.compose.viewModel // Necesario para crear ViewModels
 import androidx.navigation.compose.rememberNavController // Necesario para la navegación
 import com.example.app_clinica_atl.data.local.database.AppDatabase // Base de datos Room
 // Importaciones de Storage (DataStore)
-import com.example.app_clinica_atl.data.local.storage.UserPreferences // <-- AÑADIDO: Importa UserPreferences
+import com.example.app_clinica_atl.data.local.storage.UserPreferences // Importa UserPreferences
 // Importaciones de Repositorios
 import com.example.app_clinica_atl.data.repository.AppointmentRepository // Repositorio de Citas
 import com.example.app_clinica_atl.data.repository.PatientRepository // Repositorio de Pacientes
@@ -34,6 +34,9 @@ import com.example.app_clinica_atl.ui.viewmodel.PatientViewModel
 import com.example.app_clinica_atl.ui.viewmodel.PatientViewModelFactory
 import com.example.app_clinica_atl.ui.viewmodel.DoctorSearchViewModel
 import com.example.app_clinica_atl.ui.viewmodel.DoctorSearchViewModelFactory
+// *** NUEVOS IMPORTS ***
+import com.example.app_clinica_atl.ui.viewmodel.DoctorProfileViewModel
+import com.example.app_clinica_atl.ui.viewmodel.DoctorProfileViewModelFactory
 
 class MainActivity : ComponentActivity() {
     @RequiresApi(Build.VERSION_CODES.O)
@@ -65,16 +68,23 @@ fun AppRoot() { // Se define AppRoot UNA SOLA VEZ
     val doctorRepository = DoctorRepository()
     val appointmentRepository = AppointmentRepository(doctorRepository)
 
-    // --- ¡NUEVO! Instancia de UserPreferences ---
-    // Usamos remember para que la instancia no se cree en cada recomposición
+    // --- Instancia de UserPreferences (DataStore) ---
     val userPreferences = remember { UserPreferences(context) }
 
     // ViewModels
-    val authViewModel: AuthViewModel = viewModel(factory = AuthViewModelFactory(userRepository))
+    // *** 1. AUTHVIEWMODEL (Inyección de UserRepository y UserPreferences) ***
+    val authViewModel: AuthViewModel = viewModel(
+        factory = AuthViewModelFactory(userRepository, userPreferences)
+    )
+
     val patientViewModel: PatientViewModel = viewModel(factory = PatientViewModelFactory(patientRepository))
     val doctorSearchViewModel: DoctorSearchViewModel = viewModel(factory = DoctorSearchViewModelFactory(doctorRepository))
     val bookAppointmentViewModel: BookAppointmentViewModel = viewModel(
         factory = BookAppointmentViewModelFactory(appointmentRepository)
+    )
+    // *** 2. DOCTORPROFILEVIEWMODEL (Inyección de DoctorRepository) ***
+    val doctorProfileViewModel: DoctorProfileViewModel = viewModel(
+        factory = DoctorProfileViewModelFactory(doctorRepository)
     )
 
     // Controlador de Navegación
@@ -88,8 +98,8 @@ fun AppRoot() { // Se define AppRoot UNA SOLA VEZ
                 authViewModel = authViewModel,
                 patientViewModel = patientViewModel,
                 bookAppointmentViewModel = bookAppointmentViewModel,
-                doctorSearchViewModel = doctorSearchViewModel
-                // Aún no pasamos userPreferences aquí. Se inyectará en el ViewModel que lo necesite.
+                doctorSearchViewModel = doctorSearchViewModel,
+                doctorProfileViewModel = doctorProfileViewModel // <-- Pasar el VM del perfil
             )
         }
     }

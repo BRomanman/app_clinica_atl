@@ -18,9 +18,9 @@ import androidx.compose.ui.text.input.*
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.example.app_clinica_atl.ui.viewmodel.AuthViewModel
-import com.example.app_clinica_atl.data.model.RoleOption // <--- CAMBIO: Import ajustado
+// import de RoleOption ELIMINADO
 
-// --- CAMBIO: Firma de RegisterScreenVm actualizada (Añadir roles) ---
+// --- CAMBIO: Firma de RegisterScreenVm simplificada ---
 @Composable
 fun RegisterScreenVm(
     vm: AuthViewModel,
@@ -29,7 +29,7 @@ fun RegisterScreenVm(
 ) {
 
     val state by vm.register.collectAsStateWithLifecycle()
-    val roles = vm.availableRoles
+    // val roles = vm.availableRoles ELIMINADO
 
     if (state.success) {
         vm.clearRegisterResult()
@@ -57,9 +57,7 @@ fun RegisterScreenVm(
         isSubmitting = state.isSubmitting,
         errorMsg = state.errorMsg,
 
-        // --- NUEVOS PARÁMETROS DE ROL ---
-        selectedRole = state.selectedRole,
-        availableRoles = roles,
+        // Parámetros de rol ELIMINADOS
 
         onNombreChange = vm::onNombreChange,
         onApellidoChange = vm::onApellidoChange,
@@ -68,7 +66,7 @@ fun RegisterScreenVm(
         onPhoneChange = vm::onPhoneChange,
         onPassChange = vm::onRegisterPassChange,
         onConfirmChange = vm::onConfirmChange,
-        onRoleSelect = vm::onRoleSelect,
+        // onRoleSelect ELIMINADO
 
         onSubmit = vm::submitRegister,
         onGoLogin = onGoLogin
@@ -76,7 +74,7 @@ fun RegisterScreenVm(
 }
 
 
-// --- CAMBIO: Firma de RegisterScreen actualizada (Añadir roles) ---
+// --- CAMBIO: Firma de RegisterScreen simplificada ---
 @Composable
 private fun RegisterScreen(
     nombre: String,
@@ -97,10 +95,7 @@ private fun RegisterScreen(
     isSubmitting: Boolean,
     errorMsg: String?,
 
-    // --- NUEVOS PARÁMETROS DE ROL ---
-    selectedRole: RoleOption,
-    availableRoles: List<RoleOption>,
-    onRoleSelect: (RoleOption) -> Unit,
+    // Parámetros de rol ELIMINADOS
 
     onNombreChange: (String) -> Unit,
     onApellidoChange: (String) -> Unit,
@@ -215,14 +210,7 @@ private fun RegisterScreen(
 
             Spacer(Modifier.height(8.dp))
 
-            // ---------- NUEVO: SELECCIÓN DE ROL ----------
-            RoleSelector(
-                selectedRole = selectedRole,
-                availableRoles = availableRoles,
-                onRoleSelect = onRoleSelect
-            )
-            Spacer(Modifier.height(8.dp))
-            // ---------------------------------------------
+            // Selección de rol ELIMINADA
 
             // ---------- 6. PASSWORD ----------
             OutlinedTextField(
@@ -302,43 +290,4 @@ private fun RegisterScreen(
     }
 }
 
-
-// --- NUEVO COMPOSABLE: Componente de selección de rol (Usa RoleOption importado) ---
-@OptIn(ExperimentalMaterial3Api::class)
-@Composable
-fun RoleSelector(
-    selectedRole: RoleOption,
-    availableRoles: List<RoleOption>,
-    onRoleSelect: (RoleOption) -> Unit
-) {
-    var expanded by remember { mutableStateOf(false) }
-
-    ExposedDropdownMenuBox(
-        expanded = expanded,
-        onExpandedChange = { expanded = !expanded },
-        modifier = Modifier.fillMaxWidth()
-    ) {
-        OutlinedTextField(
-            value = selectedRole.name,
-            onValueChange = {},
-            readOnly = true,
-            label = { Text("Tipo de Usuario") },
-            trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded = expanded) },
-            modifier = Modifier.menuAnchor().fillMaxWidth()
-        )
-        ExposedDropdownMenu(
-            expanded = expanded,
-            onDismissRequest = { expanded = false }
-        ) {
-            availableRoles.forEach { role ->
-                DropdownMenuItem(
-                    text = { Text(role.name) },
-                    onClick = {
-                        onRoleSelect(role)
-                        expanded = false
-                    }
-                )
-            }
-        }
-    }
-}
+// RoleSelector ELIMINADO

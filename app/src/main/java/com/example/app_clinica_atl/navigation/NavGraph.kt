@@ -25,9 +25,9 @@ import com.example.app_clinica_atl.ui.screen.AdminUserHistoriesScreen
 import com.example.app_clinica_atl.ui.screen.BookAppointmentScreenVm
 import com.example.app_clinica_atl.ui.screen.DoctorScheduleScreen
 import com.example.app_clinica_atl.ui.screen.DoctorMenuScreen
-import com.example.app_clinica_atl.ui.screen.DoctorProfileScreen
+import com.example.app_clinica_atl.ui.screen.DoctorProfileScreenVm
 import com.example.app_clinica_atl.ui.screen.FormularioSeguroScreen
-import com.example.app_clinica_atl.ui.screen.HomeScreen
+import com.example.app_clinica_atl.ui.screen.HomeScreenVm
 import com.example.app_clinica_atl.ui.screen.LoginScreenVm
 import com.example.app_clinica_atl.ui.screen.PatientProfileScreen
 import com.example.app_clinica_atl.ui.screen.PatientSearchScreenVm
@@ -37,6 +37,7 @@ import com.example.app_clinica_atl.ui.viewmodel.AuthViewModel
 import com.example.app_clinica_atl.ui.viewmodel.BookAppointmentViewModel
 import com.example.app_clinica_atl.ui.viewmodel.DoctorSearchViewModel
 import com.example.app_clinica_atl.ui.viewmodel.PatientViewModel
+import com.example.app_clinica_atl.ui.viewmodel.DoctorProfileViewModel
 import kotlinx.coroutines.launch
 
 @RequiresApi(Build.VERSION_CODES.O)
@@ -46,7 +47,8 @@ fun AppNavGraph(
     authViewModel: AuthViewModel,
     patientViewModel: PatientViewModel,
     bookAppointmentViewModel: BookAppointmentViewModel,
-    doctorSearchViewModel: DoctorSearchViewModel
+    doctorSearchViewModel: DoctorSearchViewModel,
+    doctorProfileViewModel: DoctorProfileViewModel
 ) {
     val drawerState = rememberDrawerState(initialValue = DrawerValue.Closed)
     val scope = rememberCoroutineScope()
@@ -77,13 +79,15 @@ fun AppNavGraph(
     val goAdminAddDoctor: () -> Unit = { navController.navigate(Route.AdminAddDoctor.path) { launchSingleTop = true } }
 
 
-    //Función de logout para todos los roles
+    // *** FUNCIÓN DE LOGOUT CORREGIDA (Usa scope.launch para esperar la limpieza del DataStore) ***
     val logoutAndNavigate: () -> Unit = {
-        authViewModel.logout()
-        scope.launch { drawerState.close() }
-        navController.navigate(Route.Login.path) {
-            popUpTo(navController.graph.startDestinationId) { inclusive = true }
-            launchSingleTop = true
+        scope.launch {
+            authViewModel.logout() // <-- Llama a la función suspendida
+            scope.launch { drawerState.close() }
+            navController.navigate(Route.Login.path) {
+                popUpTo(navController.graph.startDestinationId) { inclusive = true }
+                launchSingleTop = true
+            }
         }
     }
 
@@ -113,7 +117,8 @@ fun AppNavGraph(
                 modifier = Modifier.padding(innerPadding)
             ) {
                 composable(Route.Home.path) {
-                    HomeScreen(
+                    HomeScreenVm(
+                        vm = authViewModel,
                         onBookAppointment = goBookAppointment,
                         onInsuranceSelected = goInsuranceForm
                     )
@@ -172,7 +177,10 @@ fun AppNavGraph(
                     DoctorScheduleScreen()
                 }
                 composable(Route.DoctorProfile.path) {
-                    DoctorProfileScreen()
+                    DoctorProfileScreenVm(
+                        vm = doctorProfileViewModel,
+                        onLogout = logoutAndNavigate
+                    )
                 }
                 composable(Route.AdminMenu.path) {
                     AdminMenuScreen(

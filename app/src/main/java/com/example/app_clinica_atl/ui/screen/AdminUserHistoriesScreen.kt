@@ -54,14 +54,14 @@ fun AdminUserHistoriesScreen(
             AdminPatientHistory(
                 name = "Keanu Reeves",
                 address = "123 Matrix St, Hollywood, CA",
-                contact = "+1 555-1001",
+                contact = "+569 12345678",
                 email = "keanu.reeves@example.com",
                 history = "Paciente presenta alergia leve al polen. Historial de fractura de muneca en 2019. Todas las vacunas al dia."
             ),
             AdminPatientHistory(
                 name = "Taylor Swift",
                 address = "456 Music Row, Nashville, TN",
-                contact = "+1 555-2456",
+                contact = "+569 12345678",
                 email = "taylor.swift@example.com",
                 history = "Paciente bajo seguimiento por tratamiento preventivo. Sin hospitalizaciones recientes."
             ),
