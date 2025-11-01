@@ -21,22 +21,29 @@ import java.util.Locale
 object NotificationHelper {
 
     private const val APPOINTMENT_NOTIFICATION_ID = 1001
+    private const val INSURANCE_NOTIFICATION_ID = 1002
     const val APPOINTMENT_CHANNEL_ID = "appointment_confirmations"
+    const val INSURANCE_CHANNEL_ID = "insurance_confirmations"
 
     fun createNotificationChannel(context: Context) {
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-            val channelName = context.getString(R.string.book_appointment_notification_channel_name)
-            val channelDescription = context.getString(R.string.book_appointment_notification_channel_description)
-            val channel = NotificationChannel(
+            val appointmentChannel = NotificationChannel(
                 APPOINTMENT_CHANNEL_ID,
-                channelName,
+                context.getString(R.string.book_appointment_notification_channel_name),
                 NotificationManager.IMPORTANCE_DEFAULT
             ).apply {
-                description = channelDescription
+                description = context.getString(R.string.book_appointment_notification_channel_description)
+            }
+            val insuranceChannel = NotificationChannel(
+                INSURANCE_CHANNEL_ID,
+                context.getString(R.string.insurance_notification_channel_name),
+                NotificationManager.IMPORTANCE_DEFAULT
+            ).apply {
+                description = context.getString(R.string.insurance_notification_channel_description)
             }
 
             val manager = context.getSystemService(NotificationManager::class.java)
-            manager?.createNotificationChannel(channel)
+            manager?.createNotificationChannels(listOf(appointmentChannel, insuranceChannel))
         }
     }
 
@@ -77,5 +84,31 @@ object NotificationHelper {
             .build()
 
         NotificationManagerCompat.from(context).notify(APPOINTMENT_NOTIFICATION_ID, notification)
+    }
+
+    @RequiresPermission(Manifest.permission.POST_NOTIFICATIONS)
+    fun showInsuranceConfirmation(
+        context: Context,
+        policyHolderName: String
+    ) {
+        val title = context.getString(R.string.insurance_notification_title)
+        val message = context.getString(R.string.insurance_notification_body, policyHolderName)
+
+        val intent = Intent(context, MainActivity::class.java).apply {
+            flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TASK
+        }
+        val flags = PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
+        val pendingIntent = PendingIntent.getActivity(context, 1, intent, flags)
+
+        val notification = NotificationCompat.Builder(context, INSURANCE_CHANNEL_ID)
+            .setSmallIcon(R.drawable.logo_clean)
+            .setContentTitle(title)
+            .setContentText(message)
+            .setStyle(NotificationCompat.BigTextStyle().bigText(message))
+            .setContentIntent(pendingIntent)
+            .setAutoCancel(true)
+            .build()
+
+        NotificationManagerCompat.from(context).notify(INSURANCE_NOTIFICATION_ID, notification)
     }
 }

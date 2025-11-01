@@ -19,7 +19,7 @@ import com.example.app_clinica_atl.ui.components.defaultDrawerItems
 import com.example.app_clinica_atl.ui.screen.AdminAddDoctorScreen
 import com.example.app_clinica_atl.ui.screen.AdminDoctorScheduleScreen
 import com.example.app_clinica_atl.ui.screen.AdminDoctorSearchScreenVm
-import com.example.app_clinica_atl.ui.screen.AdminManageDoctorScreen
+import com.example.app_clinica_atl.ui.screen.AdminManageDoctorScreenVm
 import com.example.app_clinica_atl.ui.screen.AdminMenuScreen
 import com.example.app_clinica_atl.ui.screen.AdminUserHistoriesScreen
 import com.example.app_clinica_atl.ui.screen.BookAppointmentScreenVm
@@ -33,6 +33,7 @@ import com.example.app_clinica_atl.ui.screen.PatientProfileScreen
 import com.example.app_clinica_atl.ui.screen.PatientSearchScreenVm
 import com.example.app_clinica_atl.ui.screen.RegisterScreenVm
 import com.example.app_clinica_atl.ui.screen.SegurosScreen
+import com.example.app_clinica_atl.ui.viewmodel.AdminManageDoctorViewModel
 import com.example.app_clinica_atl.ui.viewmodel.AuthViewModel
 import com.example.app_clinica_atl.ui.viewmodel.BookAppointmentViewModel
 import com.example.app_clinica_atl.ui.viewmodel.DoctorSearchViewModel
@@ -48,7 +49,8 @@ fun AppNavGraph(
     patientViewModel: PatientViewModel,
     bookAppointmentViewModel: BookAppointmentViewModel,
     doctorSearchViewModel: DoctorSearchViewModel,
-    doctorProfileViewModel: DoctorProfileViewModel
+    doctorProfileViewModel: DoctorProfileViewModel,
+    adminManageDoctorViewModel: AdminManageDoctorViewModel
 ) {
     val drawerState = rememberDrawerState(initialValue = DrawerValue.Closed)
     val scope = rememberCoroutineScope()
@@ -200,7 +202,7 @@ fun AppNavGraph(
                 }
                 composable(Route.AdminDoctorSearch.path) { AdminDoctorSearchScreenVm(vm = doctorSearchViewModel) }
                 composable(Route.AdminManageDoctor.path) {
-                    AdminManageDoctorScreen()
+                    AdminManageDoctorScreenVm(vm = adminManageDoctorViewModel)
                 }
                 composable(Route.AdminAddDoctor.path) {
                     AdminAddDoctorScreen(onCreateDoctor = goAdminMenu)

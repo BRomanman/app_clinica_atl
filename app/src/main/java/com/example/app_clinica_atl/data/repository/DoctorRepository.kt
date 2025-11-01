@@ -1,10 +1,14 @@
 package com.example.app_clinica_atl.data.repository
 
 import com.example.app_clinica_atl.data.model.DoctorInfo
+import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.update
 
 class DoctorRepository {
 
-    private val doctors = listOf(
+    private val initialDoctors = listOf(
         DoctorInfo(
             id = "001",
             firstName = "Ana",
@@ -211,10 +215,70 @@ class DoctorRepository {
         )
     )
 
-    fun getAllDoctors(): List<DoctorInfo> = doctors
+    private val doctors = MutableStateFlow(initialDoctors)
 
-    fun getSpecialties(): List<String> = doctors.map { it.specialty }.distinct()
+    fun observeDoctors(): StateFlow<List<DoctorInfo>> = doctors.asStateFlow()
+
+    fun getAllDoctors(): List<DoctorInfo> = doctors.value
+
+    fun getDoctorById(id: String): DoctorInfo? =
+        doctors.value.firstOrNull { it.id.equals(id.trim(), ignoreCase = true) }
+
+    fun getDoctorByEmail(email: String): DoctorInfo? =
+        doctors.value.firstOrNull { it.email.equals(email.trim(), ignoreCase = true) }
+
+    fun updateDoctor(updated: DoctorInfo): Boolean {
+        val sanitized = updated.sanitized()
+        var success = false
+        doctors.update { current ->
+            val index = current.indexOfFirst { it.id.equals(sanitized.id, ignoreCase = true) }
+            if (index >= 0) {
+                success = true
+                current.toMutableList().apply { this[index] = sanitized }
+            } else {
+                current
+            }
+        }
+        return success
+    }
+
+    fun deleteDoctorById(id: String): Boolean {
+        val targetId = id.trim()
+        if (targetId.isEmpty()) return false
+
+        var success = false
+        doctors.update { current ->
+            val index = current.indexOfFirst { it.id.equals(targetId, ignoreCase = true) }
+            if (index >= 0) {
+                success = true
+                current.toMutableList().apply { removeAt(index) }
+            } else {
+                current
+            }
+        }
+        return success
+    }
+
+    fun getSpecialties(): List<String> = doctors.value.map { it.specialty }.distinct()
 
     fun getDoctorsBySpecialty(specialty: String): List<DoctorInfo> =
-        doctors.filter { it.specialty.equals(specialty, ignoreCase = true) }
+        doctors.value.filter { it.specialty.equals(specialty, ignoreCase = true) }
+
+    private fun DoctorInfo.sanitized(): DoctorInfo = copy(
+        id = id.trim(),
+        firstName = firstName.trim(),
+        lastName = lastName.trim(),
+        birthDate = birthDate.trim(),
+        email = email.trim(),
+        contactNumber = contactNumber.trim(),
+        password = password.trim(),
+        consultationRate = consultationRate.trim(),
+        salary = salary.trim(),
+        bonus = bonus.trim(),
+        specialtyId = specialtyId.trim(),
+        specialty = specialty.trim(),
+        availability = availability.trim(),
+        address = address.trim(),
+        since = since.trim()
+    )
 }

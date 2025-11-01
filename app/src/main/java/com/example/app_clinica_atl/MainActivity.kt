@@ -35,6 +35,8 @@ import com.example.app_clinica_atl.ui.viewmodel.PatientViewModelFactory
 import com.example.app_clinica_atl.ui.viewmodel.DoctorSearchViewModel
 import com.example.app_clinica_atl.ui.viewmodel.DoctorSearchViewModelFactory
 // *** NUEVOS IMPORTS ***
+import com.example.app_clinica_atl.ui.viewmodel.AdminManageDoctorViewModel
+import com.example.app_clinica_atl.ui.viewmodel.AdminManageDoctorViewModelFactory
 import com.example.app_clinica_atl.ui.viewmodel.DoctorProfileViewModel
 import com.example.app_clinica_atl.ui.viewmodel.DoctorProfileViewModelFactory
 
@@ -86,6 +88,9 @@ fun AppRoot() { // Se define AppRoot UNA SOLA VEZ
     val doctorProfileViewModel: DoctorProfileViewModel = viewModel(
         factory = DoctorProfileViewModelFactory(doctorRepository)
     )
+    val adminManageDoctorViewModel: AdminManageDoctorViewModel = viewModel(
+        factory = AdminManageDoctorViewModelFactory(doctorRepository)
+    )
 
     // Controlador de Navegación
     val navController = rememberNavController()
@@ -99,7 +104,8 @@ fun AppRoot() { // Se define AppRoot UNA SOLA VEZ
                 patientViewModel = patientViewModel,
                 bookAppointmentViewModel = bookAppointmentViewModel,
                 doctorSearchViewModel = doctorSearchViewModel,
-                doctorProfileViewModel = doctorProfileViewModel // <-- Pasar el VM del perfil
+                doctorProfileViewModel = doctorProfileViewModel, // <-- Pasar el VM del perfil
+                adminManageDoctorViewModel = adminManageDoctorViewModel
             )
         }
     }

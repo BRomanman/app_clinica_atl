@@ -142,6 +142,14 @@ private fun BookAppointmentScreen(
     // Formateadores para mostrar fecha y hora
     val dateFormatter = remember { DateTimeFormatter.ofPattern("dd MMM yyyy") }
     val timeFormatter = remember { DateTimeFormatter.ofPattern("HH:mm") }
+    val dropdownColors = ExposedDropdownMenuDefaults.outlinedTextFieldColors(
+        disabledTextColor = MaterialTheme.colorScheme.onSurface,
+        disabledPlaceholderColor = MaterialTheme.colorScheme.onSurfaceVariant,
+        disabledLeadingIconColor = MaterialTheme.colorScheme.onSurfaceVariant,
+        disabledTrailingIconColor = MaterialTheme.colorScheme.onSurfaceVariant,
+        disabledLabelColor = MaterialTheme.colorScheme.onSurfaceVariant,
+        disabledBorderColor = MaterialTheme.colorScheme.outline
+    )
 
     // Estado para el DatePickerDialog
     val datePickerState = rememberDatePickerState()

@@ -23,6 +23,7 @@ import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
+import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Edit
 import androidx.compose.material.icons.filled.Person
@@ -37,8 +38,10 @@ import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
+import androidx.compose.material3.OutlinedTextFieldDefaults
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
+import androidx.compose.material3.TextFieldDefaults
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -53,6 +56,7 @@ import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
@@ -62,6 +66,9 @@ import androidx.core.content.FileProvider
 import coil.compose.AsyncImage
 import coil.request.ImageRequest
 import com.example.app_clinica_atl.R
+import com.example.app_clinica_atl.domain.validation.validateEmail
+import com.example.app_clinica_atl.domain.validation.validateNamePart
+import com.example.app_clinica_atl.domain.validation.validatePhoneDigitsOnly
 import java.io.File
 import java.text.SimpleDateFormat
 import java.util.Date
@@ -104,8 +111,14 @@ fun PatientProfileScreen(
     // --- Estado para el formulario de perfil (se llenará con datos reales del VM) ---
     var name by remember { mutableStateOf("Javier Soto") }
     var address by remember { mutableStateOf("Av. Siempre Viva 123") }
-    var phone by remember { mutableStateOf("+56 9 1234 5678") }
+    var phone by remember { mutableStateOf("56912345678") }
     var email by remember { mutableStateOf("javier.soto@mail.com") }
+    var isEditing by remember { mutableStateOf(false) }
+
+    var nameError by remember { mutableStateOf<String?>(null) }
+    var addressError by remember { mutableStateOf<String?>(null) }
+    var phoneError by remember { mutableStateOf<String?>(null) }
+    var emailError by remember { mutableStateOf<String?>(null) }
 
     // --- Estado para la Foto de Perfil (DataStore) ---
     // En un proyecto real, esto vendría del ViewModel, leyendo DataStore.
@@ -312,23 +325,54 @@ fun PatientProfileScreen(
 
                 ProfileTextField(
                     value = name,
-                    onValueChange = { name = it },
-                    label = stringResource(id = R.string.profile_field_name)
+                    onValueChange = {
+                        name = it
+                        if (isEditing && nameError != null) {
+                            nameError = validateNamePart(it.trim(), "Nombre")
+                        }
+                    },
+                    label = stringResource(id = R.string.profile_field_name),
+                    enabled = isEditing,
+                    error = if (isEditing) nameError else null
                 )
                 ProfileTextField(
                     value = address,
-                    onValueChange = { address = it },
-                    label = stringResource(id = R.string.profile_field_address)
+                    onValueChange = {
+                        address = it
+                        if (isEditing && addressError != null) {
+                            addressError = validateAddress(it)
+                        }
+                    },
+                    label = stringResource(id = R.string.profile_field_address),
+                    enabled = isEditing,
+                    error = if (isEditing) addressError else null
                 )
                 ProfileTextField(
                     value = phone,
-                    onValueChange = { phone = it },
-                    label = stringResource(id = R.string.profile_field_phone)
+                    onValueChange = {
+                        val digitsOnly = it.filter(Char::isDigit)
+                        phone = digitsOnly
+                        if (isEditing && phoneError != null) {
+                            phoneError = validatePhoneDigitsOnly(digitsOnly)
+                        }
+                    },
+                    label = stringResource(id = R.string.profile_field_phone),
+                    enabled = isEditing,
+                    error = if (isEditing) phoneError else null,
+                    keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Phone)
                 )
                 ProfileTextField(
                     value = email,
-                    onValueChange = { email = it },
-                    label = stringResource(id = R.string.profile_field_email)
+                    onValueChange = {
+                        email = it
+                        if (isEditing && emailError != null) {
+                            emailError = validateEmail(it.trim())
+                        }
+                    },
+                    label = stringResource(id = R.string.profile_field_email),
+                    enabled = isEditing,
+                    error = if (isEditing) emailError else null,
+                    keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Email)
                 )
 
                 Spacer(modifier = Modifier.height(12.dp))
@@ -385,7 +429,56 @@ fun PatientProfileScreen(
         }
 
         Button(
-            onClick = { /* TODO: handle save */ },
+            onClick = {
+                isEditing = true
+                nameError = null
+                addressError = null
+                phoneError = null
+                emailError = null
+            },
+            enabled = !isEditing,
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(bottom = 8.dp),
+            shape = RoundedCornerShape(12.dp)
+        ) {
+            Text(text = stringResource(id = R.string.profile_edit_cta))
+        }
+        Button(
+            onClick = {
+                val cleanedName = name.trim()
+                val cleanedEmail = email.trim()
+                val cleanedAddress = address.trim()
+                val currentNameError = validateNamePart(cleanedName, "Nombre")
+                val currentAddressError = validateAddress(cleanedAddress)
+                val currentPhoneError = validatePhoneDigitsOnly(phone)
+                val currentEmailError = validateEmail(cleanedEmail)
+
+                nameError = currentNameError
+                addressError = currentAddressError
+                phoneError = currentPhoneError
+                emailError = currentEmailError
+
+                val hasError = listOf(
+                    currentNameError,
+                    currentAddressError,
+                    currentPhoneError,
+                    currentEmailError
+                ).any { it != null }
+
+                if (!hasError) {
+                    name = cleanedName
+                    address = cleanedAddress
+                    email = cleanedEmail
+                    isEditing = false
+                    Toast.makeText(
+                        context,
+                        context.getString(R.string.profile_save_success),
+                        Toast.LENGTH_SHORT
+                    ).show()
+                }
+            },
+            enabled = isEditing,
             modifier = Modifier
                 .fillMaxWidth()
                 .padding(bottom = 8.dp),
@@ -448,21 +541,49 @@ private fun ImageSourceDialog(
     )
 }
 
+private fun validateAddress(value: String): String? {
+    return if (value.isBlank()) "La dirección es obligatoria" else null
+}
+
 @Composable
 private fun ProfileTextField(
     value: String,
     onValueChange: (String) -> Unit,
-    label: String
+    label: String,
+    enabled: Boolean,
+    error: String?,
+    keyboardOptions: KeyboardOptions = KeyboardOptions.Default
 ) {
+    val textFieldColors = OutlinedTextFieldDefaults.colors(
+        disabledTextColor = MaterialTheme.colorScheme.onSurface,
+        disabledPlaceholderColor = MaterialTheme.colorScheme.onSurfaceVariant,
+        disabledLabelColor = MaterialTheme.colorScheme.onSurfaceVariant,
+        disabledLeadingIconColor = MaterialTheme.colorScheme.onSurfaceVariant,
+        disabledTrailingIconColor = MaterialTheme.colorScheme.onSurfaceVariant,
+        disabledBorderColor = MaterialTheme.colorScheme.outline,
+        disabledContainerColor = Color.Transparent
+    )
     OutlinedTextField(
         value = value,
         onValueChange = onValueChange,
         label = { Text(text = label) },
         singleLine = true,
+        enabled = enabled,
+        isError = error != null,
+        colors = textFieldColors,
+        supportingText = {
+            error?.let {
+                Text(
+                    text = it,
+                    color = MaterialTheme.colorScheme.error,
+                    style = MaterialTheme.typography.bodySmall
+                )
+            }
+        },
+        keyboardOptions = keyboardOptions,
         modifier = Modifier
             .fillMaxWidth()
             .padding(bottom = 12.dp)
-
     )
 }
 

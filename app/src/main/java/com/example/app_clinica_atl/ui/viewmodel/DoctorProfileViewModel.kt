@@ -56,7 +56,7 @@ class DoctorProfileViewModel(
 
     private fun loadDoctorData() {
         viewModelScope.launch {
-            val loggedDoctor = doctorRepository.getAllDoctors().find { it.email == "victor@duoc.cl" }
+            val loggedDoctor = doctorRepository.getDoctorByEmail("victor@duoc.cl")
 
             if (loggedDoctor != null) {
                 _uiState.update { currentState ->

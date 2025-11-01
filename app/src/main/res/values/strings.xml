@@ -22,6 +22,12 @@
     <string name="book_appointment_notification_channel_description">Avisos cuando una reserva se confirma.</string>
     <string name="insurance_form_confirmation_title">Formulario confirmado</string>
     <string name="insurance_form_confirmation_body">Tus datos fueron enviados para gestionar el seguro.</string>
+    <string name="insurance_form_toast_message">Solicitud enviada. Te contactaremos pronto.</string>
+    <string name="insurance_notification_title">Seguro en proceso</string>
+    <string name="insurance_notification_body">Registramos la solicitud de seguro para %1$s. Te avisaremos pronto.</string>
+    <string name="insurance_notification_channel_name">Confirmaciones de seguro</string>
+    <string name="insurance_notification_channel_description">Notificaciones cuando se contrata un seguro.</string>
+    <string name="insurance_notification_default_name">Cliente</string>
     <string name="profile_header_title">Perfil del paciente</string>
     <string name="profile_header_subtitle">Actualizar información</string>
     <string name="profile_delete_cta">Eliminar cuenta</string>
@@ -34,5 +40,7 @@
     <string name="profile_upload_section_title">Agregar historial médico</string>
     <string name="profile_upload_placeholder">Adjuntar archivo…</string>
     <string name="profile_upload_cta">Agregar archivo</string>
+    <string name="profile_edit_cta">Modificar datos</string>
     <string name="profile_save_cta">Guardar cambios</string>
+    <string name="profile_save_success">Datos actualizados correctamente</string>
 </resources>

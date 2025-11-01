@@ -1,5 +1,6 @@
 package com.example.app_clinica_atl.ui.screen
 
+
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
@@ -25,6 +26,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue // <--- SOLUCIÓN ERROR 'Type androidx.compose.runtime.State has no method getValue'
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
@@ -127,7 +129,7 @@ private fun MainActionCard(onBookAppointment: () -> Unit) {
         ) {
             Text(
                 text = "Reserva tu Hora",
-                color = MaterialTheme.colorScheme.onSecondary,
+                color = Color.White,
                 fontSize = 16.sp
             )
         }
