@@ -35,7 +35,7 @@ import com.example.app_clinica_atl.navigation.Route
 data class Seguro(
     val area: String,
     val nombre: String,
-    val descripcion: String,
+    val descripción: String,
     val imagen: Int
 )
 
@@ -44,8 +44,8 @@ fun SegurosScreen(navController: NavController) {
     val seguros = listOf(
         Seguro(
             "Salud",
-            "Seguro de Salud Basico",
-            "Plan economico con cobertura de consultas y medicamentos esenciales.",
+            "Seguro de Salud Básico",
+            "Plan económico con cobertura de consultas y medicamentos esenciales.",
             R.drawable.seguro_salud_2
         ),
         Seguro(
@@ -57,7 +57,7 @@ fun SegurosScreen(navController: NavController) {
         Seguro(
             "Salud",
             "Seguro de Salud Premium",
-            "Cobertura completa que incluye hospitalizacion y atencion de urgencia.",
+            "Cobertura completa que incluye hospitalización y atención de urgencia.",
             R.drawable.seguro_3
         ),
         Seguro(
@@ -69,7 +69,7 @@ fun SegurosScreen(navController: NavController) {
         Seguro(
             "Vida",
             "Seguro de Vida Individual",
-            "Proteccion pensada para quienes buscan un plan base y flexible.",
+            "Protección pensada para quienes buscan un plan base y flexible.",
             R.drawable.seguro_vida_2
         ),
         Seguro(
@@ -81,7 +81,7 @@ fun SegurosScreen(navController: NavController) {
         Seguro(
             "Vida",
             "Seguro de Vida Familiar",
-            "Protege a tu familia ante eventualidades y asegura estabilidad economica.",
+            "Protege a tu familia ante eventualidades y asegura estabilidad económica.",
             R.drawable.familia_feliz1
         ),
         Seguro(
@@ -93,7 +93,7 @@ fun SegurosScreen(navController: NavController) {
         Seguro(
             "Vida",
             "Seguro de Vida Senior",
-            "Cobertura enfocada en adultos mayores, con asistencia medica incluida.",
+            "Cobertura enfocada en adultos mayores, con asistencia médica incluida.",
             R.drawable.seguro_salud_3
         ),
         Seguro(
@@ -181,7 +181,7 @@ fun SegurosScreen(navController: NavController) {
                                 Spacer(modifier = Modifier.height(4.dp))
 
                                 Text(
-                                    text = seguro.descripcion,
+                                    text = seguro.descripción,
                                     fontSize = 14.sp,
                                     color = MaterialTheme.colorScheme.onBackground,
                                     textAlign = TextAlign.Start

@@ -141,9 +141,9 @@ fun AdminUserHistoriesScreen(
                         )
                         Spacer(modifier = Modifier.height(12.dp))
                         AdminInfoRow(label = "Nombre:", value = item.name)
-                        AdminInfoRow(label = "Direccion:", value = item.address)
-                        AdminInfoRow(label = "Numero de contacto:", value = item.contact)
-                        AdminInfoRow(label = "Correo electronico:", value = item.email)
+                        AdminInfoRow(label = "Dirección:", value = item.address)
+                        AdminInfoRow(label = "Número de contacto:", value = item.contact)
+                        AdminInfoRow(label = "Correo electrónico:", value = item.email)
                         Spacer(modifier = Modifier.height(12.dp))
                         Text(
                             text = "Historial medico",

@@ -149,7 +149,7 @@ private fun InsuranceSection(onInsuranceSelected: () -> Unit) {
         ),
         InsuranceHighlight(
             imageRes = R.drawable.seguro_salud_2,
-            title = "Seguro de Salud Basico"
+            title = "Seguro de Salud Básico"
         ),
         InsuranceHighlight(
             imageRes = R.drawable.seguro_salud_1,

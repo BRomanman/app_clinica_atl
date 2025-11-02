@@ -155,7 +155,7 @@ private fun AdminManageDoctorScreen(
             modifier = Modifier.fillMaxWidth()
         ) {
             Text(
-                text = "Informacion personal",
+                text = "Información personal",
                 style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold),
                 color = MaterialTheme.colorScheme.onPrimaryContainer,
                 modifier = Modifier.padding(horizontal = 16.dp, vertical = 12.dp)
@@ -194,7 +194,7 @@ private fun AdminManageDoctorScreen(
         OutlinedTextField(
             value = state.email,
             onValueChange = onEmailChange,
-            label = { Text("Correo electronico") },
+            label = { Text("Correo electrónico") },
             enabled = state.isDoctorLoaded,
             singleLine = true,
             modifier = Modifier.fillMaxWidth()
@@ -203,7 +203,7 @@ private fun AdminManageDoctorScreen(
         OutlinedTextField(
             value = state.contactNumber,
             onValueChange = onContactNumberChange,
-            label = { Text("Numero de contacto") },
+            label = { Text("Número de contacto") },
             enabled = state.isDoctorLoaded,
             singleLine = true,
             modifier = Modifier.fillMaxWidth()
@@ -212,7 +212,7 @@ private fun AdminManageDoctorScreen(
         OutlinedTextField(
             value = state.password,
             onValueChange = onPasswordChange,
-            label = { Text("Contrasena temporal") },
+            label = { Text("Contraseña temporal") },
             enabled = state.isDoctorLoaded,
             singleLine = true,
             modifier = Modifier.fillMaxWidth()
@@ -264,7 +264,7 @@ private fun AdminManageDoctorScreen(
         OutlinedTextField(
             value = state.address,
             onValueChange = onAddressChange,
-            label = { Text("Direccion consulta") },
+            label = { Text("Dirección consulta") },
             enabled = state.isDoctorLoaded,
             modifier = Modifier.fillMaxWidth()
         )

@@ -156,7 +156,7 @@ private fun LoginScreen(
                     OutlinedTextField(
                         value = email,
                         onValueChange = onEmailChange,
-                        label = { Text("Email institucional") },
+                        label = { Text("Correo") },
                         singleLine = true,
                         isError = emailError != null,
                         keyboardOptions = KeyboardOptions(

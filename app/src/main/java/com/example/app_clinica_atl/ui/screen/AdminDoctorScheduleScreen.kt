@@ -39,18 +39,18 @@ fun AdminDoctorScheduleScreen(
         listOf(
             AdminDoctorSchedule(
                 doctorName = "Dra. Ana Torres",
-                specialty = "Cardiologia",
-                schedules = listOf("Lunes 09:00 - 13:00", "Miercoles 14:00 - 18:00", "Viernes 09:00 - 12:00")
+                specialty = "Cardiología",
+                schedules = listOf("Lunes 09:00 - 13:00", "Miércoles 14:00 - 18:00", "Viernes 09:00 - 12:00")
             ),
             AdminDoctorSchedule(
                 doctorName = "Dr. Luis Martinez",
-                specialty = "Pediatria",
+                specialty = "Pediatría",
                 schedules = listOf("Martes 08:30 - 12:30", "Jueves 10:00 - 16:00")
             ),
             AdminDoctorSchedule(
                 doctorName = "Dra. Camila Ruiz",
-                specialty = "Dermatologia",
-                schedules = listOf("Lunes 15:00 - 19:00", "Sabado 09:00 - 13:00")
+                specialty = "Dermatología",
+                schedules = listOf("Lunes 15:00 - 19:00", "Sábado 09:00 - 13:00")
             )
         )
     }

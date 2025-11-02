@@ -131,7 +131,7 @@ fun DoctorProfileScreenVm(
         contract = ActivityResultContracts.RequestPermission()
     ) { isGranted ->
         if (isGranted) openCamera()
-        else Toast.makeText(context, "Permiso de camara denegado", Toast.LENGTH_SHORT).show()
+        else Toast.makeText(context, "Permiso de cámara denegado", Toast.LENGTH_SHORT).show()
     }
 
     val pickImageLauncher = rememberLauncherForActivityResult(

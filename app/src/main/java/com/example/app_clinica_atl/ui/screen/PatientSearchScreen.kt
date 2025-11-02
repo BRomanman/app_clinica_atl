@@ -112,9 +112,9 @@ private fun PatientInfoCard(patient: Patient) {
 
             // --- CAMPOS DE DATOS ---
             InfoRow("Nombre:", patient.nombre)
-            InfoRow("direccion:", patient.direccion)
-            InfoRow("numero de contacto:", patient.numeroContacto)
-            InfoRow("correo electronico:", patient.correo)
+            InfoRow("Dirección:", patient.direccion)
+            InfoRow("Número de contacto:", patient.numeroContacto)
+            InfoRow("Correo electrónico:", patient.correo)
 
             HorizontalDivider(
                 modifier = Modifier.padding(vertical = 8.dp),
@@ -123,7 +123,7 @@ private fun PatientInfoCard(patient: Patient) {
 
             // --- HISTORIAL MÉDICO (Estilo de la foto) ---
             Text(
-                text = "historial medico",
+                text = "Historial médico",
                 style = MaterialTheme.typography.titleMedium,
                 color = Color.Black.copy(alpha = 0.8f),
                 fontWeight = FontWeight.SemiBold

@@ -70,8 +70,8 @@ fun AdminMenuScreen(
             verticalArrangement = Arrangement.spacedBy(24.dp)
         ) {
             AdminMenuButton(text = "Ver Horarios Doctor", onClick = onViewDoctorSchedules)
-            AdminMenuButton(text = "Busqueda Usuarios", onClick = onViewUserHistories)
-            AdminMenuButton(text = "Busqueda Doctores", onClick = onViewDoctorSearch)
+            AdminMenuButton(text = "Búsqueda de Usuarios", onClick = onViewUserHistories)
+            AdminMenuButton(text = "Búsqueda de Doctores", onClick = onViewDoctorSearch)
             AdminMenuButton(text = "Administrar Doctores", onClick = onManageDoctors)
             AdminMenuButton(text = "Agregar Doctor", onClick = onAddDoctor)
         }
