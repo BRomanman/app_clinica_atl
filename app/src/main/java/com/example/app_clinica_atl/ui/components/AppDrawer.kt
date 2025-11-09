@@ -1,6 +1,7 @@
 package com.example.app_clinica_atl.ui.components
 
 import androidx.compose.material.icons.Icons
+// import androidx.compose.material.icons.filled.AdminPanelSettings // <-- 1. ELIMINADO
 import androidx.compose.material.icons.filled.Book
 import androidx.compose.material.icons.filled.Home
 import androidx.compose.material.icons.filled.Lock
@@ -32,7 +33,7 @@ fun AppDrawer(
         items.forEach { item ->
             NavigationDrawerItem(
                 label = { Text(item.label) },
-                selected = false,
+                selected = false, // 'selected' está quemado en false, lo cual es correcto para este menú
                 onClick = item.onClick,
                 icon = { Icon(item.icon, contentDescription = item.label) },
                 modifier = Modifier,
@@ -47,12 +48,11 @@ fun defaultDrawerItems(
     onHome: () -> Unit,
     onInsurance: () -> Unit,
     onBookAppointment: () -> Unit,
-    onProfile: () -> Unit,
-
+    onProfile: () -> Unit
+    // onAdminBypass: () -> Unit // <-- 2. ELIMINADO
 ): List<DrawerItem> = listOf(
     DrawerItem("Home", Icons.Filled.Home, onHome),
     DrawerItem("Seguros", Icons.Filled.Lock, onInsurance),
     DrawerItem("Reservar Hora", Icons.Filled.Book, onBookAppointment),
     DrawerItem("Perfil", Icons.Filled.Person, onProfile)
-
 )

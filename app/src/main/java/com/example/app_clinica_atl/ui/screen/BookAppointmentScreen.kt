@@ -175,7 +175,9 @@ private fun BookAppointmentScreen(
 
     // --- Contenido Principal ---
     Column(
-        modifier = modifier.fillMaxSize().padding(16.dp),
+        modifier = modifier
+            .fillMaxSize()
+            .padding(16.dp),
         verticalArrangement = Arrangement.spacedBy(16.dp)
     ) {
         Text(stringResource(id = R.string.book_appointment_title), style = MaterialTheme.typography.headlineSmall, fontWeight = FontWeight.Bold)
@@ -187,7 +189,9 @@ private fun BookAppointmentScreen(
                 value = state.selectedDepartment.orEmpty(), onValueChange = {}, readOnly = true,
                 label = { Text(stringResource(id = R.string.book_appointment_department)) },
                 trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded = state.departmentExpanded) },
-                modifier = Modifier.fillMaxWidth().menuAnchor()
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .menuAnchor()
             )
             ExposedDropdownMenu(expanded = state.departmentExpanded, onDismissRequest = { onDepartmentExpandedChange(false) }) {
                 state.departments.forEach { department ->
@@ -204,7 +208,9 @@ private fun BookAppointmentScreen(
                 leadingIcon = { Icon(Icons.Default.Person, null) },
                 trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded = state.doctorExpanded) },
                 enabled = state.doctors.isNotEmpty(),
-                modifier = Modifier.fillMaxWidth().menuAnchor()
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .menuAnchor()
             )
             ExposedDropdownMenu(expanded = state.doctorExpanded, onDismissRequest = { onDoctorExpandedChange(false) }) {
                 state.doctors.forEach { doctor ->
@@ -212,7 +218,20 @@ private fun BookAppointmentScreen(
                 }
             }
         }
-        state.selectedDoctor?.let { Text(stringResource(id = R.string.book_appointment_doctor_since, it.since), style = MaterialTheme.typography.labelMedium) }
+
+        // --- ARREGLO DEL CRASH ---
+        // El error ocurría en la siguiente línea al intentar formatear un string
+        // que probablemente no tenía un placeholder (%d).
+        state.selectedDoctor?.let {
+            // 1. Leemos el string (ej: "Doctor desde")
+            val sinceText = stringResource(id = R.string.book_appointment_doctor_since)
+            // 2. Construimos el texto manualmente para evitar el crash
+            Text(
+                text = "$sinceText ${it.since}",
+                style = MaterialTheme.typography.labelMedium
+            )
+        }
+        // --- FIN DEL ARREGLO ---
 
 
 
@@ -281,7 +300,9 @@ private fun BookAppointmentScreen(
                 leadingIcon = { Icon(Icons.Default.AccessTime, null) },
                 trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded = state.timeExpanded && timeFieldEnabled) },
                 enabled = timeFieldEnabled, singleLine = true,
-                modifier = Modifier.fillMaxWidth().menuAnchor()
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .menuAnchor()
             )
             ExposedDropdownMenu(expanded = state.timeExpanded && timeFieldEnabled, onDismissRequest = { onTimeExpandedChange(false) }) {
                 state.availableTimes.forEach { time ->

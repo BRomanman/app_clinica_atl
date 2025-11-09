@@ -1,6 +1,7 @@
 package com.example.app_clinica_atl.navigation
 
 import android.os.Build
+import android.widget.Toast
 import androidx.annotation.RequiresApi
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.DrawerValue
@@ -8,11 +9,14 @@ import androidx.compose.material3.ModalNavigationDrawer
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.rememberDrawerState
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalContext
 import androidx.navigation.NavHostController
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
+import androidx.navigation.compose.currentBackStackEntryAsState
 import com.example.app_clinica_atl.ui.components.AppDrawer
 import com.example.app_clinica_atl.ui.components.AppTopBar
 import com.example.app_clinica_atl.ui.components.defaultDrawerItems
@@ -29,7 +33,9 @@ import com.example.app_clinica_atl.ui.screen.DoctorProfileScreenVm
 import com.example.app_clinica_atl.ui.screen.FormularioSeguroScreen
 import com.example.app_clinica_atl.ui.screen.HomeScreenVm
 import com.example.app_clinica_atl.ui.screen.LoginScreenVm
-import com.example.app_clinica_atl.ui.screen.PatientProfileScreen
+// --- ¡CAMBIO 1: IMPORTAR LA NUEVA PANTALLA "INTELIGENTE"! ---
+import com.example.app_clinica_atl.ui.screen.PatientProfileScreenVm
+// --- FIN CAMBIO 1 ---
 import com.example.app_clinica_atl.ui.screen.PatientSearchScreenVm
 import com.example.app_clinica_atl.ui.screen.RegisterScreenVm
 import com.example.app_clinica_atl.ui.screen.SegurosScreen
@@ -52,8 +58,20 @@ fun AppNavGraph(
     doctorProfileViewModel: DoctorProfileViewModel,
     adminManageDoctorViewModel: AdminManageDoctorViewModel
 ) {
+    val context = LocalContext.current.applicationContext
     val drawerState = rememberDrawerState(initialValue = DrawerValue.Closed)
     val scope = rememberCoroutineScope()
+
+    // Lógica para ocultar la barra superior y el menú en Login/Register
+    val navBackStackEntry by navController.currentBackStackEntryAsState()
+    val currentRoute = navBackStackEntry?.destination?.route
+
+    val showTopBarAndDrawer = when (currentRoute) {
+        Route.Login.path -> false
+        Route.Register.path -> false
+        else -> true
+    }
+
 
     // Rutas Paciente
     val goHome: () -> Unit = { navController.navigate(Route.Home.path) { launchSingleTop = true } }
@@ -81,10 +99,9 @@ fun AppNavGraph(
     val goAdminAddDoctor: () -> Unit = { navController.navigate(Route.AdminAddDoctor.path) { launchSingleTop = true } }
 
 
-    // *** FUNCIÓN DE LOGOUT CORREGIDA (Usa scope.launch para esperar la limpieza del DataStore) ***
     val logoutAndNavigate: () -> Unit = {
         scope.launch {
-            authViewModel.logout() // <-- Llama a la función suspendida
+            authViewModel.logout()
             scope.launch { drawerState.close() }
             navController.navigate(Route.Login.path) {
                 popUpTo(navController.graph.startDestinationId) { inclusive = true }
@@ -95,27 +112,31 @@ fun AppNavGraph(
 
     ModalNavigationDrawer(
         drawerState = drawerState,
+        // Desactiva el gesto de deslizar si no mostramos el drawer
+        gesturesEnabled = showTopBarAndDrawer,
         drawerContent = {
             AppDrawer(
-                currentRoute = null,
+                currentRoute = currentRoute,
                 items = defaultDrawerItems(
                     onHome = { scope.launch { drawerState.close() }; goHome() },
                     onInsurance = { scope.launch { drawerState.close() }; goInsurance() },
                     onBookAppointment = { scope.launch { drawerState.close() }; goBookAppointment() },
                     onProfile = { scope.launch { drawerState.close() }; goProfile() }
-
                 )
             )
         }
     ) {
         Scaffold(
             topBar = {
-                AppTopBar(onOpenDrawer = { scope.launch { drawerState.open() } })
+                // Solo muestra la barra superior si showTopBarAndDrawer es true
+                if (showTopBarAndDrawer) {
+                    AppTopBar(onOpenDrawer = { scope.launch { drawerState.open() } })
+                }
             }
         ) { innerPadding ->
             NavHost(
                 navController = navController,
-                startDestination = Route.Login.path, // el inicio de la app es el login
+                startDestination = Route.Login.path,
                 modifier = Modifier.padding(innerPadding)
             ) {
                 composable(Route.Home.path) {
@@ -129,6 +150,10 @@ fun AppNavGraph(
                     LoginScreenVm(
                         vm = authViewModel,
                         onNavigateAfterLogin = { role ->
+
+                            // (Este es el Toast de login que pediste)
+                            Toast.makeText(context, "Inicio de sesión exitoso", Toast.LENGTH_SHORT).show()
+
                             val targetRoute = when (role) {
                                 1L -> Route.Home.path
                                 2L -> Route.DoctorMenu.path
@@ -159,11 +184,14 @@ fun AppNavGraph(
                 composable(Route.InsuranceForm.path) {
                     FormularioSeguroScreen(navController = navController)
                 }
+                // --- ¡CAMBIO 2: PASAR EL AUTHVIEWMODEL AL PERFIL! ---
                 composable(Route.Profile.path) {
-                    PatientProfileScreen(
+                    PatientProfileScreenVm( // <-- Llamamos a la nueva pantalla "inteligente"
+                        vm = authViewModel, // <-- Le pasamos el cerebro
                         onLogout = logoutAndNavigate
                     )
                 }
+                // --- FIN CAMBIO 2 ---
                 composable(Route.PatientSearch.path) {
                     PatientSearchScreenVm(vm = patientViewModel)
                 }

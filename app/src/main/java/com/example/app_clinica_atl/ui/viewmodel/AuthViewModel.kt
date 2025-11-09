@@ -9,6 +9,7 @@ import com.example.app_clinica_atl.domain.validation.*
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 
@@ -64,6 +65,12 @@ class AuthViewModel(
     private val _userDisplayName = MutableStateFlow("Bienvenido/a a la Clínica")
     val userDisplayName: StateFlow<String> = _userDisplayName
 
+    // --- ¡CAMBIO 1: AÑADIR ESTADO PARA EL USUARIO ACTUAL! ---
+    // Este Flow "recordará" al usuario que inició sesión.
+    private val _currentUserData = MutableStateFlow<UserEntity?>(null)
+    val currentUserData: StateFlow<UserEntity?> = _currentUserData.asStateFlow()
+    // --- FIN CAMBIO 1 ---
+
 
     // ----------------- LOGIN: Handlers -----------------
     fun onLoginEmailChange(value: String) {
@@ -81,6 +88,8 @@ class AuthViewModel(
         _login.update { it.copy(canSubmit = can) }
     }
 
+    // recomputeRegisterCanSubmit ahora SOLO habilita el botón,
+    // la validación final se hace en submitRegister
     private fun recomputeRegisterCanSubmit() {
         val s = _register.value
 
@@ -93,7 +102,7 @@ class AuthViewModel(
                 s.fecha_nacimiento.isNotBlank() && s.email.isNotBlank() &&
                 s.phone.isNotBlank() && s.pass.isNotBlank() && s.confirm.isNotBlank()
 
-        _register.update { it.copy(canSubmit = noErrors && filled) }
+        _register.update { it.copy(canSubmit = noErrors && filled && s.fecha_nacimiento.length == 10) }
     }
 
     fun submitLogin() {
@@ -109,6 +118,10 @@ class AuthViewModel(
                 if (user != null) {
                     userPreferences.setLoggedIn(true)
                     _userDisplayName.value = "Hola, ${user.nombre} (${if(user.id_rol == 1L) "Paciente" else if(user.id_rol == 2L) "Doctor" else "Admin"})."
+
+                    // --- ¡CAMBIO 2: GUARDAR EL USUARIO EN EL NUEVO ESTADO! ---
+                    _currentUserData.value = user
+                    // --- FIN CAMBIO 2 ---
 
                     it.copy(
                         isSubmitting = false,
@@ -132,19 +145,18 @@ class AuthViewModel(
         _login.update { it.copy(success = false, errorMsg = null, loggedUser = null) }
     }
 
-    // *** CAMBIO CRÍTICO: Función suspendida para esperar el DataStore ***
     suspend fun logout() {
-        // 1. Limpiar estado local
         _login.value = LoginUiState()
         _register.value = RegisterUiState()
         _userDisplayName.value = "Bienvenido/a a la Clínica"
 
-        // 2. Limpiar DataStore (EJECUCIÓN DIRECTA, NO EN UN NUEVO LAUNCH)
-        userPreferences.setLoggedIn(false) // <-- ESTO AHORA ES SINCRÓNICO CON LA LLAMADA EXTERNA
-    }
-    // *************************************
+        // --- ¡CAMBIO 3: LIMPIAR EL USUARIO AL CERRAR SESIÓN! ---
+        _currentUserData.value = null
+        // --- FIN CAMBIO 3 ---
 
-    // ... (el resto de funciones de Registro se mantienen) ...
+        userPreferences.setLoggedIn(false)
+    }
+
     fun onNombreChange(value: String) {
         val filtered = value.filter { it.isLetter() || it.isWhitespace() }
         _register.update {
@@ -159,12 +171,43 @@ class AuthViewModel(
         }
         recomputeRegisterCanSubmit()
     }
+
     fun onFechaNacimientoChange(value: String) {
+        val digits = value.filter(Char::isDigit).take(8)
+
+        val formatted = buildString {
+            for ((index, char) in digits.withIndex()) {
+                append(char)
+                if ((index == 1 || index == 3)) {
+                    if (digits.length > index + 1) {
+                        append('-')
+                    }
+                }
+            }
+        }
+
         _register.update {
-            it.copy(fecha_nacimiento = value, fechaNacimientoError = validateFechaNacimiento(value))
+            var error: String?
+
+            if (formatted.isBlank()) {
+                error = "La fecha es obligatoria"
+            } else if (formatted.length < 10) {
+                error = "Formato debe ser DD-MM-YYYY"
+            } else {
+                error = validateFechaNacimiento(formatted)
+                if (error == null) {
+                    error = validateEdadMinima(formatted, 18)
+                }
+            }
+
+            it.copy(
+                fecha_nacimiento = formatted,
+                fechaNacimientoError = error
+            )
         }
         recomputeRegisterCanSubmit()
     }
+
     fun onRegisterEmailChange(value: String) {
         _register.update { it.copy(email = value, emailError = validateEmail(value)) }
         recomputeRegisterCanSubmit()
@@ -176,8 +219,9 @@ class AuthViewModel(
         }
         recomputeRegisterCanSubmit()
     }
+
     fun onRegisterPassChange(value: String) {
-        _register.update { it.copy(pass = value, passError = validateStrongPassword(value)) }
+        _register.update { it.copy(pass = value, passError = validateSimplePassword(value)) }
         _register.update { it.copy(confirmError = validateConfirm(it.pass, it.confirm)) }
         recomputeRegisterCanSubmit()
     }
@@ -186,9 +230,45 @@ class AuthViewModel(
         recomputeRegisterCanSubmit()
     }
 
+    // --- ¡¡¡ESTA ES LA FUNCIÓN CORREGIDA!!! ---
     fun submitRegister() {
+        // Ya no confiamos en 'canSubmit'. Volvemos a validar todo AHORA.
         val s = _register.value
-        if (!s.canSubmit || s.isSubmitting) return
+
+        // 1. Validamos todos los campos uno por uno
+        val nombreError = validateNamePart(s.nombre.trim(), "El nombre")
+        val apellidoError = validateNamePart(s.apellido.trim(), "El apellido")
+        val fechaError = if (s.fecha_nacimiento.length < 10) "Formato debe ser DD-MM-YYYY"
+        else validateFechaNacimiento(s.fecha_nacimiento) ?: validateEdadMinima(s.fecha_nacimiento, 18)
+        val emailError = validateEmail(s.email.trim())
+        val phoneError = validatePhoneDigitsOnly(s.phone.trim())
+        val passError = validateSimplePassword(s.pass)
+        val confirmError = validateConfirm(s.pass, s.confirm)
+
+        // 2. Creamos una lista de todos los errores
+        val errors = listOf(
+            nombreError, apellidoError, fechaError, emailError,
+            phoneError, passError, confirmError
+        )
+        val hasError = errors.any { it != null }
+
+        // 3. Si hay CUALQUIER error, actualizamos la UI con todos los errores y detenemos.
+        if (hasError) {
+            _register.update {
+                it.copy(
+                    nombreError = nombreError,
+                    apellidoError = apellidoError,
+                    fechaNacimientoError = fechaError,
+                    emailError = emailError,
+                    phoneError = phoneError,
+                    passError = passError,
+                    confirmError = confirmError
+                )
+            }
+            return // <-- DETENEMOS EL REGISTRO
+        }
+
+        // 4. Si llegamos aquí, NO hay errores. Procedemos a registrar.
         viewModelScope.launch {
             _register.update { it.copy(isSubmitting = true, errorMsg = null, success = false) }
             delay(700)
@@ -212,6 +292,7 @@ class AuthViewModel(
             }
         }
     }
+    // --- FIN DE LA FUNCIÓN CORREGIDA ---
 
     fun clearRegisterResult() {
         _register.update { it.copy(success = false, errorMsg = null) }

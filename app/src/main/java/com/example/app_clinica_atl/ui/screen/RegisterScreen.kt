@@ -1,5 +1,6 @@
 package com.example.app_clinica_atl.ui.screen
 
+import android.widget.Toast
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
@@ -31,6 +32,7 @@ import androidx.compose.material3.OutlinedTextFieldDefaults
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -38,6 +40,7 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Brush
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.input.PasswordVisualTransformation
@@ -56,11 +59,22 @@ fun RegisterScreenVm(
     onGoLogin: () -> Unit
 ) {
     val state by vm.register.collectAsStateWithLifecycle()
+    val context = LocalContext.current // <-- OBTENER EL CONTEXTO
 
-    if (state.success) {
-        vm.clearRegisterResult()
-        onRegisteredNavigateLogin()
+    // --- LÓGICA DE FEEDBACK (CON TOAST) ---
+    // Usamos LaunchedEffect para reaccionar al cambio de 'state.success'
+    LaunchedEffect(state.success) {
+        if (state.success) {
+            // Si el registro fue exitoso:
+            // 1. Muestra el Toast de éxito
+            Toast.makeText(context, "¡Cuenta creada! Inicia sesión.", Toast.LENGTH_LONG).show()
+            // 2. Limpia el estado en el ViewModel
+            vm.clearRegisterResult()
+            // 3. Navega de vuelta al Login
+            onRegisteredNavigateLogin()
+        }
     }
+    // --- FIN DEL CAMBIO ---
 
     RegisterScreen(
         nombre = state.nombre,
@@ -237,7 +251,8 @@ private fun RegisterScreen(
                         placeholder = { Text("DD-MM-YYYY") },
                         singleLine = true,
                         isError = fechaNacimientoError != null,
-                        keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Text),
+                        // --- CAMBIO: TECLADO NUMÉRICO ---
+                        keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
                         modifier = Modifier.fillMaxWidth(),
                         colors = textFieldColors
                     )

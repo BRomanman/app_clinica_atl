@@ -43,10 +43,12 @@ import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.text.input.VisualTransformation
 import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.example.app_clinica_atl.R
+import com.example.app_clinica_atl.ui.theme.AppClinicaATLTheme
 import com.example.app_clinica_atl.ui.viewmodel.AuthViewModel
 
 @Composable
@@ -252,5 +254,25 @@ private fun LoginScreen(
                 }
             }
         }
+    }
+}
+
+@Preview(showBackground = true)
+@Composable
+fun LoginScreenPreview() {
+    AppClinicaATLTheme {
+        LoginScreen(
+            email = "test@example.com",
+            pass = "password",
+            emailError = null,
+            passError = null,
+            canSubmit = true,
+            isSubmitting = false,
+            errorMsg = null,
+            onEmailChange = {},
+            onPassChange = {},
+            onSubmit = {},
+            onGoRegister = {}
+        )
     }
 }
