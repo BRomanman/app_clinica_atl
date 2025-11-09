@@ -6,9 +6,14 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.example.app_clinica_atl.data.local.storage.UserPreferences
 import com.example.app_clinica_atl.data.local.user.UserEntity
+// --- 1. IMPORTAR LA ENTIDAD DE CITAS ---
+import com.example.app_clinica_atl.data.local.appointment.AppointmentEntity
 import com.example.app_clinica_atl.data.repository.UserRepository
 // --- 1. IMPORTAR LA DEPENDENCIA QUE FALTA ---
 import com.example.app_clinica_atl.data.repository.AppointmentRepository
+// --- 1. IMPORTAR DoctorRepository Y DoctorInfo ---
+import com.example.app_clinica_atl.data.model.DoctorInfo
+import com.example.app_clinica_atl.data.repository.DoctorRepository
 import com.example.app_clinica_atl.domain.validation.*
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -58,8 +63,9 @@ data class RegisterUiState(
 class AuthViewModel(
     private val repository: UserRepository,
     private val userPreferences: UserPreferences,
-    // --- 2. AÑADIR EL REPOSITORIO DE CITAS AL CONSTRUCTOR ---
-    private val appointmentRepo: AppointmentRepository
+    private val appointmentRepo: AppointmentRepository,
+    // --- 2. AÑADIR DOCTORREPOSITORY AL CONSTRUCTOR ---
+    private val doctorRepo: DoctorRepository
 ) : ViewModel() {
 
     private val _login = MutableStateFlow(LoginUiState())
@@ -76,6 +82,55 @@ class AuthViewModel(
     private val _currentUserData = MutableStateFlow<UserEntity?>(null)
     val currentUserData: StateFlow<UserEntity?> = _currentUserData.asStateFlow()
     // --- FIN CAMBIO 1 ---
+
+    // --- 2. NUEVO ESTADO PARA LAS CITAS DEL USUARIO ---
+    private val _userAppointments = MutableStateFlow<List<AppointmentEntity>>(emptyList())
+    val userAppointments: StateFlow<List<AppointmentEntity>> = _userAppointments.asStateFlow()
+    // --- FIN 2 ---
+
+    // --- 3. NUEVOS ESTADOS PARA EL PERFIL DEL DOCTOR ---
+    private val _currentDoctorInfo = MutableStateFlow<DoctorInfo?>(null)
+    val currentDoctorInfo: StateFlow<DoctorInfo?> = _currentDoctorInfo.asStateFlow()
+
+    private val _isSavingProfile = MutableStateFlow(false)
+    val isSavingProfile: StateFlow<Boolean> = _isSavingProfile.asStateFlow()
+
+    private val _saveProfileSuccess = MutableStateFlow(false)
+    val saveProfileSuccess: StateFlow<Boolean> = _saveProfileSuccess.asStateFlow()
+    // --- FIN 3 ---
+
+
+    // --- 4. MODIFICAR EL INIT PARA CARGAR DOCTOR O PACIENTE ---
+    init {
+        viewModelScope.launch {
+            repository.getLoggedInUser().collect { user ->
+                _currentUserData.value = user
+
+                // Limpiar estados anteriores
+                _userAppointments.value = emptyList()
+                _currentDoctorInfo.value = null
+
+                if (user != null) {
+                    // Cargar datos según el rol
+                    _userDisplayName.value = "Hola, ${user.nombre} (${if(user.id_rol == 1L) "Paciente" else if(user.id_rol == 2L) "Doctor" else "Admin"})."
+
+                    if (user.id_rol == 1L) { // Rol Paciente
+                        appointmentRepo.getAppointmentsForUser(user.id).collect { appointments ->
+                            _userAppointments.value = appointments
+                        }
+                    } else if (user.id_rol == 2L) { // Rol Doctor
+                        // ¡Aquí cargamos el perfil del doctor!
+                        _currentDoctorInfo.value = doctorRepo.getDoctorByEmail(user.email)
+                    }
+
+                } else {
+                    // No hay usuario, limpiar todo
+                    _userDisplayName.value = "Bienvenido/a a la Clínica"
+                }
+            }
+        }
+    }
+    // --- FIN 4 ---
 
 
     // ----------------- LOGIN: Handlers -----------------
@@ -123,11 +178,11 @@ class AuthViewModel(
             _login.update {
                 if (user != null) {
                     userPreferences.setLoggedIn(true)
-                    _userDisplayName.value = "Hola, ${user.nombre} (${if(user.id_rol == 1L) "Paciente" else if(user.id_rol == 2L) "Doctor" else "Admin"})."
-
-                    // --- ¡CAMBIO 2: GUARDAR EL USUARIO EN EL NUEVO ESTADO! ---
-                    _currentUserData.value = user
-                    // --- FIN CAMBIO 2 ---
+                    // --- 4. QUITAR LÓGICA DE AQUÍ ---
+                    // (El 'init' collector se encargará de esto automáticamente)
+                    // _userDisplayName.value = "Hola, ${user.nombre} (${if(user.id_rol == 1L) "Paciente" else if(user.id_rol == 2L) "Doctor" else "Admin"})."
+                    // _currentUserData.value = user
+                    // --- FIN 4 ---
 
                     it.copy(
                         isSubmitting = false,
@@ -154,14 +209,59 @@ class AuthViewModel(
     suspend fun logout() {
         _login.value = LoginUiState()
         _register.value = RegisterUiState()
-        _userDisplayName.value = "Bienvenido/a a la Clínica"
-
-        // --- ¡CAMBIO 3: LIMPIAR EL USUARIO AL CERRAR SESIÓN! ---
-        _currentUserData.value = null
-        // --- FIN CAMBIO 3 ---
-
+        // --- 5. SIMPLIFICAR LOGOUT ---
+        // (El 'init' collector se encargará de limpiar los states
+        //  cuando el 'setLoggedIn' dispare el cambio en el Flow)
         userPreferences.setLoggedIn(false)
+        // --- FIN 5 ---
     }
+
+    // --- 5. AÑADIR FUNCIÓN PARA GUARDAR PERFIL DE DOCTOR ---
+    fun saveDoctorProfile(
+        newContactNumber: String,
+        newAddress: String,
+        newEmail: String
+    ) {
+        if (_isSavingProfile.value) return
+        val currentDoctor = _currentDoctorInfo.value ?: return
+
+        viewModelScope.launch {
+            _isSavingProfile.value = true
+            _saveProfileSuccess.value = false
+
+            // Simulación de guardado (el repo es mockeado)
+            delay(1500)
+
+            val updatedDoctor = currentDoctor.copy(
+                contactNumber = newContactNumber,
+                address = newAddress,
+                email = newEmail
+            )
+
+            // Aquí llamarías a repository.updateDoctor(updatedDoctor)
+            // Como nuestro repo es mockeado, solo actualizamos el estado local
+            _currentDoctorInfo.value = updatedDoctor
+
+            _isSavingProfile.value = false
+            _saveProfileSuccess.value = true
+        }
+    }
+
+    // Función para limpiar el estado de "Guardado!"
+    fun clearSaveDoctorProfileStatus() {
+        _saveProfileSuccess.value = false
+    }
+    // --- FIN 5 ---
+
+
+    // --- 6. FUNCIÓN DE CANCELAR CITA (ya la teníamos) ---
+    fun cancelAppointment(appointmentId: Long) {
+        viewModelScope.launch {
+            appointmentRepo.deleteAppointment(appointmentId)
+            // La lista se actualizará sola gracias al Flow del 'init'
+        }
+    }
+    // --- FIN 6 ---
 
     fun onNombreChange(value: String) {
         val filtered = value.filter { it.isLetter() || it.isWhitespace() }
@@ -238,7 +338,6 @@ class AuthViewModel(
     }
 
     // --- ¡¡¡ESTA ES LA FUNCIÓN CORREGIDA!!! ---
-    @RequiresApi(Build.VERSION_CODES.O)
     fun submitRegister() {
         // Ya no confiamos en 'canSubmit'. Volvemos a validar todo AHORA.
         val s = _register.value

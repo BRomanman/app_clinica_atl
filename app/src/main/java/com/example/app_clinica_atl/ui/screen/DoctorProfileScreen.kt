@@ -49,6 +49,9 @@ import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
+// --- 1. IMPORTAR collectAsStateWithLifecycle ---
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -72,7 +75,8 @@ import coil.compose.AsyncImage
 import coil.request.ImageRequest
 import com.example.app_clinica_atl.R
 import com.example.app_clinica_atl.data.model.DoctorInfo
-import com.example.app_clinica_atl.ui.viewmodel.DoctorProfileViewModel
+// --- 2. CAMBIAR EL IMPORT DEL VIEWMODEL ---
+import com.example.app_clinica_atl.ui.viewmodel.AuthViewModel
 import java.io.File
 import java.text.NumberFormat
 import java.text.SimpleDateFormat
@@ -94,28 +98,45 @@ private fun getImageUriFile(context: Context, file: File): Uri {
 // --- PANTALLA PRINCIPAL (VM) ---
 @Composable
 fun DoctorProfileScreenVm(
-    vm: DoctorProfileViewModel,
+    // --- 3. CAMBIAR EL VIEWMODEL DE DoctorProfileViewModel A AuthViewModel ---
+    vm: AuthViewModel,
     onLogout: () -> Unit = {}
 ) {
-    val uiState by vm.uiState.collectAsState()
+    // --- 4. OBTENER LOS DATOS DESDE AUTHVIEWMODEL ---
+    val doctorInfo by vm.currentDoctorInfo.collectAsStateWithLifecycle()
+    val isSaving by vm.isSavingProfile.collectAsStateWithLifecycle()
+    val saveSuccess by vm.saveProfileSuccess.collectAsStateWithLifecycle()
+    // --- FIN 4 ---
+
     val context = LocalContext.current
     val headerColor = MaterialTheme.colorScheme.primary
 
+    // --- 5. ESTADOS LOCALES PARA LA FOTO (SE MANTIENEN) ---
+    var photoUriString by remember(doctorInfo) { mutableStateOf<String?>("") } // (Podrías guardar esto en el DoctorInfo si quisieras)
     var pendingCaptureUri by remember { mutableStateOf<Uri?>(null) }
     var showPictureSourceDialog by remember { mutableStateOf(false) }
 
-    // Mostrar mensaje de éxito al guardar
-    if (uiState.saveSuccess) {
-        Toast.makeText(context, "Perfil actualizado con éxito!", Toast.LENGTH_SHORT).show()
+    // --- 6. ESTADOS LOCALES PARA LOS CAMPOS EDITABLES ---
+    // (Se inicializan cuando doctorInfo cambia)
+    var contactNumber by remember(doctorInfo) { mutableStateOf(doctorInfo?.contactNumber ?: "") }
+    var address by remember(doctorInfo) { mutableStateOf(doctorInfo?.address ?: "") }
+    var email by remember(doctorInfo) { mutableStateOf(doctorInfo?.email ?: "") }
+    // --- FIN 6 ---
+
+    // Mostrar mensaje de éxito al guardar y limpiar estado
+    LaunchedEffect(saveSuccess) {
+        if (saveSuccess) {
+            Toast.makeText(context, "Perfil actualizado con éxito!", Toast.LENGTH_SHORT).show()
+            vm.clearSaveDoctorProfileStatus()
+        }
     }
 
-
-    // --- Launchers para Cámara y Galería ---
+    // --- Launchers para Cámara y Galería (MODIFICADO para usar el estado local) ---
     val takePictureLauncher = rememberLauncherForActivityResult(
         contract = ActivityResultContracts.TakePicture()
     ) { success ->
         if (success) {
-            vm.updatePhotoUri(pendingCaptureUri?.toString())
+            photoUriString = pendingCaptureUri?.toString() // <-- Actualiza estado local
             Toast.makeText(context, "Foto capturada", Toast.LENGTH_SHORT).show()
         } else { pendingCaptureUri = null }
     }
@@ -137,17 +158,22 @@ fun DoctorProfileScreenVm(
     val pickImageLauncher = rememberLauncherForActivityResult(
         contract = ActivityResultContracts.GetContent()
     ) { uri: Uri? ->
-        if (uri != null) vm.updatePhotoUri(uri.toString())
-        else Toast.makeText(context, "Selección cancelada", Toast.LENGTH_SHORT).show()
+        if (uri != null) {
+            photoUriString = uri.toString() // <-- Actualiza estado local
+        } else {
+            Toast.makeText(context, "Selección cancelada", Toast.LENGTH_SHORT).show()
+        }
     }
 
     Scaffold { padding ->
         // --- UI ---
-        if (uiState.isLoading) {
+        // --- 7. USAR doctorInfo PARA VERIFICAR LA CARGA ---
+        if (doctorInfo == null) {
             Box(modifier = Modifier
                 .fillMaxSize()
                 .padding(padding), contentAlignment = Alignment.Center) {
                 CircularProgressIndicator(color = headerColor)
+                Text(modifier = Modifier.padding(top = 80.dp), text = "Cargando perfil del doctor...")
             }
         } else {
             Column(
@@ -161,35 +187,47 @@ fun DoctorProfileScreenVm(
             ) {
                 // 1. TARJETA PRINCIPAL DEL DOCTOR
                 DoctorInfoCard(
-                    name = uiState.doctorInfo.name,
-                    specialty = uiState.doctorInfo.specialty,
-                    photoUriString = uiState.photoUriString,
+                    name = doctorInfo!!.name,
+                    specialty = doctorInfo!!.specialty,
+                    photoUriString = photoUriString, // <-- Usa estado local
                     headerColor = headerColor,
                     onEditPhotoClick = { showPictureSourceDialog = true }
                 )
 
-                // 2. MÉTRICAS DE DESEMPEÑO
+                // 2. MÉTRICAS DE DESEMPEÑO (Usando datos fijos por ahora)
                 DoctorMetricsSection(
-                    appointmentsCompleted = uiState.appointmentsCompleted,
-                    newPatientsThisMonth = uiState.newPatientsThisMonth
+                    appointmentsCompleted = 42, // (Estos siguen fijos, necesitarían repo de citas)
+                    newPatientsThisMonth = 8    // (Estos siguen fijos)
                 )
 
                 // 3. INFORMACIÓN PROFESIONAL Y CONTACTO
                 DoctorDetails(
-                    info = uiState.doctorInfo,
-                    onContactNumberChange = vm::updateContactNumber,
-                    onAddressChange = vm::updateAddress,
-                    onEmailChange = vm::updateEmail
+                    info = doctorInfo!!,
+                    // --- 8. CONECTAR CAMPOS EDITABLES AL ESTADO LOCAL ---
+                    contactNumber = contactNumber,
+                    address = address,
+                    email = email,
+                    onContactNumberChange = { contactNumber = it },
+                    onAddressChange = { address = it },
+                    onEmailChange = { email = it }
+                    // --- FIN 8 ---
                 )
 
                 // BOTÓN GUARDAR CAMBIOS (Conectado y con estados)
                 Button(
-                    onClick = vm::saveProfile, // <-- Conexión al VM
-                    enabled = !uiState.isSaving,
+                    // --- 9. LLAMAR A LA NUEVA FUNCIÓN DEL AUTHVIEWMODEL ---
+                    onClick = {
+                        vm.saveDoctorProfile(
+                            newContactNumber = contactNumber,
+                            newAddress = address,
+                            newEmail = email
+                        )
+                    },
+                    enabled = !isSaving, // <-- Usar estado de AuthViewModel
                     modifier = Modifier.fillMaxWidth(),
                     shape = RoundedCornerShape(12.dp)
                 ) {
-                    if (uiState.isSaving) {
+                    if (isSaving) { // <-- Usar estado de AuthViewModel
                         CircularProgressIndicator(
                             strokeWidth = 2.dp,
                             modifier = Modifier.size(20.dp),
@@ -197,7 +235,7 @@ fun DoctorProfileScreenVm(
                         )
                         Spacer(Modifier.width(8.dp))
                         Text("Guardando...")
-                    } else if (uiState.saveSuccess) {
+                    } else if (saveSuccess) { // <-- Usar estado de AuthViewModel
                         Icon(imageVector = Icons.Default.Check, contentDescription = null)
                         Spacer(Modifier.width(8.dp))
                         Text("¡Guardado!")
@@ -238,10 +276,10 @@ fun DoctorProfileScreenVm(
             },
             onDeleteSelected = {
                 showPictureSourceDialog = false
-                vm.updatePhotoUri(null)
+                photoUriString = null // <-- Actualiza estado local
                 Toast.makeText(context, "Foto eliminada", Toast.LENGTH_SHORT).show()
             },
-            showDeleteOption = !uiState.photoUriString.isNullOrEmpty()
+            showDeleteOption = !photoUriString.isNullOrEmpty() // <-- Usa estado local
         )
     }
 }
@@ -359,9 +397,13 @@ private fun MetricCard(title: String, value: String, icon: ImageVector, modifier
 @Composable
 private fun DoctorDetails(
     info: DoctorInfo,
+    // --- 10. AÑADIR PARÁMETROS PARA LOS CAMPOS EDITABLES ---
+    contactNumber: String,
+    address: String,
+    email: String,
     onContactNumberChange: (String) -> Unit,
     onAddressChange: (String) -> Unit,
-    onEmailChange: (String) -> Unit,
+    onEmailChange: (String) -> Unit
 ) {
     val consultationRateFormatted = try {
         val rate = info.consultationRate.toDouble()
@@ -391,10 +433,10 @@ private fun DoctorDetails(
             Text(text = "Información de Contacto", fontSize = 18.sp, fontWeight = FontWeight.SemiBold, color = MaterialTheme.colorScheme.primary)
             Spacer(modifier = Modifier.height(12.dp))
 
-            // CAMPOS EDITABLES
-            ProfileTextField(value = info.contactNumber, onValueChange = onContactNumberChange, label = "Teléfono", icon = Icons.Default.Phone)
-            ProfileTextField(value = info.email, onValueChange = onEmailChange, label = "Email", enabled = true)
-            ProfileTextField(value = info.address, onValueChange = onAddressChange, label = "Dirección", icon = Icons.Default.Place)
+            // --- 11. CONECTAR TEXTFIELDS A LOS NUEVOS PARÁMETROS ---
+            ProfileTextField(value = contactNumber, onValueChange = onContactNumberChange, label = "Teléfono", icon = Icons.Default.Phone)
+            ProfileTextField(value = email, onValueChange = onEmailChange, label = "Email", enabled = true)
+            ProfileTextField(value = address, onValueChange = onAddressChange, label = "Dirección", icon = Icons.Default.Place)
         }
     }
 }

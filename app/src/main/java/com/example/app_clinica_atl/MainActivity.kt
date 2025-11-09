@@ -13,8 +13,10 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.ViewModelProvider
 import androidx.navigation.compose.rememberNavController
 import androidx.room.Room
+// --- 1. IMPORTAR LO NECESARIO PARA EL CALLBACK ---
+import androidx.room.RoomDatabase
+import androidx.sqlite.db.SupportSQLiteDatabase
 import com.example.app_clinica_atl.data.local.database.AppDatabase
-// --- 1. IMPORTAR LA NUEVA MIGRACIÓN ---
 import com.example.app_clinica_atl.data.local.database.MIGRATION_2_3
 import com.example.app_clinica_atl.data.local.storage.UserPreferences
 import com.example.app_clinica_atl.data.repository.AppointmentRepository
@@ -29,44 +31,64 @@ import com.example.app_clinica_atl.ui.viewmodel.AuthViewModel
 import com.example.app_clinica_atl.ui.viewmodel.BookAppointmentViewModel
 import com.example.app_clinica_atl.ui.viewmodel.DoctorSearchViewModel
 import com.example.app_clinica_atl.ui.viewmodel.PatientViewModel
-import com.example.app_clinica_atl.ui.viewmodel.DoctorProfileViewModel
+// --- 2. ELIMINAR LOS IMPORTS DEL VIEWMODEL QUE BORRAMOS ---
+// import com.example.app_clinica_atl.ui.viewmodel.DoctorProfileViewModel
 
 class MainActivity : ComponentActivity() {
 
-    // --- 2. INICIALIZAR LA BASE DE DATOS (AÑADIENDO LA MIGRACIÓN) ---
+    // --- 3. MODIFICAR LA CREACIÓN DE LA BASE DE DATOS ---
     private val db by lazy {
         Room.databaseBuilder(
             applicationContext,
             AppDatabase::class.java,
             "clinica_atl_v3.db" // Usamos el nuevo nombre de la DB
         )
-            .addMigrations(MIGRATION_2_3) // <-- AÑADIDO AQUÍ
+            .addMigrations(MIGRATION_2_3)
+            // --- ¡AÑADIR ESTE BLOQUE COMPLETO! ---
+            .addCallback(object : RoomDatabase.Callback() {
+                override fun onCreate(db: SupportSQLiteDatabase) {
+                    super.onCreate(db)
+                    // Usamos raw SQL para insertar los usuarios semilla
+                    // Esto se ejecuta SÓLO la primera vez que la BD es creada
+
+                    // Rol 3: Administrador
+                    db.execSQL("INSERT OR REPLACE INTO users (nombre, apellido, fecha_nacimiento, email, phone, password, id_rol) VALUES ('Admin', 'Clinica', '01-01-1990', 'admin@duoc.cl', '12345678', 'Admin123!', 3)")
+
+                    // Rol 2: Doctor (Tus datos)
+                    db.execSQL("INSERT OR REPLACE INTO users (nombre, apellido, fecha_nacimiento, email, phone, password, id_rol) VALUES ('Víctor', 'Rosendo', '10-05-2000', 'victor@duoc.cl', '56922222222', '123456', 2)")
+
+                    // Rol 1: Paciente (Tus datos)
+                    db.execSQL("INSERT OR REPLACE INTO users (nombre, apellido, fecha_nacimiento, email, phone, password, id_rol) VALUES ('Carlos', 'Sainz', '01-09-1994', 'csainz@duoc.cl', '56933333333', '123456', 1)")
+                }
+            })
+            // --- FIN DEL BLOQUE AÑADIDO ---
             .fallbackToDestructiveMigration() // Como plan B
             .build()
     }
-    // ---
+    // --- FIN 3 ---
 
     private val userPreferences by lazy { UserPreferences(applicationContext) }
 
-    // --- 3. CREAR LOS REPOSITORIOS (AÑADIENDO EL DE CITAS) ---
-    // (Ahora UserRepository SÍ recibe el UserPreferences que necesita)
+    // --- 4. REPOSITORIOS (ACTUALIZADOS) ---
     private val userRepo by lazy { UserRepository(db.userDao(), userPreferences) }
     private val patientRepo by lazy { PatientRepository() } // Sigue mockeado
-    // (Inyectamos el nuevo AppointmentDao)
-    private val appointmentRepo by lazy { AppointmentRepository(db.appointmentDao()) } // <-- MODIFICADO
+    private val appointmentRepo by lazy { AppointmentRepository(db.appointmentDao()) }
     private val doctorRepo by lazy { DoctorRepository() } // Sigue mockeado
-    private val doctorProfileRepo by lazy { DoctorRepository() } // Sigue mockeado
     private val adminDoctorRepo by lazy { DoctorRepository() } // Sigue mockeado
-    // ---
+    // --- FIN 4 ---
 
 
-    // --- 4. CREAR LAS "FÁBRICAS" DE VIEWMODELS (ACTUALIZARLAS) ---
+    // --- 5. FÁBRICAS DE VIEWMODELS (ACTUALIZADAS) ---
     private val authViewModel: AuthViewModel by viewModels {
         object : ViewModelProvider.Factory {
             override fun <T : ViewModel> create(modelClass: Class<T>): T {
-                // (Ahora AuthViewModel también necesita el repo de citas)
                 @Suppress("UNCHECKED_CAST")
-                return AuthViewModel(userRepo, userPreferences, appointmentRepo) as T // <-- MODIFICADO
+                return AuthViewModel(
+                    userRepo,
+                    userPreferences,
+                    appointmentRepo,
+                    doctorRepo // <-- La 4ta dependencia que añadimos
+                ) as T
             }
         }
     }
@@ -84,9 +106,8 @@ class MainActivity : ComponentActivity() {
         object : ViewModelProvider.Factory {
             @RequiresApi(Build.VERSION_CODES.O)
             override fun <T : ViewModel> create(modelClass: Class<T>): T {
-                // (Ahora BookAppointmentViewModel también necesita el repo de usuario)
                 @Suppress("UNCHECKED_CAST")
-                return BookAppointmentViewModel(appointmentRepo, userRepo) as T // <-- MODIFICADO
+                return BookAppointmentViewModel(appointmentRepo, userRepo) as T
             }
         }
     }
@@ -98,14 +119,9 @@ class MainActivity : ComponentActivity() {
             }
         }
     }
-    private val doctorProfileViewModel: DoctorProfileViewModel by viewModels {
-        object : ViewModelProvider.Factory {
-            override fun <T : ViewModel> create(modelClass: Class<T>): T {
-                @Suppress("UNCHECKED_CAST")
-                return DoctorProfileViewModel(doctorProfileRepo) as T
-            }
-        }
-    }
+
+    // (Ya no necesitamos el DoctorProfileViewModel)
+
     private val adminManageDoctorViewModel: AdminManageDoctorViewModel by viewModels {
         object : ViewModelProvider.Factory {
             override fun <T : ViewModel> create(modelClass: Class<T>): T {
@@ -114,7 +130,7 @@ class MainActivity : ComponentActivity() {
             }
         }
     }
-    // --- FIN 4 ---
+    // --- FIN 5 ---
 
 
     @RequiresApi(Build.VERSION_CODES.O)
@@ -138,7 +154,7 @@ class MainActivity : ComponentActivity() {
                     patientViewModel = patientViewModel,
                     bookAppointmentViewModel = bookAppointmentViewModel,
                     doctorSearchViewModel = doctorSearchViewModel,
-                    doctorProfileViewModel = doctorProfileViewModel,
+                    // (Ya no pasamos el doctorProfileViewModel)
                     adminManageDoctorViewModel = adminManageDoctorViewModel
                 )
             }

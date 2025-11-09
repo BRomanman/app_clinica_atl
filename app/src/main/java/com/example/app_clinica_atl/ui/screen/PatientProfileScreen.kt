@@ -19,12 +19,19 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+// --- 1. IMPORTAR LazyColumn ---
+import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
+// --- 2. IMPORTAR NUEVOS ICONOS ---
+import androidx.compose.material.icons.filled.AccessTime
+import androidx.compose.material.icons.filled.CalendarToday
+import androidx.compose.material.icons.filled.Cancel
 import androidx.compose.material.icons.filled.Edit
 import androidx.compose.material.icons.filled.Person
 // import androidx.compose.material.icons.filled.Upload // <-- ELIMINADO
@@ -37,6 +44,8 @@ import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.DividerDefaults
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
+// --- 3. IMPORTAR IconButton ---
+import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.OutlinedTextFieldDefaults
@@ -68,6 +77,8 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import coil.compose.AsyncImage
 import coil.request.ImageRequest
 import com.example.app_clinica_atl.R
+// --- 4. IMPORTAR LA ENTIDAD DE CITAS ---
+import com.example.app_clinica_atl.data.local.appointment.AppointmentEntity
 import com.example.app_clinica_atl.domain.validation.validateEmail
 import com.example.app_clinica_atl.domain.validation.validateNamePart
 import com.example.app_clinica_atl.domain.validation.validatePhoneDigitsOnly
@@ -76,6 +87,8 @@ import java.io.File
 import java.text.SimpleDateFormat
 import java.util.Date
 import java.util.Locale
+
+import androidx.compose.foundation.layout.width
 
 // --- Funciones de Utilidad (Uris y Permisos) ---
 // (Estas funciones se quedan igual)
@@ -100,6 +113,8 @@ fun PatientProfileScreenVm(
     onLogout: () -> Unit = {}
 ) {
     val userData by vm.currentUserData.collectAsStateWithLifecycle()
+    // --- 5. OBTENER LA LISTA DE CITAS DEL VIEWMODEL ---
+    val appointments by vm.userAppointments.collectAsStateWithLifecycle()
 
     if (userData == null) {
         Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
@@ -112,6 +127,9 @@ fun PatientProfileScreenVm(
             lastNameFromDb = userData!!.apellido, // <-- NUEVO
             phoneFromDb = userData!!.phone,
             emailFromDb = userData!!.email,
+            // --- 6. PASAR CITAS Y FUNCIÓN DE CANCELAR ---
+            appointments = appointments,
+            onCancelAppointment = vm::cancelAppointment,
             modifier = modifier,
             onLogout = onLogout
         )
@@ -129,6 +147,9 @@ private fun PatientProfileScreen(
     lastNameFromDb: String, // <-- NUEVO
     phoneFromDb: String,
     emailFromDb: String,
+    // --- 7. ACEPTAR LA LISTA Y LA FUNCIÓN ---
+    appointments: List<AppointmentEntity>,
+    onCancelAppointment: (Long) -> Unit,
     // --- FIN CAMBIO 2 ---
     modifier: Modifier = Modifier,
     onLogout: () -> Unit = {}
@@ -158,6 +179,10 @@ private fun PatientProfileScreen(
     var photoUriString by rememberSaveable { mutableStateOf<String?>("") }
     var pendingCaptureUri by remember { mutableStateOf<Uri?>(null) }
     var showPictureSourceDialog by remember { mutableStateOf(false) }
+
+    // --- 8. ESTADO PARA EL DIÁLOGO DE CONFIRMACIÓN DE CANCELAR ---
+    var showCancelDialog by remember { mutableStateOf<Long?>(null) } // Guarda el ID de la cita a cancelar
+    // --- FIN 8 ---
 
 
     // --- Launchers para Cámara y Galería (Sin cambios) ---
@@ -439,6 +464,69 @@ private fun PatientProfileScreen(
             }
         }
 
+        // --- 9. ¡NUEVA TARJETA DE CITAS! ---
+        Card(
+            colors = CardDefaults.cardColors(containerColor = Color.White),
+            elevation = CardDefaults.cardElevation(defaultElevation = 4.dp),
+            shape = RoundedCornerShape(16.dp),
+            modifier = Modifier.fillMaxWidth()
+        ) {
+            Column(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .background(sectionColor.copy(alpha = 0.1f))
+                    .padding(16.dp)
+            ) {
+                Box(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .clip(RoundedCornerShape(12.dp))
+                        .background(headerColor)
+                        .padding(vertical = 12.dp, horizontal = 16.dp)
+                ) {
+                    Text(
+                        text = "Mis Citas Agendadas",
+                        color = Color.White,
+                        fontSize = 18.sp,
+                        fontWeight = FontWeight.SemiBold
+                    )
+                }
+
+                Spacer(modifier = Modifier.height(16.dp))
+
+                // Columna para la lista de citas (no usamos LazyColumn
+                // porque ya estamos dentro de un verticalScroll)
+                Column(
+                    modifier = Modifier.fillMaxWidth(),
+                    verticalArrangement = Arrangement.spacedBy(12.dp)
+                ) {
+                    if (appointments.isEmpty()) {
+                        Text(
+                            text = "No tienes citas agendadas.",
+                            style = MaterialTheme.typography.bodyMedium,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant,
+                            textAlign = androidx.compose.ui.text.style.TextAlign.Center,
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .padding(vertical = 16.dp)
+                        )
+                    } else {
+                        appointments.forEach { appointment ->
+                            AppointmentItem(
+                                appointment = appointment,
+                                onCancelClick = {
+                                    // Abrir el diálogo de confirmación
+                                    showCancelDialog = appointment.id
+                                }
+                            )
+                            HorizontalDivider(color = headerColor.copy(alpha = 0.2f))
+                        }
+                    }
+                }
+            }
+        }
+        // --- FIN 9 ---
+
         Button(
             onClick = {
                 isEditing = true
@@ -516,6 +604,33 @@ private fun PatientProfileScreen(
             Text(text = stringResource(id = R.string.common_logout))
         }
     }
+
+    // --- 10. DIÁLOGO DE CONFIRMACIÓN PARA CANCELAR ---
+    if (showCancelDialog != null) {
+        val appointmentIdToCancel = showCancelDialog!!
+        AlertDialog(
+            onDismissRequest = { showCancelDialog = null }, // Cerrar si toca fuera
+            title = { Text("Cancelar Cita") },
+            text = { Text("¿Estás seguro de que quieres cancelar esta cita?") },
+            confirmButton = {
+                TextButton(
+                    onClick = {
+                        onCancelAppointment(appointmentIdToCancel) // ¡Llama a la función del VM!
+                        showCancelDialog = null // Cierra el diálogo
+                    },
+                    colors = ButtonDefaults.textButtonColors(contentColor = MaterialTheme.colorScheme.error)
+                ) {
+                    Text("Confirmar Cancelación")
+                }
+            },
+            dismissButton = {
+                TextButton(onClick = { showCancelDialog = null }) {
+                    Text("Atrás")
+                }
+            }
+        )
+    }
+    // --- FIN 10 ---
 }
 
 // --- Diálogo para elegir origen de imagen (Sin cambios) ---
@@ -597,7 +712,81 @@ private fun ProfileTextField(
     )
 }
 
-// --- Preview (Actualizada para pasar ambos) ---
+// --- 11. NUEVO COMPOSABLE PARA MOSTRAR CADA CITA ---
+@Composable
+private fun AppointmentItem(
+    appointment: AppointmentEntity,
+    onCancelClick: () -> Unit
+) {
+    Row(
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(vertical = 8.dp),
+        verticalAlignment = Alignment.CenterVertically
+    ) {
+        // Columna de información
+        Column(
+            modifier = Modifier.weight(1f),
+            verticalArrangement = Arrangement.spacedBy(4.dp)
+        ) {
+            Text(
+                text = "Dr/a. ${appointment.doctorName}",
+                style = MaterialTheme.typography.bodyLarge,
+                fontWeight = FontWeight.Bold,
+                color = MaterialTheme.colorScheme.onSurface
+            )
+            Text(
+                text = appointment.department,
+                style = MaterialTheme.typography.bodyMedium,
+                color = MaterialTheme.colorScheme.primary
+            )
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                Icon(
+                    imageVector = Icons.Default.CalendarToday,
+                    contentDescription = "Fecha",
+                    modifier = Modifier.size(16.dp),
+                    tint = MaterialTheme.colorScheme.onSurfaceVariant
+                )
+                Spacer(modifier = Modifier.width(4.dp))
+                Text(
+                    text = appointment.date, // (Podríamos formatear esto, pero por ahora está bien)
+                    style = MaterialTheme.typography.bodyMedium,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                )
+                Spacer(modifier = Modifier.width(12.dp))
+                Icon(
+                    imageVector = Icons.Default.AccessTime,
+                    contentDescription = "Hora",
+                    modifier = Modifier.size(16.dp),
+                    tint = MaterialTheme.colorScheme.onSurfaceVariant
+                )
+                Spacer(modifier = Modifier.width(4.dp))
+                Text(
+                    text = appointment.time,
+                    style = MaterialTheme.typography.bodyMedium,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                )
+            }
+        }
+
+        // Botón de Cancelar
+        IconButton(
+            onClick = onCancelClick,
+            modifier = Modifier.padding(start = 8.dp)
+        ) {
+            Icon(
+                imageVector = Icons.Default.Cancel,
+                contentDescription = "Cancelar Cita",
+                tint = MaterialTheme.colorScheme.error,
+                modifier = Modifier.size(32.dp)
+            )
+        }
+    }
+}
+// --- FIN 11 ---
+
+
+// --- Preview (Actualizada para pasar la lista vacía) ---
 @Preview(showBackground = true)
 @Composable
 private fun PatientProfileScreenPreview() {
@@ -606,6 +795,8 @@ private fun PatientProfileScreenPreview() {
         lastNameFromDb = "Sainz (Preview)", // <-- NUEVO
         phoneFromDb = "+56933333333",
         emailFromDb = "csainz@duoc.cl",
-        onLogout = {}
+        appointments = emptyList(), // <-- NUEVO
+        onLogout = {},
+        onCancelAppointment = {} // <-- NUEVO
     )
 }

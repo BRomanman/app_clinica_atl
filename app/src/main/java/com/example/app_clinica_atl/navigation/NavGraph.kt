@@ -29,6 +29,7 @@ import com.example.app_clinica_atl.ui.screen.AdminUserHistoriesScreen
 import com.example.app_clinica_atl.ui.screen.BookAppointmentScreenVm
 import com.example.app_clinica_atl.ui.screen.DoctorScheduleScreen
 import com.example.app_clinica_atl.ui.screen.DoctorMenuScreen
+// --- 1. IMPORTAR DoctorProfileScreenVm (el : AuthViewModel) ---
 import com.example.app_clinica_atl.ui.screen.DoctorProfileScreenVm
 import com.example.app_clinica_atl.ui.screen.FormularioSeguroScreen
 import com.example.app_clinica_atl.ui.screen.HomeScreenVm
@@ -44,7 +45,8 @@ import com.example.app_clinica_atl.ui.viewmodel.AuthViewModel
 import com.example.app_clinica_atl.ui.viewmodel.BookAppointmentViewModel
 import com.example.app_clinica_atl.ui.viewmodel.DoctorSearchViewModel
 import com.example.app_clinica_atl.ui.viewmodel.PatientViewModel
-import com.example.app_clinica_atl.ui.viewmodel.DoctorProfileViewModel
+// --- 2. ELIMINAR EL IMPORT INNECESARIO ---
+// import com.example.app_clinica_atl.ui.viewmodel.DoctorProfileViewModel
 import kotlinx.coroutines.launch
 
 @RequiresApi(Build.VERSION_CODES.O)
@@ -55,7 +57,8 @@ fun AppNavGraph(
     patientViewModel: PatientViewModel,
     bookAppointmentViewModel: BookAppointmentViewModel,
     doctorSearchViewModel: DoctorSearchViewModel,
-    doctorProfileViewModel: DoctorProfileViewModel,
+    // --- 3. ELIMINAR EL PARÁMETRO ---
+    // doctorProfileViewModel: DoctorProfileViewModel,
     adminManageDoctorViewModel: AdminManageDoctorViewModel
 ) {
     val context = LocalContext.current.applicationContext
@@ -206,12 +209,16 @@ fun AppNavGraph(
                 composable(Route.DoctorAppointments.path) {
                     DoctorScheduleScreen()
                 }
+
+                // --- 4. ACTUALIZAR LA RUTA DEL PERFIL DEL DOCTOR ---
                 composable(Route.DoctorProfile.path) {
                     DoctorProfileScreenVm(
-                        vm = doctorProfileViewModel,
+                        vm = authViewModel, // <-- USAR AUTHVIEWMODEL
                         onLogout = logoutAndNavigate
                     )
                 }
+                // --- FIN 4 ---
+
                 composable(Route.AdminMenu.path) {
                     AdminMenuScreen(
                         onViewDoctorSchedules = goAdminDoctorSchedule,
