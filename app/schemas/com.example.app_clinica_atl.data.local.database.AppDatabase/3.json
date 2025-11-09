@@ -2,7 +2,7 @@
   "formatVersion": 1,
   "database": {
     "version": 3,
-    "identityHash": "bcb4503eb8487f75179a35fed161a361",
+    "identityHash": "5010b1084313bdaa0b30d44a5c4336db",
     "entities": [
       {
         "tableName": "users",
@@ -68,7 +68,7 @@
       },
       {
         "tableName": "appointments",
-        "createSql": "CREATE TABLE IF NOT EXISTS `${TABLE_NAME}` (`id` INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL, `patient_id` INTEGER NOT NULL, `doctor_name` TEXT NOT NULL, `department` TEXT NOT NULL, `date` TEXT NOT NULL, `time` TEXT NOT NULL, FOREIGN KEY(`patient_id`) REFERENCES `users`(`id`) ON UPDATE NO ACTION ON DELETE CASCADE )",
+        "createSql": "CREATE TABLE IF NOT EXISTS `${TABLE_NAME}` (`id` INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL, `patient_id` INTEGER NOT NULL, `patient_name` TEXT NOT NULL, `doctor_id` TEXT NOT NULL, `doctor_name` TEXT NOT NULL, `department` TEXT NOT NULL, `date` TEXT NOT NULL, `time` TEXT NOT NULL, FOREIGN KEY(`patient_id`) REFERENCES `users`(`id`) ON UPDATE NO ACTION ON DELETE CASCADE )",
         "fields": [
           {
             "fieldPath": "id",
@@ -80,6 +80,18 @@
             "fieldPath": "patientId",
             "columnName": "patient_id",
             "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "patientName",
+            "columnName": "patient_name",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "doctorId",
+            "columnName": "doctor_id",
+            "affinity": "TEXT",
             "notNull": true
           },
           {
@@ -122,6 +134,15 @@
             ],
             "orders": [],
             "createSql": "CREATE INDEX IF NOT EXISTS `index_appointments_patient_id` ON `${TABLE_NAME}` (`patient_id`)"
+          },
+          {
+            "name": "index_appointments_doctor_id",
+            "unique": false,
+            "columnNames": [
+              "doctor_id"
+            ],
+            "orders": [],
+            "createSql": "CREATE INDEX IF NOT EXISTS `index_appointments_doctor_id` ON `${TABLE_NAME}` (`doctor_id`)"
           }
         ],
         "foreignKeys": [
@@ -142,7 +163,7 @@
     "views": [],
     "setupQueries": [
       "CREATE TABLE IF NOT EXISTS room_master_table (id INTEGER PRIMARY KEY,identity_hash TEXT)",
-      "INSERT OR REPLACE INTO room_master_table (id,identity_hash) VALUES(42, 'bcb4503eb8487f75179a35fed161a361')"
+      "INSERT OR REPLACE INTO room_master_table (id,identity_hash) VALUES(42, '5010b1084313bdaa0b30d44a5c4336db')"
     ]
   }
 }

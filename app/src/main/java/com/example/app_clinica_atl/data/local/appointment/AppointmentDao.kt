@@ -9,22 +9,19 @@ import kotlinx.coroutines.flow.Flow
 @Dao
 interface AppointmentDao {
 
-    /**
-     * Inserta una nueva cita. Si ya existe, la reemplaza.
-     */
     @Insert(onConflict = OnConflictStrategy.REPLACE)
     suspend fun insertAppointment(appointment: AppointmentEntity)
 
-    /**
-     * Obtiene un Flow (flujo) de todas las citas para un ID de paciente específico.
-     * Usar un Flow significa que la UI se actualizará automáticamente si una cita se borra.
-     */
+    // (Esta consulta sigue igual, para el perfil del paciente)
     @Query("SELECT * FROM appointments WHERE patient_id = :patientId ORDER BY date DESC, time DESC")
     fun getAppointmentsForUser(patientId: Long): Flow<List<AppointmentEntity>>
 
-    /**
-     * Borra una cita usando su ID.
-     */
+    // --- ¡NUEVA CONSULTA! ---
+    // (Esta es para la agenda del doctor)
+    @Query("SELECT * FROM appointments WHERE doctor_id = :doctorId ORDER BY date ASC, time ASC")
+    fun getAppointmentsForDoctor(doctorId: String): Flow<List<AppointmentEntity>>
+    // --- FIN NUEVA CONSULTA ---
+
     @Query("DELETE FROM appointments WHERE id = :appointmentId")
     suspend fun deleteAppointmentById(appointmentId: Long)
 }

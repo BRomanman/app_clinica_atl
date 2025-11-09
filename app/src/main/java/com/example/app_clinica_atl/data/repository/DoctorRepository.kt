@@ -9,6 +9,28 @@ import kotlinx.coroutines.flow.update
 class DoctorRepository {
 
     private val initialDoctors = listOf(
+        // --- ¡AQUÍ ESTÁ LA SOLUCIÓN! ---
+        // Añadimos al doctor "Víctor Rosendo" a esta lista "falsa" (mock)
+        // para que coincida con el usuario que SÍ existe en la base de datos (Room).
+        DoctorInfo(
+            id = "000", // ID de doctor (puede ser diferente al ID de usuario de Room)
+            firstName = "Víctor",
+            lastName = "Rosendo",
+            birthDate = "2000-05-10",
+            email = "victor@duoc.cl", // <-- Este email AHORA SÍ COINCIDE
+            contactNumber = "+56922222222",
+            password = "123456",
+            consultationRate = "40000",
+            salary = "2000000",
+            bonus = "150000",
+            specialtyId = "MED",
+            specialty = "Medicina General",
+            availability = "Martes y Jueves, 10:00 - 18:00",
+            address = "Av. Clínica Duoc 555, Santiago",
+            since = "2020"
+        ),
+        // --- FIN DE LA SOLUCIÓN ---
+
         DoctorInfo(
             id = "001",
             firstName = "Ana",

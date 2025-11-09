@@ -17,7 +17,9 @@ import androidx.room.Room
 import androidx.room.RoomDatabase
 import androidx.sqlite.db.SupportSQLiteDatabase
 import com.example.app_clinica_atl.data.local.database.AppDatabase
+// --- 2. IMPORTAR LA NUEVA MIGRACIÓN 3_4 ---
 import com.example.app_clinica_atl.data.local.database.MIGRATION_2_3
+import com.example.app_clinica_atl.data.local.database.MIGRATION_3_4
 import com.example.app_clinica_atl.data.local.storage.UserPreferences
 import com.example.app_clinica_atl.data.repository.AppointmentRepository
 import com.example.app_clinica_atl.data.repository.DoctorRepository
@@ -31,8 +33,7 @@ import com.example.app_clinica_atl.ui.viewmodel.AuthViewModel
 import com.example.app_clinica_atl.ui.viewmodel.BookAppointmentViewModel
 import com.example.app_clinica_atl.ui.viewmodel.DoctorSearchViewModel
 import com.example.app_clinica_atl.ui.viewmodel.PatientViewModel
-// --- 2. ELIMINAR LOS IMPORTS DEL VIEWMODEL QUE BORRAMOS ---
-// import com.example.app_clinica_atl.ui.viewmodel.DoctorProfileViewModel
+// --- (Imports de DoctorProfileViewModel eliminados) ---
 
 class MainActivity : ComponentActivity() {
 
@@ -41,28 +42,19 @@ class MainActivity : ComponentActivity() {
         Room.databaseBuilder(
             applicationContext,
             AppDatabase::class.java,
-            "clinica_atl_v3.db" // Usamos el nuevo nombre de la DB
+            "clinica_atl_v4.db" // <-- 3.1. NUEVO NOMBRE DE BD (v4)
         )
-            .addMigrations(MIGRATION_2_3)
-            // --- ¡AÑADIR ESTE BLOQUE COMPLETO! ---
+            .addMigrations(MIGRATION_2_3, MIGRATION_3_4) // <-- 3.2. AÑADIR NUEVA MIGRACIÓN
             .addCallback(object : RoomDatabase.Callback() {
                 override fun onCreate(db: SupportSQLiteDatabase) {
                     super.onCreate(db)
-                    // Usamos raw SQL para insertar los usuarios semilla
-                    // Esto se ejecuta SÓLO la primera vez que la BD es creada
-
-                    // Rol 3: Administrador
+                    // (Los datos semilla se mantienen igual)
                     db.execSQL("INSERT OR REPLACE INTO users (nombre, apellido, fecha_nacimiento, email, phone, password, id_rol) VALUES ('Admin', 'Clinica', '01-01-1990', 'admin@duoc.cl', '12345678', 'Admin123!', 3)")
-
-                    // Rol 2: Doctor (Tus datos)
                     db.execSQL("INSERT OR REPLACE INTO users (nombre, apellido, fecha_nacimiento, email, phone, password, id_rol) VALUES ('Víctor', 'Rosendo', '10-05-2000', 'victor@duoc.cl', '56922222222', '123456', 2)")
-
-                    // Rol 1: Paciente (Tus datos)
                     db.execSQL("INSERT OR REPLACE INTO users (nombre, apellido, fecha_nacimiento, email, phone, password, id_rol) VALUES ('Carlos', 'Sainz', '01-09-1994', 'csainz@duoc.cl', '56933333333', '123456', 1)")
                 }
             })
-            // --- FIN DEL BLOQUE AÑADIDO ---
-            .fallbackToDestructiveMigration() // Como plan B
+            .fallbackToDestructiveMigration()
             .build()
     }
     // --- FIN 3 ---
@@ -71,23 +63,27 @@ class MainActivity : ComponentActivity() {
 
     // --- 4. REPOSITORIOS (ACTUALIZADOS) ---
     private val userRepo by lazy { UserRepository(db.userDao(), userPreferences) }
-    private val patientRepo by lazy { PatientRepository() } // Sigue mockeado
-    private val appointmentRepo by lazy { AppointmentRepository(db.appointmentDao()) }
-    private val doctorRepo by lazy { DoctorRepository() } // Sigue mockeado
-    private val adminDoctorRepo by lazy { DoctorRepository() } // Sigue mockeado
+    private val patientRepo by lazy { PatientRepository() }
+    private val doctorRepo by lazy { DoctorRepository() } // <-- Este ya existía
+    private val adminDoctorRepo by lazy { DoctorRepository() }
+
+    // --- ¡¡¡AQUÍ ESTÁ LA CORRECCIÓN 1!!! ---
+    // ¡AHORA AppointmentRepository DEPENDE de doctorRepo!
+    private val appointmentRepo by lazy { AppointmentRepository(db.appointmentDao(), doctorRepo) }
     // --- FIN 4 ---
 
 
     // --- 5. FÁBRICAS DE VIEWMODELS (ACTUALIZADAS) ---
     private val authViewModel: AuthViewModel by viewModels {
         object : ViewModelProvider.Factory {
+            @RequiresApi(Build.VERSION_CODES.O)
             override fun <T : ViewModel> create(modelClass: Class<T>): T {
                 @Suppress("UNCHECKED_CAST")
                 return AuthViewModel(
                     userRepo,
                     userPreferences,
                     appointmentRepo,
-                    doctorRepo // <-- La 4ta dependencia que añadimos
+                    doctorRepo
                 ) as T
             }
         }
@@ -107,7 +103,9 @@ class MainActivity : ComponentActivity() {
             @RequiresApi(Build.VERSION_CODES.O)
             override fun <T : ViewModel> create(modelClass: Class<T>): T {
                 @Suppress("UNCHECKED_CAST")
-                return BookAppointmentViewModel(appointmentRepo, userRepo) as T
+                // --- ¡¡¡AQUÍ ESTÁ LA CORRECCIÓN 2!!! ---
+                // ¡Añadimos doctorRepo a la fábrica!
+                return BookAppointmentViewModel(appointmentRepo, userRepo, doctorRepo) as T
             }
         }
     }
@@ -119,8 +117,6 @@ class MainActivity : ComponentActivity() {
             }
         }
     }
-
-    // (Ya no necesitamos el DoctorProfileViewModel)
 
     private val adminManageDoctorViewModel: AdminManageDoctorViewModel by viewModels {
         object : ViewModelProvider.Factory {
@@ -138,7 +134,6 @@ class MainActivity : ComponentActivity() {
         super.onCreate(savedInstanceState)
         enableEdgeToEdge()
 
-        // (Crear canales de notificación se mantiene igual)
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
             NotificationHelper.createNotificationChannel(this)
         }
@@ -154,7 +149,6 @@ class MainActivity : ComponentActivity() {
                     patientViewModel = patientViewModel,
                     bookAppointmentViewModel = bookAppointmentViewModel,
                     doctorSearchViewModel = doctorSearchViewModel,
-                    // (Ya no pasamos el doctorProfileViewModel)
                     adminManageDoctorViewModel = adminManageDoctorViewModel
                 )
             }

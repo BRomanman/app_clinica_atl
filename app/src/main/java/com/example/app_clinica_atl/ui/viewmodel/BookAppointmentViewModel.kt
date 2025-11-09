@@ -6,8 +6,9 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.example.app_clinica_atl.data.model.DoctorInfo
 import com.example.app_clinica_atl.data.repository.AppointmentRepository
-// --- 1. IMPORTAR USER REPOSITORY ---
 import com.example.app_clinica_atl.data.repository.UserRepository
+// --- 1. IMPORTAR DOCTOR REPOSITORY ---
+import com.example.app_clinica_atl.data.repository.DoctorRepository
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -46,8 +47,9 @@ data class BookAppointmentUiState(
 @RequiresApi(Build.VERSION_CODES.O)
 class BookAppointmentViewModel(
     private val repository: AppointmentRepository,
-    // --- 2. INYECTAR EL USER REPOSITORY (AHORA SÍ EXISTE) ---
-    private val userRepository: UserRepository
+    private val userRepository: UserRepository,
+    // --- 2. INYECTAR EL DOCTOR REPOSITORY ---
+    private val doctorRepository: DoctorRepository
 ) : ViewModel() {
 
     private val _uiState = MutableStateFlow(BookAppointmentUiState())
@@ -58,23 +60,25 @@ class BookAppointmentViewModel(
     }
 
     private fun loadInitialData() {
-        // Obtenemos los departamentos y horarios "mockeados" del repositorio
+        // --- 3. ACTUALIZADO: Carga departamentos desde el repo real ---
         _uiState.update {
             it.copy(
-                departments = repository.getDepartments(),
-                availableTimes = repository.getAvailableSlots(LocalDate.now(), DoctorInfo()) // (La fecha/doctor aquí no importan para tu lógica actual)
+                // ¡YA NO ES MOCKEADO!
+                departments = doctorRepository.getSpecialties(),
+                // (La lógica de horas disponibles sigue siendo mockeada, lo cual está bien)
+                availableTimes = repository.getAvailableSlots(LocalDate.now(), DoctorInfo())
             )
         }
     }
 
-    // --- Handlers de Selección (Sin cambios) ---
+    // --- 4. ACTUALIZADO: Carga doctores desde el repo real ---
     fun onDepartmentSelected(department: String) {
-        val doctors = repository.getDoctorsByDepartment(department)
+        // ¡YA NO ES MOCKEADO!
+        val doctors = doctorRepository.getDoctorsBySpecialty(department)
         _uiState.update {
             it.copy(
                 selectedDepartment = department,
                 doctors = doctors,
-                // Si el doctor seleccionado ya no está en la nueva lista, lo limpiamos
                 selectedDoctor = if (it.selectedDoctor !in doctors) null else it.selectedDoctor,
                 departmentExpanded = false,
                 doctorExpanded = false
@@ -118,7 +122,7 @@ class BookAppointmentViewModel(
         _uiState.update { it.copy(showConfirmationDialog = false) }
     }
 
-    // --- Lógica de Negocio: Guardar la Cita (AHORA SÍ FUNCIONA) ---
+    // --- 5. ACTUALIZADO: Lógica de Guardar la Cita ---
     fun submitAppointment() {
         val state = _uiState.value
         val doctor = state.selectedDoctor
@@ -126,7 +130,6 @@ class BookAppointmentViewModel(
         val time = state.selectedTime
         val department = state.selectedDepartment
 
-        // Validación simple
         if (doctor == null || date == null || time == null || department == null) {
             _uiState.update { it.copy(submissionError = "Por favor, completa todos los campos.") }
             return
@@ -136,19 +139,22 @@ class BookAppointmentViewModel(
 
         viewModelScope.launch {
             try {
-                // 3. OBTENER EL ID DEL USUARIO (PACIENTE)
-                // (Ahora 'getLoggedInUser()' SÍ existe en el UserRepository)
+                // 3. OBTENER EL ID Y NOMBRE DEL PACIENTE
                 val currentUser = userRepository.getLoggedInUser().firstOrNull()
 
-                // (Ahora 'id_rol' SÍ existe en UserEntity)
-                if (currentUser == null || currentUser.id_rol != 1L) { // Asegurarse de que sea un paciente
+                if (currentUser == null || currentUser.id_rol != 1L) {
                     _uiState.update { it.copy(isSubmitting = false, submissionError = "Error: No se encontró un paciente válido. Vuelve a iniciar sesión.") }
                     return@launch
                 }
 
+                // ¡Obtenemos el nombre completo del paciente!
+                val patientName = "${currentUser.nombre} ${currentUser.apellido}"
+
                 // 4. GUARDAR LA CITA REAL en la base de datos
                 repository.saveAppointment(
-                    patientId = currentUser.id, // <-- (Ahora 'id' SÍ existe)
+                    patientId = currentUser.id,
+                    patientName = patientName,  // <-- NUEVO
+                    doctorId = doctor.id,       // <-- NUEVO
                     doctorName = doctor.name,
                     department = department,
                     date = date,
@@ -156,7 +162,18 @@ class BookAppointmentViewModel(
                 )
 
                 // 5. Éxito
-                _uiState.update { it.copy(isSubmitting = false, showConfirmationDialog = true) }
+                _uiState.update {
+                    it.copy(
+                        isSubmitting = false,
+                        showConfirmationDialog = true,
+                        // Limpiamos el formulario
+                        selectedDepartment = null,
+                        selectedDoctor = null,
+                        selectedDate = null,
+                        selectedTime = null,
+                        doctors = emptyList()
+                    )
+                }
 
             } catch (e: Exception) {
                 _uiState.update { it.copy(isSubmitting = false, submissionError = "Error al guardar la cita: ${e.message}") }

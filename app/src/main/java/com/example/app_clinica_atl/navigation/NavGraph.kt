@@ -27,16 +27,14 @@ import com.example.app_clinica_atl.ui.screen.AdminManageDoctorScreenVm
 import com.example.app_clinica_atl.ui.screen.AdminMenuScreen
 import com.example.app_clinica_atl.ui.screen.AdminUserHistoriesScreen
 import com.example.app_clinica_atl.ui.screen.BookAppointmentScreenVm
-import com.example.app_clinica_atl.ui.screen.DoctorScheduleScreen
+// --- 1. IMPORTAR DoctorScheduleScreenVm ---
+import com.example.app_clinica_atl.ui.screen.DoctorScheduleScreenVm
 import com.example.app_clinica_atl.ui.screen.DoctorMenuScreen
-// --- 1. IMPORTAR DoctorProfileScreenVm (el : AuthViewModel) ---
 import com.example.app_clinica_atl.ui.screen.DoctorProfileScreenVm
 import com.example.app_clinica_atl.ui.screen.FormularioSeguroScreen
 import com.example.app_clinica_atl.ui.screen.HomeScreenVm
 import com.example.app_clinica_atl.ui.screen.LoginScreenVm
-// --- ¡CAMBIO 1: IMPORTAR LA NUEVA PANTALLA "INTELIGENTE"! ---
 import com.example.app_clinica_atl.ui.screen.PatientProfileScreenVm
-// --- FIN CAMBIO 1 ---
 import com.example.app_clinica_atl.ui.screen.PatientSearchScreenVm
 import com.example.app_clinica_atl.ui.screen.RegisterScreenVm
 import com.example.app_clinica_atl.ui.screen.SegurosScreen
@@ -45,8 +43,6 @@ import com.example.app_clinica_atl.ui.viewmodel.AuthViewModel
 import com.example.app_clinica_atl.ui.viewmodel.BookAppointmentViewModel
 import com.example.app_clinica_atl.ui.viewmodel.DoctorSearchViewModel
 import com.example.app_clinica_atl.ui.viewmodel.PatientViewModel
-// --- 2. ELIMINAR EL IMPORT INNECESARIO ---
-// import com.example.app_clinica_atl.ui.viewmodel.DoctorProfileViewModel
 import kotlinx.coroutines.launch
 
 @RequiresApi(Build.VERSION_CODES.O)
@@ -57,8 +53,6 @@ fun AppNavGraph(
     patientViewModel: PatientViewModel,
     bookAppointmentViewModel: BookAppointmentViewModel,
     doctorSearchViewModel: DoctorSearchViewModel,
-    // --- 3. ELIMINAR EL PARÁMETRO ---
-    // doctorProfileViewModel: DoctorProfileViewModel,
     adminManageDoctorViewModel: AdminManageDoctorViewModel
 ) {
     val context = LocalContext.current.applicationContext
@@ -187,14 +181,12 @@ fun AppNavGraph(
                 composable(Route.InsuranceForm.path) {
                     FormularioSeguroScreen(navController = navController)
                 }
-                // --- ¡CAMBIO 2: PASAR EL AUTHVIEWMODEL AL PERFIL! ---
                 composable(Route.Profile.path) {
-                    PatientProfileScreenVm( // <-- Llamamos a la nueva pantalla "inteligente"
-                        vm = authViewModel, // <-- Le pasamos el cerebro
+                    PatientProfileScreenVm(
+                        vm = authViewModel,
                         onLogout = logoutAndNavigate
                     )
                 }
-                // --- FIN CAMBIO 2 ---
                 composable(Route.PatientSearch.path) {
                     PatientSearchScreenVm(vm = patientViewModel)
                 }
@@ -206,19 +198,20 @@ fun AppNavGraph(
                         onLogout = logoutAndNavigate
                     )
                 }
-                composable(Route.DoctorAppointments.path) {
-                    DoctorScheduleScreen()
-                }
 
-                // --- 4. ACTUALIZAR LA RUTA DEL PERFIL DEL DOCTOR ---
+                // --- 2. ¡AQUÍ ESTÁ LA CORRECCIÓN! ---
+                // (Llamamos a la pantalla "inteligente" y le pasamos el VM)
+                composable(Route.DoctorAppointments.path) {
+                    DoctorScheduleScreenVm(vm = authViewModel)
+                }
+                // --- FIN 2 ---
+
                 composable(Route.DoctorProfile.path) {
                     DoctorProfileScreenVm(
-                        vm = authViewModel, // <-- USAR AUTHVIEWMODEL
+                        vm = authViewModel,
                         onLogout = logoutAndNavigate
                     )
                 }
-                // --- FIN 4 ---
-
                 composable(Route.AdminMenu.path) {
                     AdminMenuScreen(
                         onViewDoctorSchedules = goAdminDoctorSchedule,

@@ -4,26 +4,27 @@ import android.os.Build
 import androidx.annotation.RequiresApi
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+// --- 1. IMPORTAR AppointmentEntity ---
+import com.example.app_clinica_atl.data.local.appointment.AppointmentEntity
 import com.example.app_clinica_atl.data.local.storage.UserPreferences
 import com.example.app_clinica_atl.data.local.user.UserEntity
-// --- 1. IMPORTAR LA ENTIDAD DE CITAS ---
-import com.example.app_clinica_atl.data.local.appointment.AppointmentEntity
-import com.example.app_clinica_atl.data.repository.UserRepository
-// --- 1. IMPORTAR LA DEPENDENCIA QUE FALTA ---
+// --- 2. IMPORTAR LOS 3 REPOSITORIOS ---
 import com.example.app_clinica_atl.data.repository.AppointmentRepository
-// --- 1. IMPORTAR DoctorRepository Y DoctorInfo ---
-import com.example.app_clinica_atl.data.model.DoctorInfo
 import com.example.app_clinica_atl.data.repository.DoctorRepository
+import com.example.app_clinica_atl.data.repository.UserRepository
+import com.example.app_clinica_atl.data.model.DoctorInfo
 import com.example.app_clinica_atl.domain.validation.*
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.first
+import kotlinx.coroutines.flow.firstOrNull
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
+import java.time.LocalDate
 
-// ... (Data classes LoginUiState y RegisterUiState se mantienen igual) ...
-
+// (LoginUiState y RegisterUiState se mantienen igual)
 data class LoginUiState(
     val email: String = "",
     val pass: String = "",
@@ -59,12 +60,15 @@ data class RegisterUiState(
     val errorMsg: String? = null
 )
 
+// (BookAppointmentUiState se movió a su propio ViewModel)
 
+
+@RequiresApi(Build.VERSION_CODES.O)
 class AuthViewModel(
     private val repository: UserRepository,
     private val userPreferences: UserPreferences,
+    // --- 3. AÑADIR LOS NUEVOS REPOSITORIOS ---
     private val appointmentRepo: AppointmentRepository,
-    // --- 2. AÑADIR DOCTORREPOSITORY AL CONSTRUCTOR ---
     private val doctorRepo: DoctorRepository
 ) : ViewModel() {
 
@@ -77,18 +81,20 @@ class AuthViewModel(
     private val _userDisplayName = MutableStateFlow("Bienvenido/a a la Clínica")
     val userDisplayName: StateFlow<String> = _userDisplayName
 
-    // --- ¡CAMBIO 1: AÑADIR ESTADO PARA EL USUARIO ACTUAL! ---
-    // Este Flow "recordará" al usuario que inició sesión.
     private val _currentUserData = MutableStateFlow<UserEntity?>(null)
     val currentUserData: StateFlow<UserEntity?> = _currentUserData.asStateFlow()
-    // --- FIN CAMBIO 1 ---
 
-    // --- 2. NUEVO ESTADO PARA LAS CITAS DEL USUARIO ---
+    // --- 4. ¡NUEVOS ESTADOS! ---
+    // (Estos son los estados que movimos desde los otros ViewModels)
+
+    // Para Perfil Paciente
     private val _userAppointments = MutableStateFlow<List<AppointmentEntity>>(emptyList())
     val userAppointments: StateFlow<List<AppointmentEntity>> = _userAppointments.asStateFlow()
-    // --- FIN 2 ---
 
-    // --- 3. NUEVOS ESTADOS PARA EL PERFIL DEL DOCTOR ---
+    // Para Perfil Doctor
+    private val _doctorAppointments = MutableStateFlow<List<AppointmentEntity>>(emptyList())
+    val doctorAppointments: StateFlow<List<AppointmentEntity>> = _doctorAppointments.asStateFlow() // <-- ¡AQUÍ ESTABA EL BUG SUTIL!
+
     private val _currentDoctorInfo = MutableStateFlow<DoctorInfo?>(null)
     val currentDoctorInfo: StateFlow<DoctorInfo?> = _currentDoctorInfo.asStateFlow()
 
@@ -97,40 +103,30 @@ class AuthViewModel(
 
     private val _saveProfileSuccess = MutableStateFlow(false)
     val saveProfileSuccess: StateFlow<Boolean> = _saveProfileSuccess.asStateFlow()
-    // --- FIN 3 ---
+    // --- FIN 4 ---
 
 
-    // --- 4. MODIFICAR EL INIT PARA CARGAR DOCTOR O PACIENTE ---
+    // (BookAppointmentUiState ya no está aquí)
+
     init {
         viewModelScope.launch {
-            repository.getLoggedInUser().collect { user ->
-                _currentUserData.value = user
+            // (La carga de departamentos se movió a BookAppointmentViewModel)
 
-                // Limpiar estados anteriores
-                _userAppointments.value = emptyList()
-                _currentDoctorInfo.value = null
-
+            // --- 7. ¡ACTUALIZADO! Carga los datos del usuario al iniciar ---
+            val loggedInEmail = userPreferences.loggedInUserEmail.first()
+            if (loggedInEmail != null) {
+                // Usamos .first() aquí porque init solo corre una vez.
+                val user = repository.getLoggedInUser().firstOrNull()
                 if (user != null) {
-                    // Cargar datos según el rol
+                    _currentUserData.value = user
                     _userDisplayName.value = "Hola, ${user.nombre} (${if(user.id_rol == 1L) "Paciente" else if(user.id_rol == 2L) "Doctor" else "Admin"})."
 
-                    if (user.id_rol == 1L) { // Rol Paciente
-                        appointmentRepo.getAppointmentsForUser(user.id).collect { appointments ->
-                            _userAppointments.value = appointments
-                        }
-                    } else if (user.id_rol == 2L) { // Rol Doctor
-                        // ¡Aquí cargamos el perfil del doctor!
-                        _currentDoctorInfo.value = doctorRepo.getDoctorByEmail(user.email)
-                    }
-
-                } else {
-                    // No hay usuario, limpiar todo
-                    _userDisplayName.value = "Bienvenido/a a la Clínica"
+                    // --- ¡NUEVO! Cargar datos según el rol ---
+                    loadRoleSpecificData(user)
                 }
             }
         }
     }
-    // --- FIN 4 ---
 
 
     // ----------------- LOGIN: Handlers -----------------
@@ -149,20 +145,15 @@ class AuthViewModel(
         _login.update { it.copy(canSubmit = can) }
     }
 
-    // recomputeRegisterCanSubmit ahora SOLO habilita el botón,
-    // la validación final se hace en submitRegister
     private fun recomputeRegisterCanSubmit() {
         val s = _register.value
-
         val noErrors = listOf(
             s.nombreError, s.apellidoError, s.fechaNacimientoError, s.emailError,
             s.phoneError, s.passError, s.confirmError
         ).all { it == null }
-
         val filled = s.nombre.isNotBlank() && s.apellido.isNotBlank() &&
                 s.fecha_nacimiento.isNotBlank() && s.email.isNotBlank() &&
                 s.phone.isNotBlank() && s.pass.isNotBlank() && s.confirm.isNotBlank()
-
         _register.update { it.copy(canSubmit = noErrors && filled && s.fecha_nacimiento.length == 10) }
     }
 
@@ -177,12 +168,15 @@ class AuthViewModel(
             val errorMessage = result.exceptionOrNull()?.message ?: "Error de autenticación"
             _login.update {
                 if (user != null) {
-                    userPreferences.setLoggedIn(true)
-                    // --- 4. QUITAR LÓGICA DE AQUÍ ---
-                    // (El 'init' collector se encargará de esto automáticamente)
-                    // _userDisplayName.value = "Hola, ${user.nombre} (${if(user.id_rol == 1L) "Paciente" else if(user.id_rol == 2L) "Doctor" else "Admin"})."
-                    // _currentUserData.value = user
-                    // --- FIN 4 ---
+
+                    // --- ¡¡¡AQUÍ ESTÁ LA CORRECCIÓN!!! ---
+                    // (Restauramos las líneas que borré por error)
+                    _userDisplayName.value = "Hola, ${user.nombre} (${if(user.id_rol == 1L) "Paciente" else if(user.id_rol == 2L) "Doctor" else "Admin"})."
+                    _currentUserData.value = user
+
+                    // *** ¡LLAMADA A LA LÓGICA CENTRALIZADA! ***
+                    loadRoleSpecificData(user)
+                    // --- FIN DE LA CORRECCIÓN ---
 
                     it.copy(
                         isSubmitting = false,
@@ -209,60 +203,19 @@ class AuthViewModel(
     suspend fun logout() {
         _login.value = LoginUiState()
         _register.value = RegisterUiState()
-        // --- 5. SIMPLIFICAR LOGOUT ---
-        // (El 'init' collector se encargará de limpiar los states
-        //  cuando el 'setLoggedIn' dispare el cambio en el Flow)
+        _userDisplayName.value = "Bienvenido/a a la Clínica"
+        _currentUserData.value = null
+
+        // --- ¡NUEVO! Limpiar datos de rol ---
+        _userAppointments.value = emptyList()
+        _doctorAppointments.value = emptyList()
+        _currentDoctorInfo.value = null
+        // --- FIN ---
+
         userPreferences.setLoggedIn(false)
-        // --- FIN 5 ---
     }
 
-    // --- 5. AÑADIR FUNCIÓN PARA GUARDAR PERFIL DE DOCTOR ---
-    fun saveDoctorProfile(
-        newContactNumber: String,
-        newAddress: String,
-        newEmail: String
-    ) {
-        if (_isSavingProfile.value) return
-        val currentDoctor = _currentDoctorInfo.value ?: return
-
-        viewModelScope.launch {
-            _isSavingProfile.value = true
-            _saveProfileSuccess.value = false
-
-            // Simulación de guardado (el repo es mockeado)
-            delay(1500)
-
-            val updatedDoctor = currentDoctor.copy(
-                contactNumber = newContactNumber,
-                address = newAddress,
-                email = newEmail
-            )
-
-            // Aquí llamarías a repository.updateDoctor(updatedDoctor)
-            // Como nuestro repo es mockeado, solo actualizamos el estado local
-            _currentDoctorInfo.value = updatedDoctor
-
-            _isSavingProfile.value = false
-            _saveProfileSuccess.value = true
-        }
-    }
-
-    // Función para limpiar el estado de "Guardado!"
-    fun clearSaveDoctorProfileStatus() {
-        _saveProfileSuccess.value = false
-    }
-    // --- FIN 5 ---
-
-
-    // --- 6. FUNCIÓN DE CANCELAR CITA (ya la teníamos) ---
-    fun cancelAppointment(appointmentId: Long) {
-        viewModelScope.launch {
-            appointmentRepo.deleteAppointment(appointmentId)
-            // La lista se actualizará sola gracias al Flow del 'init'
-        }
-    }
-    // --- FIN 6 ---
-
+    // (La lógica de Registro se mantiene igual)
     fun onNombreChange(value: String) {
         val filtered = value.filter { it.isLetter() || it.isWhitespace() }
         _register.update {
@@ -277,11 +230,8 @@ class AuthViewModel(
         }
         recomputeRegisterCanSubmit()
     }
-
-    @RequiresApi(Build.VERSION_CODES.O)
     fun onFechaNacimientoChange(value: String) {
         val digits = value.filter(Char::isDigit).take(8)
-
         val formatted = buildString {
             for ((index, char) in digits.withIndex()) {
                 append(char)
@@ -292,10 +242,8 @@ class AuthViewModel(
                 }
             }
         }
-
         _register.update {
             var error: String?
-
             if (formatted.isBlank()) {
                 error = "La fecha es obligatoria"
             } else if (formatted.length < 10) {
@@ -306,7 +254,6 @@ class AuthViewModel(
                     error = validateEdadMinima(formatted, 18)
                 }
             }
-
             it.copy(
                 fecha_nacimiento = formatted,
                 fechaNacimientoError = error
@@ -314,7 +261,6 @@ class AuthViewModel(
         }
         recomputeRegisterCanSubmit()
     }
-
     fun onRegisterEmailChange(value: String) {
         _register.update { it.copy(email = value, emailError = validateEmail(value)) }
         recomputeRegisterCanSubmit()
@@ -326,7 +272,6 @@ class AuthViewModel(
         }
         recomputeRegisterCanSubmit()
     }
-
     fun onRegisterPassChange(value: String) {
         _register.update { it.copy(pass = value, passError = validateSimplePassword(value)) }
         _register.update { it.copy(confirmError = validateConfirm(it.pass, it.confirm)) }
@@ -336,13 +281,8 @@ class AuthViewModel(
         _register.update { it.copy(confirm = value, confirmError = validateConfirm(it.pass, value)) }
         recomputeRegisterCanSubmit()
     }
-
-    // --- ¡¡¡ESTA ES LA FUNCIÓN CORREGIDA!!! ---
     fun submitRegister() {
-        // Ya no confiamos en 'canSubmit'. Volvemos a validar todo AHORA.
         val s = _register.value
-
-        // 1. Validamos todos los campos uno por uno
         val nombreError = validateNamePart(s.nombre.trim(), "El nombre")
         val apellidoError = validateNamePart(s.apellido.trim(), "El apellido")
         val fechaError = if (s.fecha_nacimiento.length < 10) "Formato debe ser DD-MM-YYYY"
@@ -351,15 +291,11 @@ class AuthViewModel(
         val phoneError = validatePhoneDigitsOnly(s.phone.trim())
         val passError = validateSimplePassword(s.pass)
         val confirmError = validateConfirm(s.pass, s.confirm)
-
-        // 2. Creamos una lista de todos los errores
         val errors = listOf(
             nombreError, apellidoError, fechaError, emailError,
             phoneError, passError, confirmError
         )
         val hasError = errors.any { it != null }
-
-        // 3. Si hay CUALQUIER error, actualizamos la UI con todos los errores y detenemos.
         if (hasError) {
             _register.update {
                 it.copy(
@@ -372,14 +308,11 @@ class AuthViewModel(
                     confirmError = confirmError
                 )
             }
-            return // <-- DETENEMOS EL REGISTRO
+            return
         }
-
-        // 4. Si llegamos aquí, NO hay errores. Procedemos a registrar.
         viewModelScope.launch {
             _register.update { it.copy(isSubmitting = true, errorMsg = null, success = false) }
             delay(700)
-
             val result = repository.register(
                 nombre = s.nombre.trim(),
                 apellido = s.apellido.trim(),
@@ -388,7 +321,6 @@ class AuthViewModel(
                 phone = s.phone.trim(),
                 password = s.pass
             )
-
             _register.update {
                 if (result.isSuccess) {
                     it.copy(isSubmitting = false, success = true, errorMsg = null)
@@ -399,9 +331,109 @@ class AuthViewModel(
             }
         }
     }
-    // --- FIN DE LA FUNCIÓN CORREGIDA ---
-
     fun clearRegisterResult() {
         _register.update { it.copy(success = false, errorMsg = null) }
     }
+
+    // --- ¡NUEVA FUNCIÓN CENTRALIZADA Y CORREGIDA! ---
+    private fun loadRoleSpecificData(user: UserEntity) {
+        viewModelScope.launch {
+            when (user.id_rol) {
+                1L -> {
+                    // Rol 1: Paciente
+                    // Carga sus citas
+                    loadUserAppointments(user.id)
+                }
+                2L -> {
+                    // Rol 2: Doctor
+                    // 1. Carga su perfil de DoctorInfo
+                    val doctor = doctorRepo.getDoctorByEmail(user.email)
+                    _currentDoctorInfo.value = doctor
+
+                    // 2. SI lo encuentra, usa su ID (String) para cargar su agenda
+                    if (doctor != null) {
+                        loadDoctorAppointments(doctor.id) // <--- ¡CORREGIDO!
+                    }
+                }
+                3L -> {
+                    // Rol 3: Admin (no necesita cargar nada extra... por ahora)
+                }
+            }
+        }
+    }
+
+
+    // --- 8. LÓGICA DE PERFIL (MOVIMOS TODO AQUÍ) ---
+
+    // Carga las citas del PACIENTE
+    private fun loadUserAppointments(patientId: Long) {
+        viewModelScope.launch {
+            appointmentRepo.getAppointmentsForUser(patientId).collect { appointments ->
+                _userAppointments.value = appointments
+            }
+        }
+    }
+
+    // Carga las citas del DOCTOR
+    private fun loadDoctorAppointments(doctorId: String) {
+        viewModelScope.launch {
+            appointmentRepo.getAppointmentsForDoctor(doctorId).collect { appointments ->
+                _doctorAppointments.value = appointments
+            }
+        }
+    }
+
+    // Carga el perfil del DOCTOR
+    private fun loadDoctorInfo(email: String) {
+        viewModelScope.launch {
+            _currentDoctorInfo.value = doctorRepo.getDoctorByEmail(email)
+        }
+    }
+
+    // (Esta es la función que usa el Perfil Paciente y Doctor)
+    fun cancelAppointment(appointmentId: Long) {
+        viewModelScope.launch {
+            appointmentRepo.deleteAppointment(appointmentId)
+            // No necesitamos actualizar la UI, el .collect() lo hará automáticamente
+        }
+    }
+
+    // (Estas son las funciones que usa el Perfil Doctor)
+    fun saveDoctorProfile(
+        newContactNumber: String,
+        newAddress: String,
+        newEmail: String
+    ) {
+        val currentDoctor = _currentDoctorInfo.value
+        if (currentDoctor == null) return
+
+        viewModelScope.launch {
+            _isSavingProfile.value = true
+            delay(1500) // Simular guardado
+
+            val updatedInfo = currentDoctor.copy(
+                contactNumber = newContactNumber,
+                address = newAddress,
+                email = newEmail
+            )
+
+            val success = doctorRepo.updateDoctor(updatedInfo)
+            if (success) {
+                _currentDoctorInfo.value = updatedInfo
+                _saveProfileSuccess.value = true
+            }
+            _isSavingProfile.value = false
+        }
+    }
+
+    fun clearSaveDoctorProfileStatus() {
+        _saveProfileSuccess.value = false
+    }
+
+    fun updatePhotoUri(uriString: String?) {
+        // (Por ahora no lo guardamos en el repo, solo en la UI)
+        // Podríamos añadir lógica aquí si quisiéramos persistirlo
+    }
+
+    // --- FIN 8 ---
 }

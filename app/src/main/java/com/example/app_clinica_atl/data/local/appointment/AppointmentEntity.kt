@@ -21,7 +21,7 @@ import com.example.app_clinica_atl.data.local.user.UserEntity
         )
     ],
     // 3. Creamos un "índice" en 'patient_id' para que buscar citas por usuario sea ultra-rápido.
-    indices = [Index("patient_id")]
+    indices = [Index("patient_id"), Index("doctor_id")] // <-- AÑADIDO ÍNDICE PARA DOCTOR ID
 )
 data class AppointmentEntity(
     @PrimaryKey(autoGenerate = true)
@@ -29,6 +29,14 @@ data class AppointmentEntity(
 
     @ColumnInfo(name = "patient_id")
     val patientId: Long, // El ID del UserEntity (paciente)
+
+    // --- ¡NUEVOS CAMPOS! ---
+    @ColumnInfo(name = "patient_name")
+    val patientName: String, // El nombre del paciente (para mostrar al doctor)
+
+    @ColumnInfo(name = "doctor_id")
+    val doctorId: String, // El ID del DoctorInfo (ej: "000")
+    // --- FIN NUEVOS CAMPOS ---
 
     @ColumnInfo(name = "doctor_name")
     val doctorName: String,
