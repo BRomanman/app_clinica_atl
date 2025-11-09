@@ -4,6 +4,7 @@ import androidx.room.Dao                       // Marca esta interfaz como DAO d
 import androidx.room.Insert                    // Para insertar filas
 import androidx.room.OnConflictStrategy        // Estrategia de conflicto en inserción
 import androidx.room.Query                     // Para queries SQL
+import kotlinx.coroutines.flow.Flow // <-- IMPORTAR FLOW
 
 // @Dao indica que define operaciones para la tabla users.
 @Dao
@@ -16,6 +17,12 @@ interface UserDao {
     // Devuelve un usuario por email (o null si no existe).
     @Query("SELECT * FROM users WHERE email = :email LIMIT 1")
     suspend fun getByEmail(email: String): UserEntity?
+
+    // --- NUEVA FUNCIÓN CON FLOW ---
+    // (Igual que la de arriba, pero devuelve un Flow para "escuchar" cambios)
+    @Query("SELECT * FROM users WHERE email = :email LIMIT 1")
+    fun getByEmailFlow(email: String): Flow<UserEntity?>
+    // --- FIN ---
 
     // Cuenta total de usuarios (para saber si hay datos y/o para seeds).
     @Query("SELECT COUNT(*) FROM users")

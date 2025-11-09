@@ -31,8 +31,10 @@ import com.example.app_clinica_atl.notifications.NotificationHelper
 import com.example.app_clinica_atl.ui.theme.AppClinicaATLTheme
 import com.example.app_clinica_atl.ui.viewmodel.BookAppointmentUiState
 import com.example.app_clinica_atl.ui.viewmodel.BookAppointmentViewModel
+import java.time.Instant // <-- IMPORT NECESARIO
 import java.time.LocalDate
 import java.time.LocalTime
+import java.time.ZoneId // <-- IMPORT NECESARIO
 import java.time.format.DateTimeFormatter
 
 // 1. Composable "Inteligente"
@@ -151,8 +153,41 @@ private fun BookAppointmentScreen(
         disabledBorderColor = MaterialTheme.colorScheme.outline
     )
 
-    // Estado para el DatePickerDialog
-    val datePickerState = rememberDatePickerState()
+    // --- INICIO DEL CAMBIO: Bloquear fechas (Hoy + 3 días) ---
+
+    // 1. Obtenemos el primer milisegundo de la fecha permitida (hoy + 3 días) en UTC.
+    val firstAllowedDateMillis = remember {
+        LocalDate.now() // Obtiene la fecha de hoy (ej: 2025-11-09)
+            .plusDays(3) // <-- ¡¡AQUÍ ESTÁ EL CAMBIO!! (ej: 2025-11-12)
+            .atStartOfDay(ZoneId.of("UTC")) // La convierte al inicio de ese día en UTC
+            .toInstant()
+            .toEpochMilli()
+    }
+
+    // 2. Creamos el objeto SelectableDates que Material 3 SÍ entiende.
+    val selectableDates = remember(firstAllowedDateMillis) { // <-- Usamos la nueva variable
+        object : SelectableDates {
+
+            @ExperimentalMaterial3Api
+            override fun isSelectableDate(utcTimeMillis: Long): Boolean {
+                // Solo permite la fecha si NO es anterior a la primera fecha permitida.
+                return utcTimeMillis >= firstAllowedDateMillis // <-- Usamos la nueva variable
+            }
+
+            @ExperimentalMaterial3Api
+            override fun isSelectableYear(year: Int): Boolean {
+                // Esta lógica sigue bien, bloquea años pasados.
+                return year >= LocalDate.now().year
+            }
+        }
+    }
+
+    // 3. Pasamos el validador (selectableDates) AL CREAR el estado.
+    val datePickerState = rememberDatePickerState(
+        selectableDates = selectableDates
+    )
+    // --- FIN DEL CAMBIO ---
+
 
     // --- DatePickerDialog ---
     if (state.showDatePicker) {
@@ -169,7 +204,9 @@ private fun BookAppointmentScreen(
                 }
             }
         ) {
-            DatePicker(state = datePickerState)
+            DatePicker(
+                state = datePickerState
+            )
         }
     }
 
@@ -219,37 +256,20 @@ private fun BookAppointmentScreen(
             }
         }
 
-        // --- ARREGLO DEL CRASH ---
-        // El error ocurría en la siguiente línea al intentar formatear un string
-        // que probablemente no tenía un placeholder (%d).
+        // (Arreglo del crash anterior)
         state.selectedDoctor?.let {
-            // 1. Leemos el string (ej: "Doctor desde")
             val sinceText = stringResource(id = R.string.book_appointment_doctor_since)
-            // 2. Construimos el texto manualmente para evitar el crash
             Text(
                 text = "$sinceText ${it.since}",
                 style = MaterialTheme.typography.labelMedium
             )
         }
-        // --- FIN DEL ARREGLO ---
-
-
-
-
-
-
-
 
         val dateFieldEnabled = state.selectedDepartment != null && state.selectedDoctor != null
 
-// Ya no necesitas 'dateClickInteraction' para esto
-
         ExposedDropdownMenuBox(
-            // 1. Vincula el estado "expanded" a la visibilidad de tu DatePicker
             expanded = state.showDatePicker,
-            // 2. Usa onExpandedChange como tu nuevo 'onClick'
             onExpandedChange = {
-                // 'it' será 'true' cuando se haga clic para abrir
                 if (dateFieldEnabled) {
                     onShowDatePicker(it)
                 }
@@ -265,18 +285,13 @@ private fun BookAppointmentScreen(
                 leadingIcon = { Icon(Icons.Default.Event, null) },
                 trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded = state.showDatePicker) },
                 enabled = dateFieldEnabled,
-                colors = ExposedDropdownMenuDefaults.outlinedTextFieldColors(), // Opcional, pero recomendado
+                colors = ExposedDropdownMenuDefaults.outlinedTextFieldColors(),
                 modifier = Modifier
                     .fillMaxWidth()
-
-                    //    Le dice al Box que ESTE campo es el ancla que debe ser clicable.
                     .menuAnchor(),
                 singleLine = true
             )
 
-
-            //    El DatePicker es un Dialog, así que no mostramos nada aquí.
-            //    Esto te da un onDismissRequest (clic fuera) gratis.
             ExposedDropdownMenu(
                 expanded = state.showDatePicker,
                 onDismissRequest = { onShowDatePicker(false) }
@@ -284,12 +299,6 @@ private fun BookAppointmentScreen(
                 // No se necesita contenido aquí para el DatePicker
             }
         }
-
-
-
-
-
-
 
         // --- Hora ---
         val timeFieldEnabled = state.selectedDate != null
