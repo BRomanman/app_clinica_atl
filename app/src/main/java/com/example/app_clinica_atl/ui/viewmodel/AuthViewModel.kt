@@ -1,10 +1,14 @@
 package com.example.app_clinica_atl.ui.viewmodel
 
+import android.os.Build
+import androidx.annotation.RequiresApi
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.example.app_clinica_atl.data.local.storage.UserPreferences
 import com.example.app_clinica_atl.data.local.user.UserEntity
 import com.example.app_clinica_atl.data.repository.UserRepository
+// --- 1. IMPORTAR LA DEPENDENCIA QUE FALTA ---
+import com.example.app_clinica_atl.data.repository.AppointmentRepository
 import com.example.app_clinica_atl.domain.validation.*
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -53,7 +57,9 @@ data class RegisterUiState(
 
 class AuthViewModel(
     private val repository: UserRepository,
-    private val userPreferences: UserPreferences
+    private val userPreferences: UserPreferences,
+    // --- 2. AÑADIR EL REPOSITORIO DE CITAS AL CONSTRUCTOR ---
+    private val appointmentRepo: AppointmentRepository
 ) : ViewModel() {
 
     private val _login = MutableStateFlow(LoginUiState())
@@ -172,6 +178,7 @@ class AuthViewModel(
         recomputeRegisterCanSubmit()
     }
 
+    @RequiresApi(Build.VERSION_CODES.O)
     fun onFechaNacimientoChange(value: String) {
         val digits = value.filter(Char::isDigit).take(8)
 
@@ -231,6 +238,7 @@ class AuthViewModel(
     }
 
     // --- ¡¡¡ESTA ES LA FUNCIÓN CORREGIDA!!! ---
+    @RequiresApi(Build.VERSION_CODES.O)
     fun submitRegister() {
         // Ya no confiamos en 'canSubmit'. Volvemos a validar todo AHORA.
         val s = _register.value

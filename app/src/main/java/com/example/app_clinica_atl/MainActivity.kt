@@ -79,9 +79,10 @@ class MainActivity : ComponentActivity() {
         }
     }
 
-    @RequiresApi(Build.VERSION_CODES.O)
+    @get:RequiresApi(Build.VERSION_CODES.O)
     private val bookAppointmentViewModel: BookAppointmentViewModel by viewModels {
         object : ViewModelProvider.Factory {
+            @RequiresApi(Build.VERSION_CODES.O)
             override fun <T : ViewModel> create(modelClass: Class<T>): T {
                 // (Ahora BookAppointmentViewModel también necesita el repo de usuario)
                 @Suppress("UNCHECKED_CAST")
