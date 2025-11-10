@@ -434,6 +434,16 @@ class AuthViewModel(
         // (Por ahora no lo guardamos en el repo, solo en la UI)
         // Podríamos añadir lógica aquí si quisiéramos persistirlo
     }
+    fun updateUserPhoto(photoUri: String?) {
+        val user = _currentUserData.value
+        if (user == null) return
+        val updatedUser = user.copy(photoUri = photoUri)
+        _currentUserData.value = updatedUser
+        viewModelScope.launch {
+            repository.updateUserPhoto(user.id, photoUri)
+        }
+    }
+
 
     // --- FIN 8 ---
 }
