@@ -17,9 +17,10 @@ import androidx.room.Room
 import androidx.room.RoomDatabase
 import androidx.sqlite.db.SupportSQLiteDatabase
 import com.example.app_clinica_atl.data.local.database.AppDatabase
-// --- 2. IMPORTAR LA NUEVA MIGRACIÓN 3_4 ---
 import com.example.app_clinica_atl.data.local.database.MIGRATION_2_3
 import com.example.app_clinica_atl.data.local.database.MIGRATION_3_4
+import com.example.app_clinica_atl.data.local.database.MIGRATION_4_5
+import com.example.app_clinica_atl.data.local.database.MIGRATION_5_6
 import com.example.app_clinica_atl.data.local.storage.UserPreferences
 import com.example.app_clinica_atl.data.repository.AppointmentRepository
 import com.example.app_clinica_atl.data.repository.DoctorRepository
@@ -33,7 +34,6 @@ import com.example.app_clinica_atl.ui.viewmodel.AuthViewModel
 import com.example.app_clinica_atl.ui.viewmodel.BookAppointmentViewModel
 import com.example.app_clinica_atl.ui.viewmodel.DoctorSearchViewModel
 import com.example.app_clinica_atl.ui.viewmodel.PatientViewModel
-// --- (Imports de DoctorProfileViewModel eliminados) ---
 
 class MainActivity : ComponentActivity() {
 
@@ -42,19 +42,32 @@ class MainActivity : ComponentActivity() {
         Room.databaseBuilder(
             applicationContext,
             AppDatabase::class.java,
-            "clinica_atl_v4.db" // <-- 3.1. NUEVO NOMBRE DE BD (v4)
+            "clinica_atl_v6.db" // Usamos el nuevo nombre de la DB (v6)
         )
-            .addMigrations(MIGRATION_2_3, MIGRATION_3_4) // <-- 3.2. AÑADIR NUEVA MIGRACIÓN
+            .addMigrations(MIGRATION_2_3, MIGRATION_3_4, MIGRATION_4_5, MIGRATION_5_6) // Añadida 5_6
+            // --- ¡AÑADIR ESTE BLOQUE COMPLETO! ---
             .addCallback(object : RoomDatabase.Callback() {
                 override fun onCreate(db: SupportSQLiteDatabase) {
                     super.onCreate(db)
-                    // (Los datos semilla se mantienen igual)
-                    db.execSQL("INSERT OR REPLACE INTO users (nombre, apellido, fecha_nacimiento, email, phone, password, id_rol) VALUES ('Admin', 'Clinica', '01-01-1990', 'admin@duoc.cl', '12345678', 'Admin123!', 3)")
-                    db.execSQL("INSERT OR REPLACE INTO users (nombre, apellido, fecha_nacimiento, email, phone, password, id_rol) VALUES ('Víctor', 'Rosendo', '10-05-2000', 'victor@duoc.cl', '56922222222', '123456', 2)")
-                    db.execSQL("INSERT OR REPLACE INTO users (nombre, apellido, fecha_nacimiento, email, phone, password, id_rol) VALUES ('Carlos', 'Sainz', '01-09-1994', 'csainz@duoc.cl', '56933333333', '123456', 1)")
+                    // Usamos raw SQL para insertar los usuarios semilla
+                    // Esto se ejecuta SÓLO la primera vez que la BD es creada
+
+                    // --- ¡CORRECCIÓN CRÍTICA! ---
+                    // Ahora especificamos las 9 columnas para que coincida con la v6
+                    val columns = "(nombre, apellido, fecha_nacimiento, email, phone, password, id_rol, photoUri, isLoggedIn)"
+
+                    // Rol 3: Administrador
+                    db.execSQL("INSERT OR REPLACE INTO users $columns VALUES ('Admin', 'Clinica', '01-01-1990', 'admin@duoc.cl', '12345678', 'Admin123!', 3, NULL, 0)")
+
+                    // Rol 2: Doctor (Tus datos)
+                    db.execSQL("INSERT OR REPLACE INTO users $columns VALUES ('Víctor', 'Rosendo', '10-05-2000', 'victor@duoc.cl', '56922222222', '123456', 2, NULL, 0)")
+
+                    // Rol 1: Paciente (Tus datos)
+                    db.execSQL("INSERT OR REPLACE INTO users $columns VALUES ('Carlos', 'Sainz', '01-09-1994', 'csainz@duoc.cl', '56933333333', '123456', 1, NULL, 0)")
                 }
             })
-            .fallbackToDestructiveMigration()
+            // --- FIN DEL BLOQUE AÑADIDO ---
+            .fallbackToDestructiveMigration() // Como plan B
             .build()
     }
     // --- FIN 3 ---
@@ -64,11 +77,9 @@ class MainActivity : ComponentActivity() {
     // --- 4. REPOSITORIOS (ACTUALIZADOS) ---
     private val userRepo by lazy { UserRepository(db.userDao(), userPreferences) }
     private val patientRepo by lazy { PatientRepository() }
-    private val doctorRepo by lazy { DoctorRepository() } // <-- Este ya existía
-    private val adminDoctorRepo by lazy { DoctorRepository() }
-
-    // --- ¡¡¡AQUÍ ESTÁ LA CORRECCIÓN 1!!! ---
-    // ¡AHORA AppointmentRepository DEPENDE de doctorRepo!
+    private val doctorRepo by lazy { DoctorRepository() } // Sigue mockeado
+    private val adminDoctorRepo by lazy { DoctorRepository() } // Sigue mockeado
+    // (Actualizado para pasar doctorRepo)
     private val appointmentRepo by lazy { AppointmentRepository(db.appointmentDao(), doctorRepo) }
     // --- FIN 4 ---
 
@@ -83,7 +94,7 @@ class MainActivity : ComponentActivity() {
                     userRepo,
                     userPreferences,
                     appointmentRepo,
-                    doctorRepo
+                    doctorRepo // <-- La 4ta dependencia que añadimos
                 ) as T
             }
         }
@@ -103,8 +114,7 @@ class MainActivity : ComponentActivity() {
             @RequiresApi(Build.VERSION_CODES.O)
             override fun <T : ViewModel> create(modelClass: Class<T>): T {
                 @Suppress("UNCHECKED_CAST")
-                // --- ¡¡¡AQUÍ ESTÁ LA CORRECCIÓN 2!!! ---
-                // ¡Añadimos doctorRepo a la fábrica!
+                // (Actualizado para pasar doctorRepo)
                 return BookAppointmentViewModel(appointmentRepo, userRepo, doctorRepo) as T
             }
         }
@@ -134,6 +144,7 @@ class MainActivity : ComponentActivity() {
         super.onCreate(savedInstanceState)
         enableEdgeToEdge()
 
+        // (Crear canales de notificación se mantiene igual)
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
             NotificationHelper.createNotificationChannel(this)
         }

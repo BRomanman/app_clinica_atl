@@ -14,6 +14,7 @@ import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.painterResource
@@ -23,12 +24,42 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.example.app_clinica_atl.R
+// --- 1. IMPORTAR EL AUTHVIEWMODEL ---
+import com.example.app_clinica_atl.ui.viewmodel.AuthViewModel
 
+// --- 2. NUEVO COMPOSABLE "INTELIGENTE" (VM) ---
 @Composable
-fun DoctorMenuScreen(
+fun DoctorMenuScreenVm(
+    vm: AuthViewModel,
     onGoAppointments: () -> Unit,
-    onGoHistories: () -> Unit,
+    onGoProfile: () -> Unit,
+    onLogout: () -> Unit,
+    modifier: Modifier = Modifier
+) {
+    // Obtenemos los datos del usuario (que tiene el nombre)
+    val userData by vm.currentUserData.collectAsStateWithLifecycle()
+
+    // Creamos el nombre a mostrar. Si por alguna razón es nulo, usamos "Doctor"
+    val displayName = userData?.nombre ?: "Doctor"
+
+    // Llamamos a la pantalla "tonta" pasándole el nombre
+    DoctorMenuScreen(
+        doctorName = displayName,
+        onGoAppointments = onGoAppointments,
+        onGoProfile = onGoProfile,
+        onLogout = onLogout,
+        modifier = modifier
+    )
+}
+
+// --- 3. COMPOSABLE "TONTO" (UI) ACTUALIZADO ---
+@Composable
+private fun DoctorMenuScreen( // Se vuelve 'private'
+    doctorName: String, // <-- Acepta el nombre
+    onGoAppointments: () -> Unit,
+    // onGoHistories: () -> Unit, // <-- Eliminado
     onGoProfile: () -> Unit,
     onLogout: () -> Unit,
     modifier: Modifier = Modifier
@@ -48,8 +79,10 @@ fun DoctorMenuScreen(
                 modifier = Modifier.height(90.dp)
             )
             Spacer(modifier = Modifier.height(24.dp))
+
+            // --- 4. TEXTO DEL SALUDO ACTUALIZADO ---
             Text(
-                text = "Hola.",
+                text = "Hola, Dr. $doctorName",
                 style = MaterialTheme.typography.titleMedium.copy(
                     fontWeight = FontWeight.Bold,
                     fontSize = 20.sp
@@ -68,7 +101,8 @@ fun DoctorMenuScreen(
             verticalArrangement = Arrangement.spacedBy(24.dp)
         ) {
             DoctorMenuButton(text = "Citas", onClick = onGoAppointments)
-            DoctorMenuButton(text = "Historiales", onClick = onGoHistories)
+            // --- 5. BOTÓN "HISTORIALES" ELIMINADO ---
+            // DoctorMenuButton(text = "Historiales", onClick = onGoHistories)
             DoctorMenuButton(text = "Mi Perfil", onClick = onGoProfile)
         }
 
@@ -115,11 +149,12 @@ private fun DoctorMenuButton(
 }
 
 
+@Preview(showBackground = true) // <-- Añadí el @Preview
 @Composable
 private fun DoctorMenuScreenPreview() {
     DoctorMenuScreen(
+        doctorName = "Víctor Rosendo", // <-- Nombre de prueba
         onGoAppointments = {},
-        onGoHistories = {},
         onGoProfile = {},
         onLogout = {}
     )

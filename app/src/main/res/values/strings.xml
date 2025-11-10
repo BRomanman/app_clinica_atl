@@ -43,4 +43,9 @@
     <string name="profile_edit_cta">Modificar datos</string>
     <string name="profile_save_cta">Guardar cambios</string>
     <string name="profile_save_success">Datos actualizados correctamente</string>
+    <!-- ¡NUEVOS STRINGS PARA EL DRAWER! -->
+    <string name="drawer_home">Inicio</string>
+    <string name="drawer_insurance">Mis Seguros</string>
+    <string name="drawer_book_appointment">Agendar Cita</string>
+    <string name="drawer_profile">Mi Perfil</string>
 </resources>

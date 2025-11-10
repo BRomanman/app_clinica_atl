@@ -1,34 +1,38 @@
 package com.example.app_clinica_atl.data.local.user
 
-import androidx.room.Dao                       // Marca esta interfaz como DAO de Room
-import androidx.room.Insert                    // Para insertar filas
-import androidx.room.OnConflictStrategy        // Estrategia de conflicto en inserción
-import androidx.room.Query                     // Para queries SQL
-import kotlinx.coroutines.flow.Flow // <-- IMPORTAR FLOW
+import androidx.room.Dao
+import androidx.room.Insert
+import androidx.room.OnConflictStrategy
+import androidx.room.Query
+import kotlinx.coroutines.flow.Flow
 
-// @Dao indica que define operaciones para la tabla users.
+// 1. Data Access Object (DAO) para la entidad User.
+//    Define cómo interactuamos con la tabla 'users' en la BD.
 @Dao
 interface UserDao {
 
-    // Inserta un usuario. ABORT si hay conflicto de PK (no de email; ese lo controlamos a mano).
+    // 2. Inserta un nuevo usuario. Si el email ya existe (conflicto), aborta la operación.
     @Insert(onConflict = OnConflictStrategy.ABORT)
-    suspend fun insert(user: UserEntity): Long
+    suspend fun insertUser(user: UserEntity)
 
-    // Devuelve un usuario por email (o null si no existe).
+    // 3. Busca un usuario por su email (para el login).
     @Query("SELECT * FROM users WHERE email = :email LIMIT 1")
-    suspend fun getByEmail(email: String): UserEntity?
+    suspend fun getUserByEmail(email: String): UserEntity?
 
-    // --- NUEVA FUNCIÓN CON FLOW ---
-    // (Igual que la de arriba, pero devuelve un Flow para "escuchar" cambios)
-    @Query("SELECT * FROM users WHERE email = :email LIMIT 1")
-    fun getByEmailFlow(email: String): Flow<UserEntity?>
+    // 4. Obtiene el usuario que está actualmente logueado (para el 'init' del ViewModel).
+    @Query("SELECT * FROM users WHERE isLoggedIn = 1 LIMIT 1")
+    fun getLoggedInUser(): Flow<UserEntity?>
+
+    // 5. Marca a un usuario como 'logueado'.
+    @Query("UPDATE users SET isLoggedIn = 1 WHERE id = :userId")
+    suspend fun setLoggedIn(userId: Long)
+
+    // 6. Desmarca a TODOS los usuarios como 'logueados' (para el logout).
+    @Query("UPDATE users SET isLoggedIn = 0")
+    suspend fun setAllLoggedOut()
+
+    // --- ¡NUEVA FUNCIÓN! ---
+    @Query("UPDATE users SET photoUri = :uri WHERE id = :userId")
+    suspend fun updateUserPhoto(userId: Long, uri: String?)
     // --- FIN ---
-
-    // Cuenta total de usuarios (para saber si hay datos y/o para seeds).
-    @Query("SELECT COUNT(*) FROM users")
-    suspend fun count(): Int
-
-    // Lista completa (útil para debug/administración).
-    @Query("SELECT * FROM users ORDER BY id ASC")
-    suspend fun getAll(): List<UserEntity>
 }

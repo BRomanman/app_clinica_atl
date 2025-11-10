@@ -27,9 +27,9 @@ import com.example.app_clinica_atl.ui.screen.AdminManageDoctorScreenVm
 import com.example.app_clinica_atl.ui.screen.AdminMenuScreen
 import com.example.app_clinica_atl.ui.screen.AdminUserHistoriesScreen
 import com.example.app_clinica_atl.ui.screen.BookAppointmentScreenVm
-// --- 1. IMPORTAR DoctorScheduleScreenVm ---
 import com.example.app_clinica_atl.ui.screen.DoctorScheduleScreenVm
-import com.example.app_clinica_atl.ui.screen.DoctorMenuScreen
+// --- 1. IMPORTAR DoctorMenuScreenVm (el "inteligente") ---
+import com.example.app_clinica_atl.ui.screen.DoctorMenuScreenVm
 import com.example.app_clinica_atl.ui.screen.DoctorProfileScreenVm
 import com.example.app_clinica_atl.ui.screen.FormularioSeguroScreen
 import com.example.app_clinica_atl.ui.screen.HomeScreenVm
@@ -44,6 +44,8 @@ import com.example.app_clinica_atl.ui.viewmodel.BookAppointmentViewModel
 import com.example.app_clinica_atl.ui.viewmodel.DoctorSearchViewModel
 import com.example.app_clinica_atl.ui.viewmodel.PatientViewModel
 import kotlinx.coroutines.launch
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
+
 
 @RequiresApi(Build.VERSION_CODES.O)
 @Composable
@@ -55,20 +57,21 @@ fun AppNavGraph(
     doctorSearchViewModel: DoctorSearchViewModel,
     adminManageDoctorViewModel: AdminManageDoctorViewModel
 ) {
+    val user by authViewModel.currentUserData.collectAsStateWithLifecycle()
+    val userRole = user?.id_rol ?: 1L  // Paciente por defecto si está nulo
     val context = LocalContext.current.applicationContext
     val drawerState = rememberDrawerState(initialValue = DrawerValue.Closed)
     val scope = rememberCoroutineScope()
 
-    // Lógica para ocultar la barra superior y el menú en Login/Register
     val navBackStackEntry by navController.currentBackStackEntryAsState()
     val currentRoute = navBackStackEntry?.destination?.route
 
-    val showTopBarAndDrawer = when (currentRoute) {
-        Route.Login.path -> false
-        Route.Register.path -> false
+    val showTopBarAndDrawer = when {
+        currentRoute == Route.Login.path -> false
+        currentRoute == Route.Register.path -> false
+        userRole == 2L -> false              // OCULTA para doctor
         else -> true
     }
-
 
     // Rutas Paciente
     val goHome: () -> Unit = { navController.navigate(Route.Home.path) { launchSingleTop = true } }
@@ -109,7 +112,6 @@ fun AppNavGraph(
 
     ModalNavigationDrawer(
         drawerState = drawerState,
-        // Desactiva el gesto de deslizar si no mostramos el drawer
         gesturesEnabled = showTopBarAndDrawer,
         drawerContent = {
             AppDrawer(
@@ -125,7 +127,6 @@ fun AppNavGraph(
     ) {
         Scaffold(
             topBar = {
-                // Solo muestra la barra superior si showTopBarAndDrawer es true
                 if (showTopBarAndDrawer) {
                     AppTopBar(onOpenDrawer = { scope.launch { drawerState.open() } })
                 }
@@ -147,10 +148,7 @@ fun AppNavGraph(
                     LoginScreenVm(
                         vm = authViewModel,
                         onNavigateAfterLogin = { role ->
-
-                            // (Este es el Toast de login que pediste)
                             Toast.makeText(context, "Inicio de sesión exitoso", Toast.LENGTH_SHORT).show()
-
                             val targetRoute = when (role) {
                                 1L -> Route.Home.path
                                 2L -> Route.DoctorMenu.path
@@ -190,22 +188,22 @@ fun AppNavGraph(
                 composable(Route.PatientSearch.path) {
                     PatientSearchScreenVm(vm = patientViewModel)
                 }
+
+                // --- 2. RUTA DEL MENÚ DOCTOR ACTUALIZADA ---
                 composable(Route.DoctorMenu.path) {
-                    DoctorMenuScreen(
+                    DoctorMenuScreenVm( // <-- Llamamos al "inteligente"
+                        vm = authViewModel, // <-- Le pasamos el cerebro
                         onGoAppointments = goDoctorAppointments,
-                        onGoHistories = goPatientSearch,
+                        // onGoHistories ya no existe en la nueva versión
                         onGoProfile = goDoctorProfile,
                         onLogout = logoutAndNavigate
                     )
                 }
+                // --- FIN 2 ---
 
-                // --- 2. ¡AQUÍ ESTÁ LA CORRECCIÓN! ---
-                // (Llamamos a la pantalla "inteligente" y le pasamos el VM)
                 composable(Route.DoctorAppointments.path) {
                     DoctorScheduleScreenVm(vm = authViewModel)
                 }
-                // --- FIN 2 ---
-
                 composable(Route.DoctorProfile.path) {
                     DoctorProfileScreenVm(
                         vm = authViewModel,
