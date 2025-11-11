@@ -114,7 +114,7 @@ fun DoctorProfileScreenVm(
     val context = LocalContext.current
     val headerColor = MaterialTheme.colorScheme.primary
 
-    var photoUriString by remember(doctorInfo) { mutableStateOf<String?>("") }
+    var photoUriString by remember(doctorInfo?.photoUri) { mutableStateOf(doctorInfo?.photoUri) }
     var pendingCaptureUri by remember { mutableStateOf<Uri?>(null) }
     var showPictureSourceDialog by remember { mutableStateOf(false) }
 
@@ -138,8 +138,11 @@ fun DoctorProfileScreenVm(
         contract = ActivityResultContracts.TakePicture()
     ) { success ->
         if (success) {
-            photoUriString = pendingCaptureUri?.toString()
+            val newPhotoUri = pendingCaptureUri?.toString()
+            photoUriString = newPhotoUri
+            vm.updatePhotoUri(newPhotoUri)
             Toast.makeText(context, "Foto capturada", Toast.LENGTH_SHORT).show()
+            pendingCaptureUri = null
         } else { pendingCaptureUri = null }
     }
 
@@ -161,7 +164,9 @@ fun DoctorProfileScreenVm(
         contract = ActivityResultContracts.GetContent()
     ) { uri: Uri? ->
         if (uri != null) {
-            photoUriString = uri.toString()
+            val newPhotoUri = uri.toString()
+            photoUriString = newPhotoUri
+            vm.updatePhotoUri(newPhotoUri)
         } else {
             Toast.makeText(context, "Selección cancelada", Toast.LENGTH_SHORT).show()
         }
@@ -298,6 +303,7 @@ fun DoctorProfileScreenVm(
             onDeleteSelected = {
                 showPictureSourceDialog = false
                 photoUriString = null
+                vm.updatePhotoUri(null)
                 Toast.makeText(context, "Foto eliminada", Toast.LENGTH_SHORT).show()
             },
             showDeleteOption = !photoUriString.isNullOrEmpty()

@@ -431,8 +431,12 @@ class AuthViewModel(
     }
 
     fun updatePhotoUri(uriString: String?) {
-        // (Por ahora no lo guardamos en el repo, solo en la UI)
-        // Podríamos añadir lógica aquí si quisiéramos persistirlo
+        val currentDoctor = _currentDoctorInfo.value ?: return
+        val updatedInfo = currentDoctor.copy(photoUri = uriString)
+        _currentDoctorInfo.value = updatedInfo
+        viewModelScope.launch {
+            doctorRepo.updateDoctor(updatedInfo)
+        }
     }
     fun updateUserPhoto(photoUri: String?) {
         val user = _currentUserData.value

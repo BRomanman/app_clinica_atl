@@ -29,6 +29,7 @@ import com.example.app_clinica_atl.R
 import com.example.app_clinica_atl.data.model.DoctorInfo
 import com.example.app_clinica_atl.notifications.NotificationHelper
 import com.example.app_clinica_atl.ui.theme.AppClinicaATLTheme
+import com.example.app_clinica_atl.ui.viewmodel.AppointmentNotification
 import com.example.app_clinica_atl.ui.viewmodel.BookAppointmentUiState
 import com.example.app_clinica_atl.ui.viewmodel.BookAppointmentViewModel
 import java.time.Instant // <-- IMPORT NECESARIO
@@ -54,7 +55,18 @@ fun BookAppointmentScreenVm(vm: BookAppointmentViewModel) {
             ) == PackageManager.PERMISSION_GRANTED
         )
     }
-    var pendingNotification by remember { mutableStateOf<AppointmentNotificationData?>(null) }
+    var pendingNotification by remember { mutableStateOf<AppointmentNotification?>(null) }
+
+    val triggerNotification: (AppointmentNotification) -> Unit = remember(appContext) {
+        { data ->
+            NotificationHelper.showAppointmentConfirmation(
+                appContext,
+                data.doctorName,
+                data.date,
+                data.time
+            )
+        }
+    }
 
     val permissionLauncher = rememberLauncherForActivityResult(
         ActivityResultContracts.RequestPermission()
@@ -62,12 +74,7 @@ fun BookAppointmentScreenVm(vm: BookAppointmentViewModel) {
         notificationPermissionGranted = granted
         if (granted) {
             pendingNotification?.let { data ->
-                NotificationHelper.showAppointmentConfirmation(
-                    appContext,
-                    data.doctorName,
-                    data.date,
-                    data.time
-                )
+                triggerNotification(data)
                 pendingNotification = null
             }
         } else {
@@ -75,37 +82,27 @@ fun BookAppointmentScreenVm(vm: BookAppointmentViewModel) {
         }
     }
 
-    LaunchedEffect(uiState.showConfirmationDialog) {
-        if (uiState.showConfirmationDialog) {
-            val doctor = uiState.selectedDoctor
-            val date = uiState.selectedDate
-            val time = uiState.selectedTime
+    LaunchedEffect(uiState.notificationData) {
+        val data = uiState.notificationData ?: return@LaunchedEffect
+        pendingNotification = data
 
-            if (doctor != null && date != null && time != null) {
-                if (permissionRequired && !notificationPermissionGranted) {
-                    val hasPermission = ContextCompat.checkSelfPermission(
-                        context,
-                        Manifest.permission.POST_NOTIFICATIONS
-                    ) == PackageManager.PERMISSION_GRANTED
-                    if (hasPermission) {
-                        notificationPermissionGranted = true
-                    }
-                }
-
-                if (permissionRequired && !notificationPermissionGranted) {
-                    pendingNotification = AppointmentNotificationData(doctor.name, date, time)
-                    permissionLauncher.launch(Manifest.permission.POST_NOTIFICATIONS)
-                } else {
-                    NotificationHelper.showAppointmentConfirmation(
-                        appContext,
-                        doctor.name,
-                        date,
-                        time
-                    )
-                    pendingNotification = null
-                }
+        if (permissionRequired && !notificationPermissionGranted) {
+            val hasPermission = ContextCompat.checkSelfPermission(
+                context,
+                Manifest.permission.POST_NOTIFICATIONS
+            ) == PackageManager.PERMISSION_GRANTED
+            if (hasPermission) {
+                notificationPermissionGranted = true
             }
         }
+
+        if (permissionRequired && !notificationPermissionGranted) {
+            permissionLauncher.launch(Manifest.permission.POST_NOTIFICATIONS)
+        } else {
+            triggerNotification(data)
+            pendingNotification = null
+        }
+        vm.consumeNotification()
     }
 
     BookAppointmentScreen(
@@ -344,12 +341,6 @@ private fun BookAppointmentScreen(
         }
     }
 }
-
-private data class AppointmentNotificationData(
-    val doctorName: String,
-    val date: LocalDate,
-    val time: LocalTime
-)
 
 // 3. Preview (Se mantiene funcional)
 @RequiresApi(Build.VERSION_CODES.O)

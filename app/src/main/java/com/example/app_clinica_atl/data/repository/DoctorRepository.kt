@@ -301,6 +301,7 @@ class DoctorRepository {
         specialty = specialty.trim(),
         availability = availability.trim(),
         address = address.trim(),
-        since = since.trim()
+        since = since.trim(),
+        photoUri = photoUri?.trim()
     )
 }

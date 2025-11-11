@@ -19,7 +19,8 @@ data class DoctorInfo(
     val specialty: String = "",
     val availability: String = "",
     val address: String = "",
-    val since: String = ""
+    val since: String = "",
+    val photoUri: String? = null
 ) {
     val name: String
         get() = buildString {

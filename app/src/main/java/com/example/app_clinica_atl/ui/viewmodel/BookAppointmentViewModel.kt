@@ -41,7 +41,8 @@ data class BookAppointmentUiState(
 
     val isSubmitting: Boolean = false,
     val showConfirmationDialog: Boolean = false,
-    val submissionError: String? = null
+    val submissionError: String? = null,
+    val notificationData: AppointmentNotification? = null
 )
 
 @RequiresApi(Build.VERSION_CODES.O)
@@ -166,6 +167,11 @@ class BookAppointmentViewModel(
                     it.copy(
                         isSubmitting = false,
                         showConfirmationDialog = true,
+                        notificationData = AppointmentNotification(
+                            doctorName = doctor.name,
+                            date = date,
+                            time = time
+                        ),
                         // Limpiamos el formulario
                         selectedDepartment = null,
                         selectedDoctor = null,
@@ -180,4 +186,14 @@ class BookAppointmentViewModel(
             }
         }
     }
+
+    fun consumeNotification() {
+        _uiState.update { it.copy(notificationData = null) }
+    }
 }
+
+data class AppointmentNotification(
+    val doctorName: String,
+    val date: LocalDate,
+    val time: LocalTime
+)
