@@ -1,5 +1,7 @@
 package com.example.app_clinica_atl.ui.screen
 
+import android.os.Build
+import androidx.annotation.RequiresApi
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
@@ -51,6 +53,7 @@ import com.example.app_clinica_atl.R
 import com.example.app_clinica_atl.ui.theme.AppClinicaATLTheme
 import com.example.app_clinica_atl.ui.viewmodel.AuthViewModel
 
+@RequiresApi(Build.VERSION_CODES.O)
 @Composable
 fun LoginScreenVm(
     vm: AuthViewModel,

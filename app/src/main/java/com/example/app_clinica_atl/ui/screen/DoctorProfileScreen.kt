@@ -26,6 +26,7 @@ import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
+import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.AttachMoney
 import androidx.compose.material.icons.filled.CalendarToday
@@ -67,6 +68,7 @@ import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -75,6 +77,8 @@ import androidx.core.content.FileProvider
 import coil.compose.AsyncImage
 import coil.request.ImageRequest
 import com.example.app_clinica_atl.R
+import com.example.app_clinica_atl.domain.validation.validateEmail
+import com.example.app_clinica_atl.domain.validation.validatePhoneDigitsOnly
 import com.example.app_clinica_atl.data.model.DoctorInfo
 import com.example.app_clinica_atl.ui.viewmodel.AuthViewModel
 import java.io.File
@@ -82,6 +86,7 @@ import java.text.NumberFormat
 import java.text.SimpleDateFormat
 import java.util.Date
 import java.util.Locale
+import androidx.core.net.toUri
 
 // --- Funciones de Utilidad (Uris y Permisos) ---
 private fun createTempImageFile(context: Context): File {
@@ -113,9 +118,13 @@ fun DoctorProfileScreenVm(
     var pendingCaptureUri by remember { mutableStateOf<Uri?>(null) }
     var showPictureSourceDialog by remember { mutableStateOf(false) }
 
-    var contactNumber by remember(doctorInfo) { mutableStateOf(doctorInfo?.contactNumber ?: "") }
+    var contactNumber by remember(doctorInfo) { mutableStateOf(doctorInfo?.contactNumber?.filter(Char::isDigit) ?: "") }
     var address by remember(doctorInfo) { mutableStateOf(doctorInfo?.address ?: "") }
     var email by remember(doctorInfo) { mutableStateOf(doctorInfo?.email ?: "") }
+
+    var contactNumberError by remember(doctorInfo) { mutableStateOf<String?>(null) }
+    var addressError by remember(doctorInfo) { mutableStateOf<String?>(null) }
+    var emailError by remember(doctorInfo) { mutableStateOf<String?>(null) }
 
     LaunchedEffect(saveSuccess) {
         if (saveSuccess) {
@@ -177,6 +186,7 @@ fun DoctorProfileScreenVm(
                     .padding(16.dp),
                 verticalArrangement = Arrangement.spacedBy(16.dp)
             ) {
+
                 // 1. TARJETA PRINCIPAL DEL DOCTOR
                 DoctorInfoCard(
                     name = doctorInfo!!.name,
@@ -186,32 +196,54 @@ fun DoctorProfileScreenVm(
                     onEditPhotoClick = { showPictureSourceDialog = true }
                 )
 
-                // --- 2. SECCIÓN DE MÉTRICAS (ELIMINADA) ---
-                /* DoctorMetricsSection(
-                    appointmentsCompleted = 42,
-                    newPatientsThisMonth = 8
-                )
-                */
-
-                // 3. INFORMACIÓN PROFESIONAL Y CONTACTO
                 DoctorDetails(
                     info = doctorInfo!!,
                     contactNumber = contactNumber,
                     address = address,
                     email = email,
-                    onContactNumberChange = { contactNumber = it },
-                    onAddressChange = { address = it },
-                    onEmailChange = { email = it }
+                    contactNumberError = contactNumberError,
+                    addressError = addressError,
+                    emailError = emailError,
+                    onContactNumberChange = {
+                        val digitsOnly = it.filter(Char::isDigit)
+                        contactNumber = digitsOnly
+                        contactNumberError = validatePhoneDigitsOnly(digitsOnly)
+                    },
+                    onAddressChange = {
+                        address = it
+                        addressError = validateAddressField(it)
+                    },
+                    onEmailChange = {
+                        email = it
+                        emailError = validateEmail(it.trim())
+                    }
                 )
 
                 // BOTÓN GUARDAR CAMBIOS
                 Button(
                     onClick = {
-                        vm.saveDoctorProfile(
-                            newContactNumber = contactNumber,
-                            newAddress = address,
-                            newEmail = email
-                        )
+                        val cleanedEmail = email.trim()
+                        val cleanedAddress = address.trim()
+
+                        val phoneValidation = validatePhoneDigitsOnly(contactNumber)
+                        val addressValidation = validateAddressField(cleanedAddress)
+                        val emailValidation = validateEmail(cleanedEmail)
+
+                        contactNumberError = phoneValidation
+                        addressError = addressValidation
+                        emailError = emailValidation
+
+                        val hasError = listOf(phoneValidation, addressValidation, emailValidation).any { it != null }
+
+                        if (!hasError) {
+                            vm.saveDoctorProfile(
+                                newContactNumber = contactNumber,
+                                newAddress = cleanedAddress,
+                                newEmail = cleanedEmail
+                            )
+                        } else {
+                            Toast.makeText(context, "Revisa los campos marcados", Toast.LENGTH_SHORT).show()
+                        }
                     },
                     enabled = !isSaving,
                     modifier = Modifier.fillMaxWidth(),
@@ -251,7 +283,6 @@ fun DoctorProfileScreenVm(
     }
 
 
-    // --- Diálogo para elegir origen de la imagen ---
     if (showPictureSourceDialog) {
         ImageSourceDialog(
             onDismiss = { showPictureSourceDialog = false },
@@ -312,7 +343,7 @@ private fun DoctorInfoCard(
                     Icon(imageVector = Icons.Default.Person, contentDescription = "Editar foto de perfil", tint = headerColor, modifier = Modifier.size(60.dp))
                 } else {
                     AsyncImage(
-                        model = ImageRequest.Builder(context).data(Uri.parse(photoUriString)).crossfade(true).build(),
+                        model = ImageRequest.Builder(context).data(photoUriString.toUri()).crossfade(true).build(),
                         contentDescription = "Foto de perfil",
                         modifier = Modifier.fillMaxSize(),
                         contentScale = ContentScale.Crop
@@ -360,6 +391,9 @@ private fun DoctorDetails(
     contactNumber: String,
     address: String,
     email: String,
+    contactNumberError: String?,
+    addressError: String?,
+    emailError: String?,
     onContactNumberChange: (String) -> Unit,
     onAddressChange: (String) -> Unit,
     onEmailChange: (String) -> Unit
@@ -392,9 +426,29 @@ private fun DoctorDetails(
             Spacer(modifier = Modifier.height(12.dp))
 
             // CAMPOS EDITABLES
-            ProfileTextField(value = contactNumber, onValueChange = onContactNumberChange, label = "Teléfono", icon = Icons.Default.Phone)
-            ProfileTextField(value = email, onValueChange = onEmailChange, label = "Email", enabled = true)
-            ProfileTextField(value = address, onValueChange = onAddressChange, label = "Dirección", icon = Icons.Default.Place)
+            ProfileTextField(
+                value = contactNumber,
+                onValueChange = onContactNumberChange,
+                label = "Teléfono",
+                icon = Icons.Default.Phone,
+                error = contactNumberError,
+                keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Phone)
+            )
+            ProfileTextField(
+                value = email,
+                onValueChange = onEmailChange,
+                label = "Email",
+                enabled = true,
+                error = emailError,
+                keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Email)
+            )
+            ProfileTextField(
+                value = address,
+                onValueChange = onAddressChange,
+                label = "Dirección",
+                icon = Icons.Default.Place,
+                error = addressError
+            )
         }
     }
 }
@@ -459,7 +513,9 @@ private fun ProfileTextField(
     onValueChange: (String) -> Unit,
     label: String,
     icon: ImageVector? = null,
-    enabled: Boolean = true
+    enabled: Boolean = true,
+    error: String? = null,
+    keyboardOptions: KeyboardOptions = KeyboardOptions.Default
 ) {
     OutlinedTextField(
         value = value,
@@ -468,10 +524,28 @@ private fun ProfileTextField(
         leadingIcon = if (icon != null) { { Icon(imageVector = icon, contentDescription = null) } } else null,
         enabled = enabled,
         singleLine = true,
+        isError = error != null,
+        keyboardOptions = keyboardOptions,
+        supportingText = {
+            if (error != null) {
+                Text(
+                    text = error,
+                    color = MaterialTheme.colorScheme.error,
+                    style = MaterialTheme.typography.labelSmall
+                )
+            }
+        },
         modifier = Modifier
             .fillMaxWidth()
             .padding(bottom = 12.dp)
     )
+}
+
+private fun validateAddressField(address: String): String? {
+    val trimmed = address.trim()
+    if (trimmed.isEmpty()) return "La dirección es obligatoria"
+    if (trimmed.length < 5) return "La dirección debe tener al menos 5 caracteres"
+    return null
 }
 
 @Preview(showBackground = true)
