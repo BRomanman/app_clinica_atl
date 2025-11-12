@@ -3,7 +3,7 @@ package com.example.app_clinica_atl.data.remote
 import com.example.app_clinica_atl.data.remote.dto.CitasDto
 import retrofit2.http.GET
 
-interface `citas_serviceAPI` {
+interface CitasServiceAPI {
     //todos los endpoints que recibe de la api
 
     //Este link es de demostracion, no tiene que ir así

@@ -89,11 +89,38 @@ dependencies {
 
 
 //retrofit
-    implementation("com.squareup.retrofit2:retrofit2:2.11.0")
+    implementation("com.squareup.retrofit2:retrofit:2.11.0")
 
     implementation("com.squareup.retrofit2:converter-gson:2.11.0")
 
     implementation("com.squareup.okhttp3:okhttp:4.12.0")
     implementation("com.squareup.okhttp3:logging-interceptor:4.12.0")
 
+
+
+
+
+    //Prueba unitaria sobre lógica de negocio(locales)
+    testImplementation(libs.junit)
+    testImplementation("io.mockk:mockk:1.13.12")
+    testImplementation("org.robolectric:robolectric:4.13")
+
+
+
+    //test de implementacion de intefaz (Android Test)
+    androidTestImplementation(libs.androidx.junit)
+    androidTestImplementation(libs.androidx.espresso.core)
+    androidTestImplementation(libs.androidx.compose.ui.test.junit4)
+    androidTestImplementation(libs.androidx.compose.ui.test.manifest)
+
+
+
+    //Aplican nuevas reglas para los test
+    androidTestImplementation("androidx.test:core-ktx:1.5.0")
+    androidTestImplementation("androidx.test:rules:1.5.0")
+
+
 }
+
+
+

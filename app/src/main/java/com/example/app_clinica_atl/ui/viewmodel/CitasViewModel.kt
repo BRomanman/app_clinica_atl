@@ -1,5 +1,6 @@
 package com.example.app_clinica_atl.ui.viewmodel
 
+import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
 import androidx.lifecycle.ViewModel
@@ -21,8 +22,7 @@ class PostsViewModel (
 ): ViewModel(){
     var uiState by mutableStateOf(CitasUiState())
         private set
-        //TODO
-        //Importar las corutinas?
+
 
     //funcion para la carga de la data
     fun loadPost(){

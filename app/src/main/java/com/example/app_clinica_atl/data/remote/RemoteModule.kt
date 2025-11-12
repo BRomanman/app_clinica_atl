@@ -6,6 +6,9 @@ import retrofit2.Retrofit
 import retrofit2.converter.gson.GsonConverterFactory
 
 object RemoteModule {
+
+    //TODO
+    //Modificar por el url para que se conecte con nuestras apis
     private const val BASE_URL = "https://jsonplaceholder.typicode.com/";
 
     private val logging = HttpLoggingInterceptor().apply{
