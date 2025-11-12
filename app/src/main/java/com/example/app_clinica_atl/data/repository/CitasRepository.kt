@@ -9,11 +9,13 @@ class CitasRepository(
 ){
     suspend fun fetchCitas(): Result<List<CitasDto>>{
         try{
-
             val data = api.obtenerCitas()
             Result.success(data)
+
         }catch(e: Exception){
             Result.failure(e)
         }
+
+        return TODO("Provide the return value")
     }
 }

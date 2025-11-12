@@ -4,9 +4,11 @@ import android.Manifest
 import android.content.Context
 import android.content.pm.PackageManager
 import android.net.Uri
+import android.os.Build
 import android.widget.Toast
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
+import androidx.annotation.RequiresApi
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
@@ -89,6 +91,7 @@ import java.util.Date
 import java.util.Locale
 
 import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.layout.wrapContentHeight
 
 // --- Funciones de Utilidad (Uris y Permisos) ---
 // (Estas funciones se quedan igual)
@@ -106,6 +109,7 @@ private fun getImageUriFile(context: Context, file: File): Uri {
 
 
 // --- COMPOSABLE "INTELIGENTE" (VM) ---
+@RequiresApi(Build.VERSION_CODES.O)
 @Composable
 fun PatientProfileScreenVm(
     vm: AuthViewModel,
@@ -233,35 +237,43 @@ private fun PatientProfileScreen(
             .padding(16.dp),
         verticalArrangement = Arrangement.spacedBy(16.dp)
     ) {
-        // --- TARJETA DE CABECERA (Sin cambios) ---
-        Card(
-            colors = CardDefaults.cardColors(containerColor = Color.White),
-            elevation = CardDefaults.cardElevation(defaultElevation = 6.dp),
-            modifier = Modifier.fillMaxWidth()
+
+
+        Box(
+            modifier = Modifier
+                .fillMaxWidth(),
+            contentAlignment = Alignment.Center
         ) {
-            Column(
+            Card(
+                colors = CardDefaults.cardColors(containerColor = Color.White),
+                elevation = CardDefaults.cardElevation(defaultElevation = 6.dp),
                 modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(horizontal = 16.dp, vertical = 20.dp),
-                horizontalAlignment = Alignment.CenterHorizontally
+                    .fillMaxWidth(0.9f)
+                    .wrapContentHeight()
             ) {
-                Text(
-                    text = stringResource(id = R.string.profile_header_title),
-                    fontSize = 24.sp,
-                    fontWeight = FontWeight.Bold,
-                    color = headerColor
-                )
-                Spacer(modifier = Modifier.height(12.dp))
-                Row(
-                    modifier = Modifier.fillMaxWidth(),
-                    verticalAlignment = Alignment.CenterVertically,
-                    horizontalArrangement = Arrangement.SpaceBetween
+                Column(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(horizontal = 16.dp, vertical = 20.dp),
+                    horizontalAlignment = Alignment.CenterHorizontally
                 ) {
-                    Column(verticalArrangement = Arrangement.Center) {
-                        // --- FOTO DE PERFIL (Sin cambios) ---
+                    Text(
+                        text = stringResource(id = R.string.profile_header_title),
+                        fontSize = 24.sp,
+                        fontWeight = FontWeight.Bold,
+                        color = headerColor
+                    )
+
+                    Spacer(modifier = Modifier.height(12.dp))
+
+                    // contenedor centrado con imagen + botón edit
+                    Box(
+                        modifier = Modifier.size(110.dp),
+                        contentAlignment = Alignment.Center
+                    ) {
                         Box(
                             modifier = Modifier
-                                .size(80.dp)
+                                .size(100.dp)
                                 .clip(CircleShape)
                                 .background(headerColor.copy(alpha = 0.15f))
                                 .clickable { showPictureSourceDialog = true },
@@ -272,7 +284,7 @@ private fun PatientProfileScreen(
                                     imageVector = Icons.Default.Person,
                                     contentDescription = stringResource(id = R.string.profile_edit_photo),
                                     tint = headerColor,
-                                    modifier = Modifier.size(48.dp)
+                                    modifier = Modifier.size(60.dp)
                                 )
                             } else {
                                 AsyncImage(
@@ -285,29 +297,32 @@ private fun PatientProfileScreen(
                                     contentScale = ContentScale.Crop
                                 )
                             }
+                        }
+
+                        Box(
+                            modifier = Modifier
+                                .size(30.dp)
+                                .align(Alignment.BottomEnd)
+                                .clip(CircleShape)
+                                .background(headerColor)
+                                .clickable { showPictureSourceDialog = true },
+                            contentAlignment = Alignment.Center
+                        ) {
                             Icon(
                                 imageVector = Icons.Default.Edit,
                                 contentDescription = null,
                                 tint = Color.White,
-                                modifier = Modifier
-                                    .size(24.dp)
-                                    .clip(CircleShape)
-                                    .background(headerColor.copy(alpha = 0.7f))
-                                    .align(Alignment.BottomEnd)
-                                    .padding(4.dp)
+                                modifier = Modifier.size(18.dp)
                             )
                         }
-                        // --- FIN FOTO DE PERFIL ---
-
-                        Spacer(modifier = Modifier.height(8.dp))
-                        Text(
-                            text = stringResource(id = R.string.profile_header_subtitle),
-                            style = MaterialTheme.typography.bodyMedium
-                        )
                     }
                 }
             }
         }
+
+
+
+
 
         // --- Diálogo para elegir origen de la imagen (Sin cambios) ---
         if (showPictureSourceDialog) {
@@ -338,7 +353,7 @@ private fun PatientProfileScreen(
                 showDeleteOption = !photoUriString.isNullOrEmpty()
             )
         }
-        // --- FIN Diálogo ---
+
 
 
         // --- TARJETA DE DATOS PERSONALES ---
@@ -413,6 +428,7 @@ private fun PatientProfileScreen(
                     error = if (isEditing) phoneError else null,
                     keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Phone)
                 )
+                
                 ProfileTextField(
                     value = email,
                     onValueChange = {
@@ -425,41 +441,6 @@ private fun PatientProfileScreen(
                     enabled = isEditing,
                     error = if (isEditing) emailError else null,
                     keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Email)
-                )
-
-                Spacer(modifier = Modifier.height(12.dp))
-                HorizontalDivider(
-                    Modifier,
-                    DividerDefaults.Thickness,
-                    color = headerColor.copy(alpha = 0.4f)
-                )
-                Spacer(modifier = Modifier.height(12.dp))
-
-                // --- Sección de Notas Médicas (Sin cambios) ---
-                Text(
-                    text = "Notas Médicas (Historial)",
-                    fontSize = 18.sp,
-                    fontWeight = FontWeight.SemiBold,
-                    color = headerColor
-                )
-                Spacer(modifier = Modifier.height(8.dp))
-
-                val textFieldColors = OutlinedTextFieldDefaults.colors(
-                    disabledTextColor = MaterialTheme.colorScheme.onSurface,
-                    disabledBorderColor = MaterialTheme.colorScheme.outline,
-                    disabledContainerColor = Color.Transparent,
-                    disabledLabelColor = MaterialTheme.colorScheme.onSurfaceVariant,
-                )
-
-                OutlinedTextField(
-                    value = medicalHistory,
-                    onValueChange = { medicalHistory = it },
-                    label = { Text("Alergias, condiciones pre-existentes, etc.") },
-                    enabled = isEditing,
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .height(150.dp),
-                    colors = textFieldColors
                 )
             }
         }

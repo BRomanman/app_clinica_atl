@@ -24,6 +24,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.example.app_clinica_atl.R
 
+
 @Composable
 fun AdminMenuScreen(
     onViewDoctorSchedules: () -> Unit,
