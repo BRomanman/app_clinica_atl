@@ -59,7 +59,7 @@ import kotlinx.coroutines.launch
 
 class MainActivity : ComponentActivity() {
 
-    // --- Dependencias (igual que antes) ---
+    // --- Dependencias ---
     private val database by lazy { AppDatabase.getInstance(this) }
     private val userPreferences by lazy { UserPreferences(this) }
     private val userRepository by lazy { UserRepository(database.userDao()) }
@@ -68,10 +68,22 @@ class MainActivity : ComponentActivity() {
     private val specialtyRepository: SpecialtyRepository by lazy { SpecialtyRepositoryImpl(database.specialtyDao()) }
     private val insuranceRepository: InsuranceRepository by lazy { InsuranceRepositoryImpl(database.insuranceDao()) }
 
-    // --- ViewModels (igual que antes) ---
+    // --- ViewModels ---
     private val authViewModel: AuthViewModel by viewModels { AuthViewModelFactory(userRepository, userPreferences) }
     private val homeViewModel: HomeViewModel by viewModels { HomeViewModelFactory(userRepository, userPreferences) }
-    private val patientViewModel: PatientViewModel by viewModels { PatientViewModelFactory(userRepository, userPreferences, insuranceRepository) }
+
+    // --- ¡¡CAMBIO AQUÍ!! ---
+    // Ahora le pasamos el 'appointmentRepository'
+    private val patientViewModel: PatientViewModel by viewModels {
+        PatientViewModelFactory(
+            userRepository,
+            userPreferences,
+            insuranceRepository,
+            appointmentRepository // <-- ¡AÑADIDO!
+        )
+    }
+    // --- FIN DEL CAMBIO ---
+
     private val doctorSearchViewModel: DoctorSearchViewModel by viewModels { DoctorSearchViewModelFactory(doctorRepository) }
     private val doctorProfileViewModel: DoctorProfileViewModel by viewModels { DoctorProfileViewModelFactory(doctorRepository) }
     private val bookAppointmentViewModel: BookAppointmentViewModel by viewModels { BookAppointmentViewModelFactory(doctorRepository, appointmentRepository, userPreferences) }
@@ -92,25 +104,23 @@ class MainActivity : ComponentActivity() {
                     val navController = rememberNavController()
                     val scope = rememberCoroutineScope()
 
-                    // --- Lógica Condicional (Tu Arquitectura) ---
                     val navBackStackEntry by navController.currentBackStackEntryAsState()
                     val currentRoute = navBackStackEntry?.destination?.route
                     val userRole by authViewModel.userRoleFlow.collectAsStateWithLifecycle(initialValue = null)
 
-                    // El Drawer (menú lateral) solo existe si el rol es "paciente"
                     val isPatient = userRole == "paciente"
-                    // Bloqueamos el drawer si no es paciente
                     val drawerState = rememberDrawerState(initialValue = DrawerValue.Closed, confirmStateChange = { isPatient })
 
-                    // Define las rutas que NO deben mostrar el TopBar (como Login)
                     val topBarVisible = when (currentRoute) {
                         Route.Login.path, Route.Register.path -> false
-                        else -> isPatient // Muestra la TopBar solo si es paciente
+                        Route.AdminMenu.path, Route.AdminAddSpecialty.path, Route.AdminAddDoctor.path -> false
+                        Route.DoctorMenu.path, Route.DoctorSchedule.path, Route.DoctorSearchPatient.path -> false
+                        else -> isPatient
                     }
 
                     ModalNavigationDrawer(
                         drawerState = drawerState,
-                        gesturesEnabled = isPatient, // Solo permite deslizar si es paciente
+                        gesturesEnabled = isPatient,
                         drawerContent = {
                             AppDrawerVm(
                                 vm = authViewModel,
@@ -129,7 +139,7 @@ class MainActivity : ComponentActivity() {
                                     AppTopBar(
                                         onMenuClick = { scope.launch { drawerState.open() } },
                                         onLogoutClick = {
-                                            scope.launch { authViewModel.logout() } // (Añadiremos esto)
+                                            scope.launch { authViewModel.logout() }
                                             navController.navigate(Route.Login.path) {
                                                 popUpTo(0) { inclusive = true }
                                             }
@@ -138,10 +148,9 @@ class MainActivity : ComponentActivity() {
                                 }
                             }
                         ) { paddingValues ->
-                            // El NavGraph ahora vive DENTRO del Scaffold
                             AppNavGraph(
                                 navController = navController,
-                                paddingValues = paddingValues, // Pasa el padding
+                                paddingValues = paddingValues,
                                 authViewModel = authViewModel,
                                 homeViewModel = homeViewModel,
                                 patientViewModel = patientViewModel,

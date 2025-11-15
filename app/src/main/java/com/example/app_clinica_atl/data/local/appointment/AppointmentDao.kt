@@ -4,6 +4,7 @@ import androidx.room.Dao
 import androidx.room.Insert
 import androidx.room.OnConflictStrategy
 import androidx.room.Query
+import kotlinx.coroutines.flow.Flow
 
 @Dao
 interface AppointmentDao {
@@ -13,19 +14,36 @@ interface AppointmentDao {
     @Query("SELECT * FROM appointments")
     suspend fun getAll(): List<AppointmentEntity>
 
-    // --- FUNCIONES AÑADIDAS (REQUERIDAS POR EL REPOSITORIO) ---
-
-    /**
-     * Busca si ya existe una cita para un doctor en una fecha y hora específicas.
-     * Usado para evitar agendamientos duplicados.
-     */
     @Query("SELECT * FROM appointments WHERE doctorId = :doctorId AND date = :date AND time = :time LIMIT 1")
     suspend fun getAppointmentByDoctorDateTime(doctorId: Long, date: String, time: String): AppointmentEntity?
 
-    /**
-     * Devuelve una lista de Strings (horas, ej: "09:00", "10:30") que
-     * ya están ocupadas para un doctor en una fecha específica.
-     */
     @Query("SELECT time FROM appointments WHERE doctorId = :doctorId AND date = :date")
     suspend fun getBookedTimesForDoctorOnDate(doctorId: Long, date: String): List<String>
+
+    // --- ¡¡FUNCIONES AÑADIDAS PARA "MIS CITAS"!! ---
+
+    /**
+     * Obtiene una lista de todas las citas "agendadas" de un paciente,
+     * uniéndolas con la tabla de usuarios (doctores) para obtener sus nombres.
+     */
+    @Query("""
+        SELECT
+            a.id as appointmentId,
+            u.name as doctorName,
+            u.specialty as doctorSpecialty,
+            a.date,
+            a.time,
+            a.status
+        FROM appointments AS a
+        INNER JOIN user_table AS u ON a.doctorId = u.id
+        WHERE a.patientId = :patientId AND a.status = 'agendada'
+        ORDER BY a.date, a.time ASC
+    """)
+    fun getActiveAppointmentsForPatient(patientId: Long): Flow<List<AppointmentDetails>>
+
+    /**
+     * Actualiza el estado de una cita (para cancelarla).
+     */
+    @Query("UPDATE appointments SET status = 'cancelada' WHERE id = :appointmentId")
+    suspend fun cancelAppointment(appointmentId: Long)
 }

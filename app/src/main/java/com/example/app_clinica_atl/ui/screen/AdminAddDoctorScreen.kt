@@ -33,7 +33,7 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.input.KeyboardType
-import androidx.compose.ui.text.input.PasswordVisualTransformation
+// (Imports de contraseña ya no son necesarios)
 import androidx.compose.ui.unit.dp
 import com.example.app_clinica_atl.ui.viewmodel.AdminAddDoctorViewModel
 
@@ -46,11 +46,9 @@ fun AdminAddDoctorScreen(
     val uiState by viewModel.uiState.collectAsState()
     var expanded by remember { mutableStateOf(false) }
 
-    // Muestra mensaje de éxito
     LaunchedEffect(uiState.registrationSuccess) {
         if (uiState.registrationSuccess) {
-            // (Aquí podríamos mostrar un Snackbar)
-            viewModel.clearSuccess() // Resetea el estado
+            viewModel.clearSuccess()
         }
     }
 
@@ -73,16 +71,29 @@ fun AdminAddDoctorScreen(
                 .padding(16.dp)
                 .verticalScroll(rememberScrollState())
         ) {
-            // --- Formulario de Registro ---
+
+            // --- ¡¡FORMULARIO ACTUALIZADO!! ---
             OutlinedTextField(
-                value = uiState.name,
-                onValueChange = viewModel::onNameChange,
-                label = { Text("Nombre Completo") },
+                value = uiState.firstName,
+                onValueChange = viewModel::onFirstNameChange,
+                label = { Text("Nombre") },
                 modifier = Modifier.fillMaxWidth(),
-                isError = uiState.nameError != null,
+                isError = uiState.firstNameError != null,
                 singleLine = true
             )
-            uiState.nameError?.let { Text(it, color = MaterialTheme.colorScheme.error) }
+            uiState.firstNameError?.let { Text(it, color = MaterialTheme.colorScheme.error) }
+            Spacer(modifier = Modifier.height(8.dp))
+
+            OutlinedTextField(
+                value = uiState.lastName,
+                onValueChange = viewModel::onLastNameChange,
+                label = { Text("Apellido") },
+                modifier = Modifier.fillMaxWidth(),
+                isError = uiState.lastNameError != null,
+                singleLine = true
+            )
+            uiState.lastNameError?.let { Text(it, color = MaterialTheme.colorScheme.error) }
+            // --- FIN CAMBIO DE NOMBRE ---
             Spacer(modifier = Modifier.height(8.dp))
 
             OutlinedTextField(
@@ -100,7 +111,7 @@ fun AdminAddDoctorScreen(
             OutlinedTextField(
                 value = uiState.phone,
                 onValueChange = viewModel::onPhoneChange,
-                label = { Text("Teléfono") },
+                label = { Text("Teléfono (+56912345678)") },
                 modifier = Modifier.fillMaxWidth(),
                 isError = uiState.phoneError != null,
                 singleLine = true,
@@ -109,29 +120,7 @@ fun AdminAddDoctorScreen(
             uiState.phoneError?.let { Text(it, color = MaterialTheme.colorScheme.error) }
             Spacer(modifier = Modifier.height(8.dp))
 
-            OutlinedTextField(
-                value = uiState.password,
-                onValueChange = viewModel::onPasswordChange,
-                label = { Text("Contraseña") },
-                modifier = Modifier.fillMaxWidth(),
-                isError = uiState.passwordError != null,
-                singleLine = true,
-                visualTransformation = PasswordVisualTransformation()
-            )
-            uiState.passwordError?.let { Text(it, color = MaterialTheme.colorScheme.error) }
-            Spacer(modifier = Modifier.height(8.dp))
-
-            OutlinedTextField(
-                value = uiState.confirmPassword,
-                onValueChange = viewModel::onConfirmPasswordChange,
-                label = { Text("Confirmar Contraseña") },
-                modifier = Modifier.fillMaxWidth(),
-                isError = uiState.confirmPasswordError != null,
-                singleLine = true,
-                visualTransformation = PasswordVisualTransformation()
-            )
-            uiState.confirmPasswordError?.let { Text(it, color = MaterialTheme.colorScheme.error) }
-            Spacer(modifier = Modifier.height(8.dp))
+            // --- ¡¡CAMPOS DE CONTRASEÑA ELIMINADOS!! ---
 
             OutlinedTextField(
                 value = uiState.salary,
@@ -145,7 +134,7 @@ fun AdminAddDoctorScreen(
             uiState.salaryError?.let { Text(it, color = MaterialTheme.colorScheme.error) }
             Spacer(modifier = Modifier.height(8.dp))
 
-            // --- ¡¡EL COMBO BOX (DROPDOWN)!! ---
+            // --- Combo Box (sin cambios) ---
             ExposedDropdownMenuBox(
                 expanded = expanded,
                 onExpandedChange = { expanded = !expanded }

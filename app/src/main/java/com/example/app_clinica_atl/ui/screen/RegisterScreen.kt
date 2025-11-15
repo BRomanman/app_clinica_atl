@@ -13,10 +13,16 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.text.KeyboardOptions // <-- ¡IMPORT AÑADIDO!
 import androidx.compose.foundation.verticalScroll
+import androidx.compose.material.icons.Icons // <-- ¡IMPORT AÑADIDO!
+import androidx.compose.material.icons.filled.Visibility
+import androidx.compose.material.icons.filled.VisibilityOff
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.CircularProgressIndicator
+import androidx.compose.material3.Icon // <-- ¡IMPORT AÑADIDO!
+import androidx.compose.material3.IconButton // <-- ¡IMPORT AÑADIDO!
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Text
@@ -24,21 +30,25 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf // <-- ¡IMPORT AÑADIDO!
+import androidx.compose.runtime.saveable.rememberSaveable // <-- ¡IMPORT AÑADIDO!
+import androidx.compose.runtime.setValue // <-- ¡IMPORT AÑADIDO!
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
-import androidx.compose.ui.text.input.PasswordVisualTransformation
+import androidx.compose.ui.text.input.KeyboardType // <-- ¡IMPORT AÑADIDO!
+import androidx.compose.ui.text.input.PasswordVisualTransformation // <-- ¡IMPORT AÑADIDO!
+import androidx.compose.ui.text.input.VisualTransformation // <-- ¡IMPORT AÑADIDO!
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-// NO MÁS HILT
 import com.example.app_clinica_atl.R
 import com.example.app_clinica_atl.ui.viewmodel.AuthViewModel
 
 @Composable
 fun RegisterScreenVm(
-    authViewModel: AuthViewModel, // <-- ¡¡AQUÍ ESTÁ EL CAMBIO!! (Quitamos = hiltViewModel())
+    authViewModel: AuthViewModel,
     onRegisterSuccessNavigate: () -> Unit
 ) {
     val uiState by authViewModel.registerUiState.collectAsState()
@@ -50,9 +60,14 @@ fun RegisterScreenVm(
     }
 
     RegisterScreen(
-        name = uiState.name,
-        onNameChange = authViewModel::onRegisterNameChange,
-        nameError = uiState.nameError,
+        // --- ¡¡CAMPOS ACTUALIZADOS!! ---
+        firstName = uiState.firstName,
+        onFirstNameChange = authViewModel::onRegisterFirstNameChange,
+        firstNameError = uiState.firstNameError,
+        lastName = uiState.lastName,
+        onLastNameChange = authViewModel::onRegisterLastNameChange,
+        lastNameError = uiState.lastNameError,
+        // --- FIN DE CAMBIOS ---
         email = uiState.email,
         onEmailChange = authViewModel::onRegisterEmailChange,
         emailError = uiState.emailError,
@@ -73,9 +88,14 @@ fun RegisterScreenVm(
 
 @Composable
 fun RegisterScreen(
-    name: String,
-    onNameChange: (String) -> Unit,
-    nameError: String?,
+    // --- ¡¡FIRMA ACTUALIZADA!! ---
+    firstName: String,
+    onFirstNameChange: (String) -> Unit,
+    firstNameError: String?,
+    lastName: String,
+    onLastNameChange: (String) -> Unit,
+    lastNameError: String?,
+    // --- FIN DE CAMBIOS ---
     email: String,
     onEmailChange: (String) -> Unit,
     emailError: String?,
@@ -92,6 +112,10 @@ fun RegisterScreen(
     isLoading: Boolean,
     registerError: String?
 ) {
+    // --- ¡¡ESTADOS AÑADIDOS PARA VISIBILIDAD!! ---
+    var passwordVisible by rememberSaveable { mutableStateOf(false) }
+    var confirmPasswordVisible by rememberSaveable { mutableStateOf(false) }
+
     Box(
         modifier = Modifier
             .fillMaxSize()
@@ -112,7 +136,6 @@ fun RegisterScreen(
                     .height(100.dp)
                     .padding(bottom = 16.dp)
             )
-
             Text(
                 "Crea tu cuenta",
                 fontSize = 24.sp,
@@ -121,19 +144,34 @@ fun RegisterScreen(
             )
             Spacer(modifier = Modifier.height(24.dp))
 
-            // Campo de Nombre
+            // --- ¡¡CAMPO "NOMBRE" ACTUALIZADO A DOS CAMPOS!! ---
             OutlinedTextField(
-                value = name,
-                onValueChange = onNameChange,
-                label = { Text("Nombre Completo") },
+                value = firstName,
+                onValueChange = onFirstNameChange,
+                label = { Text("Nombre") },
                 modifier = Modifier.fillMaxWidth(),
                 shape = RoundedCornerShape(8.dp),
-                isError = nameError != null,
+                isError = firstNameError != null,
                 singleLine = true
             )
-            nameError?.let {
+            firstNameError?.let {
                 Text(text = it, color = MaterialTheme.colorScheme.error, style = MaterialTheme.typography.labelSmall)
             }
+            Spacer(modifier = Modifier.height(16.dp))
+
+            OutlinedTextField(
+                value = lastName,
+                onValueChange = onLastNameChange,
+                label = { Text("Apellido") },
+                modifier = Modifier.fillMaxWidth(),
+                shape = RoundedCornerShape(8.dp),
+                isError = lastNameError != null,
+                singleLine = true
+            )
+            lastNameError?.let {
+                Text(text = it, color = MaterialTheme.colorScheme.error, style = MaterialTheme.typography.labelSmall)
+            }
+            // --- FIN DE CAMBIOS ---
             Spacer(modifier = Modifier.height(16.dp))
 
             // Campo de Email
@@ -151,22 +189,23 @@ fun RegisterScreen(
             }
             Spacer(modifier = Modifier.height(16.dp))
 
-            // Campo de Teléfono
+            // --- ¡¡CAMPO "TELÉFONO" ACTUALIZADO!! ---
             OutlinedTextField(
                 value = phone,
                 onValueChange = onPhoneChange,
-                label = { Text("Teléfono") },
+                label = { Text("Teléfono (+56912345678)") },
                 modifier = Modifier.fillMaxWidth(),
                 shape = RoundedCornerShape(8.dp),
                 isError = phoneError != null,
-                singleLine = true
+                singleLine = true,
+                keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Phone) // <-- Teclado
             )
             phoneError?.let {
                 Text(text = it, color = MaterialTheme.colorScheme.error, style = MaterialTheme.typography.labelSmall)
             }
             Spacer(modifier = Modifier.height(16.dp))
 
-            // Campo de Contraseña
+            // --- ¡¡CAMPO "CONTRASEÑA" ACTUALIZADO!! ---
             OutlinedTextField(
                 value = password,
                 onValueChange = onPasswordChange,
@@ -175,14 +214,21 @@ fun RegisterScreen(
                 shape = RoundedCornerShape(8.dp),
                 isError = passwordError != null,
                 singleLine = true,
-                visualTransformation = PasswordVisualTransformation()
+                visualTransformation = if (passwordVisible) VisualTransformation.None else PasswordVisualTransformation(),
+                trailingIcon = {
+                    val image = if (passwordVisible) Icons.Filled.Visibility else Icons.Filled.VisibilityOff
+                    val description = if (passwordVisible) "Ocultar contraseña" else "Mostrar contraseña"
+                    IconButton(onClick = { passwordVisible = !passwordVisible }) {
+                        Icon(imageVector = image, description)
+                    }
+                }
             )
             passwordError?.let {
                 Text(text = it, color = MaterialTheme.colorScheme.error, style = MaterialTheme.typography.labelSmall)
             }
             Spacer(modifier = Modifier.height(16.dp))
 
-            // Campo de Confirmar Contraseña
+            // --- ¡¡CAMPO "CONFIRMAR CONTRASEÑA" ACTUALIZADO!! ---
             OutlinedTextField(
                 value = confirmPassword,
                 onValueChange = onConfirmPasswordChange,
@@ -191,7 +237,14 @@ fun RegisterScreen(
                 shape = RoundedCornerShape(8.dp),
                 isError = confirmPasswordError != null,
                 singleLine = true,
-                visualTransformation = PasswordVisualTransformation()
+                visualTransformation = if (confirmPasswordVisible) VisualTransformation.None else PasswordVisualTransformation(),
+                trailingIcon = {
+                    val image = if (confirmPasswordVisible) Icons.Filled.Visibility else Icons.Filled.VisibilityOff
+                    val description = if (confirmPasswordVisible) "Ocultar contraseña" else "Mostrar contraseña"
+                    IconButton(onClick = { confirmPasswordVisible = !confirmPasswordVisible }) {
+                        Icon(imageVector = image, description)
+                    }
+                }
             )
             confirmPasswordError?.let {
                 Text(text = it, color = MaterialTheme.colorScheme.error, style = MaterialTheme.typography.labelSmall)

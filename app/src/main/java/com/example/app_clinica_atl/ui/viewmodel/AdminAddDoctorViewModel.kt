@@ -6,8 +6,8 @@ import com.example.app_clinica_atl.data.local.specialty.SpecialtyEntity
 import com.example.app_clinica_atl.data.local.user.UserEntity
 import com.example.app_clinica_atl.data.repository.SpecialtyRepository
 import com.example.app_clinica_atl.data.repository.UserRepository
+import com.example.app_clinica_atl.domain.validation.validateChileanPhoneNumber // <-- ¡IMPORT AÑADIDO!
 import com.example.app_clinica_atl.domain.validation.validateEmail
-import com.example.app_clinica_atl.domain.validation.validateRegisterPassword
 import com.example.app_clinica_atl.domain.validation.validateRequired
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -15,17 +15,18 @@ import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.catch
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
+import kotlin.random.Random
 
 /**
  * Estado de la UI para la pantalla de añadir doctor.
+ * ¡ACTUALIZADO!
  */
 data class AdminAddDoctorUiState(
     // Datos del formulario
-    val name: String = "",
+    val firstName: String = "",         // <-- CAMBIO
+    val lastName: String = "",          // <-- CAMBIO
     val email: String = "",
     val phone: String = "",
-    val password: String = "",
-    val confirmPassword: String = "",
     val salary: String = "",
     val selectedSpecialty: SpecialtyEntity? = null,
 
@@ -33,16 +34,17 @@ data class AdminAddDoctorUiState(
     val specialties: List<SpecialtyEntity> = emptyList(),
 
     // Errores de validación
-    val nameError: String? = null,
+    val firstNameError: String? = null, // <-- CAMBIO
+    val lastNameError: String? = null,  // <-- CAMBIO
     val emailError: String? = null,
     val phoneError: String? = null,
-    val passwordError: String? = null,
-    val confirmPasswordError: String? = null,
     val salaryError: String? = null,
     val specialtyError: String? = null,
 
+    // (Campos de contraseña eliminados)
+
     // Estado general
-    val isLoading: Boolean = true, // Empieza en true para cargar especialidades
+    val isLoading: Boolean = true,
     val registrationSuccess: Boolean = false,
     val errorMsg: String? = null
 )
@@ -56,7 +58,7 @@ class AdminAddDoctorViewModel(
     val uiState: StateFlow<AdminAddDoctorUiState> = _uiState.asStateFlow()
 
     init {
-        // Carga la lista de especialidades para el combo box
+        // Carga la lista de especialidades (sin cambios)
         viewModelScope.launch {
             specialtyRepository.getAllSpecialties()
                 .catch { e ->
@@ -73,44 +75,56 @@ class AdminAddDoctorViewModel(
         }
     }
 
-    // --- Handlers de UI ---
-    fun onNameChange(name: String) { _uiState.update { it.copy(name = name, nameError = null) } }
-    fun onEmailChange(email: String) { _uiState.update { it.copy(email = email, emailError = null) } }
-    fun onPhoneChange(phone: String) { _uiState.update { it.copy(phone = phone, phoneError = null) } }
-    fun onPasswordChange(password: String) { _uiState.update { it.copy(password = password, passwordError = null) } }
-    fun onConfirmPasswordChange(confirm: String) { _uiState.update { it.copy(confirmPassword = confirm, confirmPasswordError = null) } }
-    fun onSalaryChange(salary: String) { _uiState.update { it.copy(salary = salary, salaryError = null) } }
-    fun onSpecialtyChange(specialty: SpecialtyEntity) { _uiState.update { it.copy(selectedSpecialty = specialty, specialtyError = null) } }
+    // --- ¡¡HANDLERS DE UI ACTUALIZADOS!! ---
+    fun onFirstNameChange(name: String) {
+        val error = validateRequired(name, "Nombre")
+        _uiState.update { it.copy(firstName = name, firstNameError = error) }
+    }
+    fun onLastNameChange(name: String) {
+        val error = validateRequired(name, "Apellido")
+        _uiState.update { it.copy(lastName = name, lastNameError = error) }
+    }
+    fun onEmailChange(email: String) {
+        val error = validateEmail(email)
+        _uiState.update { it.copy(email = email, emailError = error) }
+    }
+    fun onPhoneChange(phone: String) {
+        val error = validateChileanPhoneNumber(phone)
+        _uiState.update { it.copy(phone = phone, phoneError = error) }
+    }
+    fun onSalaryChange(salary: String) {
+        val error = if (salary.toDoubleOrNull() == null) "Debe ser un número" else null
+        _uiState.update { it.copy(salary = salary, salaryError = error) }
+    }
+    fun onSpecialtyChange(specialty: SpecialtyEntity) {
+        _uiState.update { it.copy(selectedSpecialty = specialty, specialtyError = null) }
+    }
     fun clearSuccess() { _uiState.update { it.copy(registrationSuccess = false) } }
 
     /**
-     * Intenta registrar al nuevo doctor.
+     * ¡¡FUNCIÓN DE REGISTRO ACTUALIZADA!!
      */
     fun registerDoctor() {
         _uiState.update { it.copy(isLoading = true, errorMsg = null) }
         val s = _uiState.value
 
-        // --- Validaciones ---
-        val nameError = validateRequired(s.name, "Nombre")
+        // --- Validaciones finales ---
+        val nameError = validateRequired(s.firstName, "Nombre")
+        val lastNameError = validateRequired(s.lastName, "Apellido")
         val emailError = validateEmail(s.email)
-        val phoneError = validateRequired(s.phone, "Teléfono")
-        val passwordResult = validateRegisterPassword(s.password, s.confirmPassword)
+        val phoneError = validateChileanPhoneNumber(s.phone)
         val salaryDouble = s.salary.toDoubleOrNull()
-        var salaryError: String? = null
-        if (salaryDouble == null || salaryDouble <= 0) {
-            salaryError = "Salario debe ser un número válido."
-        }
+        val salaryError = if (salaryDouble == null || salaryDouble <= 0) "Salario debe ser un número válido." else null
         val specialtyError = if (s.selectedSpecialty == null) "Debe seleccionar una especialidad." else null
 
-        if (nameError != null || emailError != null || phoneError != null || passwordResult.isFailure || salaryError != null || specialtyError != null) {
+        if (nameError != null || lastNameError != null || emailError != null || phoneError != null || salaryError != null || specialtyError != null) {
             _uiState.update {
                 it.copy(
                     isLoading = false,
-                    nameError = nameError,
+                    firstNameError = nameError,
+                    lastNameError = lastNameError,
                     emailError = emailError,
                     phoneError = phoneError,
-                    passwordError = passwordResult.exceptionOrNull()?.message?.takeIf { msg -> "débil" in msg },
-                    confirmPasswordError = passwordResult.exceptionOrNull()?.message?.takeIf { msg -> "coinciden" in msg },
                     salaryError = salaryError,
                     specialtyError = specialtyError
                 )
@@ -118,15 +132,25 @@ class AdminAddDoctorViewModel(
             return
         }
 
-        // --- Registro ---
+        // --- ¡¡LÓGICA DE CONTRASEÑA AUTOMÁTICA!! ---
+        // 1. Tomamos las primeras 4 letras del apellido (o rellenamos si es corto)
+        val passPrefix = s.lastName.padEnd(4, 'x').take(4)
+        // 2. Capitalizamos la primera letra
+        val formattedPrefix = passPrefix.replaceFirstChar { it.uppercase() }
+        // 3. Generamos 3 números al azar
+        val passNumbers = Random.nextInt(100, 1000) // (ej: 777)
+        // 4. Creamos la contraseña
+        val generatedPassword = "$formattedPrefix$passNumbers@" // (Ej: "Roma777@")
+        // --- FIN LÓGICA ---
+
         viewModelScope.launch {
             val newDoctor = UserEntity(
-                name = s.name,
+                name = "${s.firstName} ${s.lastName}", // Combinamos los nombres
                 email = s.email,
                 phone = s.phone,
-                password = s.password,
-                role = "doctor", // ¡Rol de Doctor!
-                specialty = s.selectedSpecialty!!.name, // ¡Especialidad del combo box!
+                password = generatedPassword, // <-- ¡Usamos la contraseña generada!
+                role = "doctor",
+                specialty = s.selectedSpecialty!!.name,
                 salary = salaryDouble
             )
 
@@ -138,8 +162,8 @@ class AdminAddDoctorViewModel(
                         isLoading = false,
                         registrationSuccess = true,
                         // Limpia el formulario
-                        name = "", email = "", phone = "", password = "",
-                        confirmPassword = "", salary = "", selectedSpecialty = null
+                        firstName = "", lastName = "", email = "", phone = "",
+                        salary = "", selectedSpecialty = null
                     )
                 }
             } else {

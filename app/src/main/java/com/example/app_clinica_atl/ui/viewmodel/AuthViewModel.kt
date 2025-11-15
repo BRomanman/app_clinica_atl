@@ -5,6 +5,7 @@ import androidx.lifecycle.viewModelScope
 import com.example.app_clinica_atl.data.local.storage.UserPreferences
 import com.example.app_clinica_atl.data.local.user.UserEntity
 import com.example.app_clinica_atl.data.repository.UserRepository
+import com.example.app_clinica_atl.domain.validation.validateChileanPhoneNumber // <-- ¡IMPORT AÑADIDO!
 import com.example.app_clinica_atl.domain.validation.validateEmail
 import com.example.app_clinica_atl.domain.validation.validateLoginPassword
 import com.example.app_clinica_atl.domain.validation.validateRegisterPassword
@@ -27,10 +28,12 @@ data class LoginUiState(
     val userRole: String? = null
 )
 
-// --- Estados de UI para Registro ---
+// --- ¡¡ESTADO DE UI DE REGISTRO ACTUALIZADO!! ---
 data class RegisterUiState(
-    val name: String = "",
-    val nameError: String? = null,
+    val firstName: String = "",         // <-- CAMBIO
+    val firstNameError: String? = null, // <-- CAMBIO
+    val lastName: String = "",          // <-- CAMBIO
+    val lastNameError: String? = null,  // <-- CAMBIO
     val email: String = "",
     val emailError: String? = null,
     val phone: String = "",
@@ -44,9 +47,6 @@ data class RegisterUiState(
     val registerSuccess: Boolean = false
 )
 
-/**
- * ViewModel para Login y Registro.
- */
 class AuthViewModel(
     private val userRepository: UserRepository,
     private val userPreferences: UserPreferences
@@ -60,32 +60,75 @@ class AuthViewModel(
 
     val userRoleFlow = userPreferences.userRoleFlow
 
-    // --- Handlers de UI para Login ---
-    fun onLoginEmailChange(email: String) { _loginUiState.update { it.copy(email = email, emailError = null, loginError = null) } }
-    fun onLoginPasswordChange(password: String) { _loginUiState.update { it.copy(password = password, passwordError = null, loginError = null) } }
+    // --- Handlers de Login (con validación en tiempo real) ---
+    fun onLoginEmailChange(email: String) {
+        val emailError = validateEmail(email)
+        _loginUiState.update { it.copy(email = email, emailError = emailError, loginError = null) }
+    }
 
-    // --- Handlers de UI para Registro ---
-    fun onRegisterNameChange(name: String) { _registerUiState.update { it.copy(name = name, nameError = null, registerError = null) } }
-    fun onRegisterEmailChange(email: String) { _registerUiState.update { it.copy(email = email, emailError = null, registerError = null) } }
-    fun onRegisterPhoneChange(phone: String) { _registerUiState.update { it.copy(phone = phone, phoneError = null, registerError = null) } }
-    fun onRegisterPasswordChange(password: String) { _registerUiState.update { it.copy(password = password, passwordError = null, registerError = null) } }
-    fun onRegisterConfirmPasswordChange(password: String) { _registerUiState.update { it.copy(confirmPassword = password, confirmPasswordError = null, registerError = null) } }
+    fun onLoginPasswordChange(password: String) {
+        val passwordError = validateLoginPassword(password)
+        _loginUiState.update { it.copy(password = password, passwordError = passwordError, loginError = null) }
+    }
+
+    // --- ¡¡HANDLERS DE REGISTRO ACTUALIZADOS!! ---
+    fun onRegisterFirstNameChange(name: String) {
+        val nameError = validateRequired(name, "Nombre")
+        _registerUiState.update { it.copy(firstName = name, firstNameError = nameError, registerError = null) }
+    }
+
+    fun onRegisterLastNameChange(lastName: String) {
+        val nameError = validateRequired(lastName, "Apellido")
+        _registerUiState.update { it.copy(lastName = lastName, lastNameError = nameError, registerError = null) }
+    }
+
+    fun onRegisterEmailChange(email: String) {
+        val emailError = validateEmail(email)
+        _registerUiState.update { it.copy(email = email, emailError = emailError, registerError = null) }
+    }
+
+    fun onRegisterPhoneChange(phone: String) {
+        // ¡CAMBIO! Usa la nueva validación
+        val phoneError = validateChileanPhoneNumber(phone)
+        _registerUiState.update { it.copy(phone = phone, phoneError = phoneError, registerError = null) }
+    }
+
+    fun onRegisterPasswordChange(password: String) {
+        val passwordResult = validateRegisterPassword(password, _registerUiState.value.confirmPassword)
+        _registerUiState.update {
+            it.copy(
+                password = password,
+                passwordError = passwordResult.exceptionOrNull()?.message?.takeIf { msg -> "débil" in msg },
+                confirmPasswordError = passwordResult.exceptionOrNull()?.message?.takeIf { msg -> "coinciden" in msg },
+                registerError = null
+            )
+        }
+    }
+
+    fun onRegisterConfirmPasswordChange(password: String) {
+        val passwordResult = validateRegisterPassword(_registerUiState.value.password, password)
+        _registerUiState.update {
+            it.copy(
+                confirmPassword = password,
+                passwordError = passwordResult.exceptionOrNull()?.message?.takeIf { msg -> "débil" in msg },
+                confirmPasswordError = passwordResult.exceptionOrNull()?.message?.takeIf { msg -> "coinciden" in msg },
+                registerError = null
+            )
+        }
+    }
 
     // --- Lógica de Negocio ---
     fun loginUser() {
-        _loginUiState.update { it.copy(isLoading = true, loginError = null) }
-        val email = _loginUiState.value.email
-        val password = _loginUiState.value.password
-        val emailError = validateEmail(email)
-        val passwordError = validateLoginPassword(password)
-
+        // ... (Sin cambios)
+        val emailError = validateEmail(_loginUiState.value.email)
+        val passwordError = validateLoginPassword(_loginUiState.value.password)
         if (emailError != null || passwordError != null) {
-            _loginUiState.update { it.copy(emailError = emailError, passwordError = passwordError, isLoading = false) }
+            _loginUiState.update { it.copy(emailError = emailError, passwordError = passwordError) }
             return
         }
-
+        _loginUiState.update { it.copy(isLoading = true, loginError = null) }
         viewModelScope.launch {
-            val result = userRepository.login(email, password)
+            val result = userRepository.login(_loginUiState.value.email, _loginUiState.value.password)
             if (result.isSuccess) {
                 val user = result.getOrNull()!!
                 userPreferences.saveUserSession(user.id, user.role)
@@ -97,17 +140,22 @@ class AuthViewModel(
     }
 
     fun registerUser() {
-        _registerUiState.update { it.copy(isLoading = true, registerError = null) }
         val s = _registerUiState.value
-        val nameError = validateRequired(s.name, "Nombre")
+
+        // ¡CAMBIO! Validación final con los nuevos campos
+        val nameError = validateRequired(s.firstName, "Nombre")
+        val lastNameError = validateRequired(s.lastName, "Apellido")
         val emailError = validateEmail(s.email)
-        val phoneError = validateRequired(s.phone, "Teléfono")
+        val phoneError = validateChileanPhoneNumber(s.phone)
         val passwordResult = validateRegisterPassword(s.password, s.confirmPassword)
 
-        if (nameError != null || emailError != null || phoneError != null || passwordResult.isFailure) {
+        if (nameError != null || lastNameError != null || emailError != null || phoneError != null || passwordResult.isFailure) {
             _registerUiState.update {
                 it.copy(
-                    nameError = nameError, emailError = emailError, phoneError = phoneError,
+                    firstNameError = nameError,
+                    lastNameError = lastNameError,
+                    emailError = emailError,
+                    phoneError = phoneError,
                     passwordError = passwordResult.exceptionOrNull()?.message?.takeIf { msg -> "débil" in msg },
                     confirmPasswordError = passwordResult.exceptionOrNull()?.message?.takeIf { msg -> "coinciden" in msg },
                     isLoading = false
@@ -116,12 +164,20 @@ class AuthViewModel(
             return
         }
 
+        _registerUiState.update { it.copy(isLoading = true, registerError = null) }
         viewModelScope.launch {
+            // ¡CAMBIO! Combinamos firstName y lastName en el 'name' de la entidad
             val newUser = UserEntity(
-                name = s.name, email = s.email, phone = s.phone, password = s.password,
-                role = "paciente", specialty = null, salary = null
+                name = "${s.firstName} ${s.lastName}",
+                email = s.email,
+                phone = s.phone,
+                password = s.password,
+                role = "paciente",
+                specialty = null,
+                salary = null
             )
             val result = userRepository.register(newUser)
+
             if (result.isSuccess) {
                 val registeredUser = result.getOrNull()!!
                 userPreferences.saveUserSession(registeredUser.id, registeredUser.role)
@@ -132,11 +188,9 @@ class AuthViewModel(
         }
     }
 
-    // --- ¡¡FUNCIÓN AÑADIDA!! ---
-    /**
-     * Limpia la sesión del usuario en DataStore.
-     */
-    suspend fun logout() {
-        userPreferences.clearUserSession()
+    fun logout() {
+        viewModelScope.launch {
+            userPreferences.clearUserSession()
+        }
     }
 }

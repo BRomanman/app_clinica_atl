@@ -11,6 +11,8 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.verticalScroll
@@ -40,18 +42,16 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import com.example.app_clinica_atl.R
+import com.example.app_clinica_atl.data.local.appointment.AppointmentDetails
 import com.example.app_clinica_atl.data.local.insurance.InsuranceEntity
 import com.example.app_clinica_atl.data.local.user.UserEntity
 import com.example.app_clinica_atl.ui.viewmodel.PatientViewModel
 
-/**
- * Pantalla de Perfil de Paciente
- * ¡SIN TopBar y SIN 'onBackClick'!
- */
 @Composable
 fun PatientProfileScreen(
     onGoToSeguros: () -> Unit,
-    viewModel: PatientViewModel
+    viewModel: PatientViewModel,
+    modifier: Modifier = Modifier
 ) {
     val uiState by viewModel.uiState.collectAsState()
     val snackbarHostState = remember { SnackbarHostState() }
@@ -67,16 +67,16 @@ fun PatientProfileScreen(
         }
     }
 
-    // Usamos un Scaffold solo por el Snackbar, pero sin TopBar/BottomBar
     Scaffold(
         snackbarHost = { SnackbarHost(snackbarHostState) },
-        containerColor = MaterialTheme.colorScheme.background
-    ) { paddingValues ->
+        containerColor = MaterialTheme.colorScheme.background,
+        modifier = modifier.fillMaxSize()
+    ) { innerPadding ->
         Box(
             modifier = Modifier
                 .fillMaxSize()
-                .padding(paddingValues) // Padding del Scaffold
-                .padding(16.dp),      // Padding de la pantalla
+                .padding(innerPadding)
+                .padding(start = 16.dp, end = 16.dp, top = 16.dp), // Padding de la pantalla
             contentAlignment = Alignment.Center
         ) {
             when {
@@ -91,10 +91,13 @@ fun PatientProfileScreen(
                     )
                 }
                 uiState.patient != null -> {
+                    // ¡CAMBIO! Pasamos la lista de citas y la acción de cancelar
                     PatientProfileContent(
                         patient = uiState.patient!!,
                         activeInsurance = uiState.activeInsuranceDetails,
+                        appointments = uiState.activeAppointments,
                         onCancelInsurance = viewModel::cancelSubscription,
+                        onCancelAppointment = viewModel::cancelAppointment,
                         onGoToSeguros = onGoToSeguros
                     )
                 }
@@ -107,48 +110,137 @@ fun PatientProfileScreen(
 private fun PatientProfileContent(
     patient: UserEntity,
     activeInsurance: InsuranceEntity?,
+    appointments: List<AppointmentDetails>, // <-- ¡AÑADIDO!
     onCancelInsurance: () -> Unit,
+    onCancelAppointment: (Long) -> Unit, // <-- ¡AÑADIDO!
     onGoToSeguros: () -> Unit
 ) {
-    Column(
-        modifier = Modifier
-            .fillMaxSize()
-            .verticalScroll(rememberScrollState()),
+    // ¡CAMBIO! Ya no usamos un Column con scroll, sino un LazyColumn
+    // para que el perfil completo sea scrolleable
+    LazyColumn(
+        modifier = Modifier.fillMaxSize(),
         horizontalAlignment = Alignment.CenterHorizontally
     ) {
-        Image(
-            painter = painterResource(id = R.drawable.goku_perfil),
-            contentDescription = "Foto de ${patient.name}",
-            contentScale = ContentScale.Crop,
-            modifier = Modifier
-                .size(150.dp)
-                .clip(CircleShape)
-        )
-        Spacer(modifier = Modifier.height(16.dp))
-        Text(
-            text = patient.name,
-            style = MaterialTheme.typography.headlineSmall,
-            fontWeight = FontWeight.Bold
-        )
-        Text(
-            text = patient.role.replaceFirstChar { it.uppercase() },
-            style = MaterialTheme.typography.titleMedium,
-            color = MaterialTheme.colorScheme.primary
-        )
-        Spacer(modifier = Modifier.height(24.dp))
-        InfoRow(label = "Email", value = patient.email)
-        InfoRow(label = "Teléfono", value = patient.phone)
-        Spacer(modifier = Modifier.height(16.dp))
-        HorizontalDivider()
-        Spacer(modifier = Modifier.height(16.dp))
-        InsuranceInfoCard(
-            activeInsurance = activeInsurance,
-            onCancelInsurance = onCancelInsurance,
-            onGoToSeguros = onGoToSeguros
-        )
+        // --- Item 1: El Perfil ---
+        item {
+            Image(
+                painter = painterResource(id = R.drawable.goku_perfil),
+                contentDescription = "Foto de ${patient.name}",
+                contentScale = ContentScale.Crop,
+                modifier = Modifier
+                    .size(150.dp)
+                    .clip(CircleShape)
+            )
+            Spacer(modifier = Modifier.height(16.dp))
+            Text(
+                text = patient.name,
+                style = MaterialTheme.typography.headlineSmall,
+                fontWeight = FontWeight.Bold
+            )
+            Text(
+                text = patient.role.replaceFirstChar { it.uppercase() },
+                style = MaterialTheme.typography.titleMedium,
+                color = MaterialTheme.colorScheme.primary
+            )
+            Spacer(modifier = Modifier.height(24.dp))
+            InfoRow(label = "Email", value = patient.email)
+            InfoRow(label = "Teléfono", value = patient.phone)
+            Spacer(modifier = Modifier.height(16.dp))
+            HorizontalDivider()
+            Spacer(modifier = Modifier.height(16.dp))
+        }
+
+        // --- Item 2: El Seguro ---
+        item {
+            InsuranceInfoCard(
+                activeInsurance = activeInsurance,
+                onCancelInsurance = onCancelInsurance,
+                onGoToSeguros = onGoToSeguros
+            )
+            Spacer(modifier = Modifier.height(16.dp))
+            HorizontalDivider()
+            Spacer(modifier = Modifier.height(16.dp))
+        }
+
+        // --- ¡¡SECCIÓN AÑADIDA!! (Item 3: Título de Citas) ---
+        item {
+            Text(
+                text = "Mis Próximas Citas",
+                style = MaterialTheme.typography.titleMedium,
+                fontWeight = FontWeight.Bold,
+                modifier = Modifier.fillMaxWidth()
+            )
+            Spacer(modifier = Modifier.height(16.dp))
+        }
+
+        // --- ¡¡SECCIÓN AÑADIDA!! (Item 4: Lista de Citas) ---
+        if (appointments.isEmpty()) {
+            item {
+                Text(
+                    "No tienes citas agendadas.",
+                    modifier = Modifier.padding(bottom = 16.dp)
+                )
+            }
+        } else {
+            items(appointments) { appointment ->
+                AppointmentCard(
+                    appointment = appointment,
+                    onCancel = { onCancelAppointment(appointment.appointmentId) }
+                )
+                Spacer(modifier = Modifier.height(12.dp))
+            }
+        }
     }
 }
 
+/**
+ * ¡¡NUEVO COMPOSABLE!!
+ * Tarjeta para mostrar una cita, basado en tu foto.
+ */
+@Composable
+private fun AppointmentCard(
+    appointment: AppointmentDetails,
+    onCancel: () -> Unit
+) {
+    Card(
+        modifier = Modifier.fillMaxWidth(),
+        elevation = CardDefaults.cardElevation(2.dp),
+        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface)
+    ) {
+        Column(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(16.dp)
+        ) {
+            Text(
+                text = "Dr. ${appointment.doctorName}",
+                style = MaterialTheme.typography.titleMedium,
+                fontWeight = FontWeight.Bold,
+                color = MaterialTheme.colorScheme.primary
+            )
+            Text(
+                text = appointment.doctorSpecialty,
+                style = MaterialTheme.typography.bodyMedium,
+                fontWeight = FontWeight.SemiBold
+            )
+            Spacer(modifier = Modifier.height(12.dp))
+            InfoRow(label = "Fecha", value = appointment.date)
+            InfoRow(label = "Hora", value = appointment.time)
+            Spacer(modifier = Modifier.height(12.dp))
+            Button(
+                onClick = onCancel,
+                colors = ButtonDefaults.buttonColors(
+                    containerColor = MaterialTheme.colorScheme.error
+                ),
+                modifier = Modifier.fillMaxWidth()
+            ) {
+                Text("Cancelar Cita")
+            }
+        }
+    }
+}
+
+// (Composable de Tarjeta de Seguro - sin cambios)
 @Composable
 private fun InsuranceInfoCard(
     activeInsurance: InsuranceEntity?,
@@ -205,12 +297,13 @@ private fun InsuranceInfoCard(
     }
 }
 
+// (Composable de InfoRow - sin cambios)
 @Composable
 private fun InfoRow(label: String, value: String) {
     Column(
         modifier = Modifier
             .fillMaxWidth()
-            .padding(vertical = 8.dp)
+            .padding(vertical = 4.dp) // Reducimos el padding para la tarjeta de cita
     ) {
         Text(
             text = label,

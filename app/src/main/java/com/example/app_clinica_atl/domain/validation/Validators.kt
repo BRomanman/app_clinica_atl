@@ -31,7 +31,6 @@ fun validateEmail(email: String): String? {
 
 /**
  * Valida la contraseña para la pantalla de Login.
- * (Solo comprueba que no esté vacía)
  */
 fun validateLoginPassword(password: String): String? {
     if (password.isBlank()) {
@@ -42,7 +41,6 @@ fun validateLoginPassword(password: String): String? {
 
 /**
  * Valida la contraseña para la pantalla de Registro.
- * Devuelve un Result<Unit> porque tiene múltiples posibles fallos.
  */
 fun validateRegisterPassword(password: String, confirm: String): Result<Unit> {
     val passwordErrors = mutableListOf<String>()
@@ -70,4 +68,25 @@ fun validateRegisterPassword(password: String, confirm: String): Result<Unit> {
     }
 
     return Result.success(Unit)
+}
+
+// --- ¡¡FUNCIÓN AÑADIDA!! ---
+/**
+ * Valida que un número de teléfono siga el formato chileno (+569xxxxxxxx).
+ */
+fun validateChileanPhoneNumber(phone: String): String? {
+    // Expresión regular:
+    // ^     = inicio de la línea
+    // \+569 = debe empezar exactamente con "+569"
+    // \d{8} = debe ser seguido por 8 dígitos numéricos
+    // $     = fin de la línea
+    val phoneRegex = Regex("^\\+569\\d{8}$")
+
+    if (phone.isBlank()) {
+        return "Teléfono es requerido."
+    }
+    if (!phone.matches(phoneRegex)) {
+        return "Formato no válido. (Ej: +56912345678)"
+    }
+    return null
 }

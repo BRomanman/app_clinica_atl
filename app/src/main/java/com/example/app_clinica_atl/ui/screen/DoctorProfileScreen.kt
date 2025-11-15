@@ -34,7 +34,6 @@ import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
-// NO MÁS HILT
 import com.example.app_clinica_atl.R
 import com.example.app_clinica_atl.data.local.user.UserEntity
 import com.example.app_clinica_atl.ui.viewmodel.DoctorProfileViewModel
@@ -44,13 +43,11 @@ import com.example.app_clinica_atl.ui.viewmodel.DoctorProfileViewModel
 fun DoctorProfileScreen(
     doctorId: Long?,
     onBackClick: () -> Unit,
-    viewModel: DoctorProfileViewModel // <-- Recibe el VM como parámetro
+    viewModel: DoctorProfileViewModel,
+    modifier: Modifier = Modifier // <-- ¡¡PARÁMETRO AÑADIDO!!
 ) {
     val uiState by viewModel.uiState.collectAsState()
 
-    // Efecto de carga:
-    // Cuando la pantalla recibe un ID, le dice al ViewModel que cargue
-    // el perfil de ESE doctor.
     LaunchedEffect(doctorId) {
         if (doctorId != null) {
             viewModel.loadDoctorProfile(doctorId)
@@ -58,6 +55,9 @@ fun DoctorProfileScreen(
     }
 
     Scaffold(
+        // ¡¡MODIFIER APLICADO!!
+        // Esto permite que el NavGraph le quite el padding
+        modifier = modifier.fillMaxSize(),
         topBar = {
             TopAppBar(
                 title = { Text(uiState.doctor?.name ?: "Perfil de Doctor") },
@@ -77,12 +77,9 @@ fun DoctorProfileScreen(
             contentAlignment = Alignment.Center
         ) {
             when {
-                // 1. Estado de Carga
                 uiState.isLoading -> {
                     CircularProgressIndicator()
                 }
-
-                // 2. Estado de Error
                 uiState.errorMsg != null || uiState.doctor == null -> {
                     Text(
                         text = uiState.errorMsg ?: "No se pudo encontrar al doctor.",
@@ -90,10 +87,7 @@ fun DoctorProfileScreen(
                         textAlign = TextAlign.Center
                     )
                 }
-
-                // 3. Estado con Datos (Éxito)
                 else -> {
-                    // Mostramos el perfil del doctor
                     DoctorProfileContent(doctor = uiState.doctor!!)
                 }
             }
@@ -101,9 +95,6 @@ fun DoctorProfileScreen(
     }
 }
 
-/**
- * Composable que muestra el contenido del perfil del doctor.
- */
 @Composable
 private fun DoctorProfileContent(doctor: UserEntity) {
     Column(
@@ -112,7 +103,6 @@ private fun DoctorProfileContent(doctor: UserEntity) {
             .verticalScroll(rememberScrollState()),
         horizontalAlignment = Alignment.CenterHorizontally
     ) {
-        // Imagen del Doctor
         Image(
             painter = painterResource(id = getDoctorImageResource(doctor.specialty)),
             contentDescription = "Foto de ${doctor.name}",
@@ -121,30 +111,20 @@ private fun DoctorProfileContent(doctor: UserEntity) {
                 .size(150.dp)
                 .clip(CircleShape)
         )
-
         Spacer(modifier = Modifier.height(16.dp))
-
-        // Nombre
         Text(
             text = doctor.name,
             style = MaterialTheme.typography.headlineSmall,
             fontWeight = FontWeight.Bold
         )
-
-        // Especialidad
         Text(
             text = doctor.specialty ?: "Especialidad no definida",
             style = MaterialTheme.typography.titleMedium,
             color = MaterialTheme.colorScheme.primary
         )
-
         Spacer(modifier = Modifier.height(24.dp))
-
-        // Información de Contacto
         InfoRow(label = "Email", value = doctor.email)
         InfoRow(label = "Teléfono", value = doctor.phone)
-
-        // (Podríamos añadir más info aquí si la tuviéramos)
     }
 }
 
@@ -167,9 +147,6 @@ private fun InfoRow(label: String, value: String) {
     }
 }
 
-/**
- * Función helper (la misma de la pantalla de búsqueda)
- */
 @Composable
 private fun getDoctorImageResource(specialty: String?): Int {
     return when (specialty) {

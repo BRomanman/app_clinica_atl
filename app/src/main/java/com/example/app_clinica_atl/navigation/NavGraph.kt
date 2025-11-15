@@ -5,8 +5,9 @@ import androidx.annotation.RequiresApi
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.padding
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.rememberCoroutineScope // <-- ¡IMPORT AÑADIDO!
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.unit.dp
 import androidx.navigation.NavHostController
 import androidx.navigation.NavType
 import androidx.navigation.compose.NavHost
@@ -35,7 +36,7 @@ import com.example.app_clinica_atl.ui.viewmodel.DoctorProfileViewModel
 import com.example.app_clinica_atl.ui.viewmodel.DoctorSearchViewModel
 import com.example.app_clinica_atl.ui.viewmodel.HomeViewModel
 import com.example.app_clinica_atl.ui.viewmodel.PatientViewModel
-import kotlinx.coroutines.launch // <-- ¡IMPORT AÑADIDO!
+import kotlinx.coroutines.launch
 
 @RequiresApi(Build.VERSION_CODES.O)
 @Composable
@@ -58,7 +59,7 @@ fun AppNavGraph(
         startDestination = Route.Login.path,
         modifier = Modifier.padding(paddingValues)
     ) {
-        // --- Rutas sin TopBar/Drawer ---
+        // --- Rutas sin padding ---
         composable(Route.Login.path) {
             LoginScreenVm(
                 authViewModel = authViewModel,
@@ -89,8 +90,9 @@ fun AppNavGraph(
             HomeScreen(
                 viewModel = homeViewModel,
                 onBookAppointmentClick = { navController.navigate(Route.BookAppointment.path) },
-                onMyDatesClick = { /* TODO */ },
-                onInsuranceClick = { navController.navigate(Route.Seguros.path) }
+                // onMyDatesClick = { /* ¡¡ELIMINADO!! */ },
+                onInsuranceClick = { navController.navigate(Route.Seguros.path) },
+                onProfileClick = { navController.navigate(Route.PatientProfile.path) }
             )
         }
         composable(Route.PatientProfile.path) {
@@ -128,19 +130,18 @@ fun AppNavGraph(
             DoctorSearchPatientScreen(
                 viewModel = doctorSearchPatientViewModel,
                 onBackClick = { navController.popBackStack() },
-                onPatientClick = { /* TODO: Navegar a un perfil de paciente para doctor */ }
+                onPatientClick = { /* TODO */ }
             )
         }
 
         // --- Rutas de Admin (Sin TopBar/Drawer) ---
         composable(Route.AdminMenu.path) {
-            // --- ¡¡ARREGLO DE SCOPE!! ---
             val scope = rememberCoroutineScope()
             AdminMenuScreen(
                 onAddSpecialty = { navController.navigate(Route.AdminAddSpecialty.path) },
                 onAddDoctor = { navController.navigate(Route.AdminAddDoctor.path) },
                 onLogout = {
-                    scope.launch { authViewModel.logout() } // <-- Ahora 'scope' existe
+                    scope.launch { authViewModel.logout() }
                     navController.navigate(Route.Login.path) {
                         popUpTo(Route.AdminMenu.path) { inclusive = true }
                     }
@@ -169,7 +170,8 @@ fun AppNavGraph(
             DoctorProfileScreen(
                 doctorId = doctorId,
                 onBackClick = { navController.popBackStack() },
-                viewModel = doctorProfileViewModel
+                viewModel = doctorProfileViewModel,
+                modifier = Modifier.padding(PaddingValues(0.dp))
             )
         }
     }

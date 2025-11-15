@@ -1,16 +1,16 @@
 package com.example.app_clinica_atl.data.repository
 
+import com.example.app_clinica_atl.data.local.appointment.AppointmentDetails
 import com.example.app_clinica_atl.data.local.appointment.AppointmentEntity
+import kotlinx.coroutines.flow.Flow
 
 /**
  * Interfaz para el repositorio de Citas.
- * Define las operaciones de datos que la app puede realizar.
  */
 interface AppointmentRepository {
 
     /**
      * Intenta agendar una nueva cita en la base de datos.
-     * Devuelve el ID de la nueva cita si tiene éxito.
      */
     suspend fun bookAppointment(appointment: AppointmentEntity): Result<Long>
 
@@ -20,5 +20,15 @@ interface AppointmentRepository {
      */
     suspend fun getBookedTimes(doctorId: Long, date: String): Result<List<String>>
 
-    // (Más funciones como 'getAppointmentsForUser' se añadirán aquí más tarde)
+    // --- ¡¡FUNCIONES AÑADIDAS!! ---
+
+    /**
+     * Obtiene un Flow con todas las citas activas de un paciente.
+     */
+    fun getAppointmentsForPatient(patientId: Long): Flow<List<AppointmentDetails>>
+
+    /**
+     * Cancela una cita.
+     */
+    suspend fun cancelAppointment(appointmentId: Long): Result<Unit>
 }

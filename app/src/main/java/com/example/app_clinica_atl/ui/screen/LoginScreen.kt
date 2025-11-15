@@ -1,9 +1,14 @@
 package com.example.app_clinica_atl.ui.screen
 
+// --- ¡¡IMPORTS AÑADIDOS!! ---
+import android.widget.Toast
+import androidx.compose.ui.platform.LocalContext
+// --- FIN IMPORTS ---
+
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
-import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Arrangement // <-- ¡IMPORT AÑADIDO!
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -17,7 +22,7 @@ import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
-import androidx.compose.material3.Checkbox
+// import androidx.compose.material3.Checkbox // <-- Ya no se usa
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
@@ -26,11 +31,10 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.saveable.rememberSaveable
+// import androidx.compose.runtime.mutableStateOf // <-- Ya no se usa
+// import androidx.compose.runtime.rememberSaveable // <-- Ya no se usa
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
@@ -43,20 +47,17 @@ import com.example.app_clinica_atl.ui.viewmodel.AuthViewModel
 @Composable
 fun LoginScreenVm(
     authViewModel: AuthViewModel,
-    onLoginSuccessNavigate: (role: String) -> Unit, // <-- ¡¡CAMBIO!!
+    onLoginSuccessNavigate: (role: String) -> Unit,
     onGoRegister: () -> Unit
 ) {
     val uiState by authViewModel.loginUiState.collectAsState()
-    val (checkedState, onStateChange) = rememberSaveable { mutableStateOf(false) }
+    // val (checkedState, onStateChange) = rememberSaveable { mutableStateOf(false) } // <-- ¡ELIMINADO!
 
-    // --- ¡¡CAMBIO!! ---
-    // Ahora reacciona al rol y lo pasa a la navegación
     LaunchedEffect(uiState.loginSuccess, uiState.userRole) {
         if (uiState.loginSuccess && uiState.userRole != null) {
             onLoginSuccessNavigate(uiState.userRole!!)
         }
     }
-    // --- FIN DEL CAMBIO ---
 
     LoginScreen(
         email = uiState.email,
@@ -65,8 +66,8 @@ fun LoginScreenVm(
         password = uiState.password,
         onPasswordChange = authViewModel::onLoginPasswordChange,
         passwordError = uiState.passwordError,
-        checkedState = checkedState,
-        onCheckedChange = onStateChange,
+        // checkedState = checkedState, // <-- ¡ELIMINADO!
+        // onCheckedChange = onStateChange, // <-- ¡ELIMINADO!
         onLoginClick = authViewModel::loginUser,
         onGoRegisterClick = onGoRegister,
         isLoading = uiState.isLoading,
@@ -82,13 +83,16 @@ fun LoginScreen(
     password: String,
     onPasswordChange: (String) -> Unit,
     passwordError: String?,
-    checkedState: Boolean,
-    onCheckedChange: (Boolean) -> Unit,
+    // checkedState: Boolean, // <-- ¡ELIMINADO!
+    // onCheckedChange: (Boolean) -> Unit, // <-- ¡ELIMINADO!
     onLoginClick: () -> Unit,
     onGoRegisterClick: () -> Unit,
     isLoading: Boolean,
     loginError: String?
 ) {
+    // --- ¡AÑADIDO! Necesitamos el contexto para el Toast ---
+    val context = LocalContext.current
+
     Box(
         modifier = Modifier
             .fillMaxSize()
@@ -125,6 +129,7 @@ fun LoginScreen(
 
             Spacer(modifier = Modifier.height(24.dp))
 
+            // Campo de Email
             OutlinedTextField(
                 value = email,
                 onValueChange = onEmailChange,
@@ -140,6 +145,7 @@ fun LoginScreen(
 
             Spacer(modifier = Modifier.height(16.dp))
 
+            // Campo de Contraseña
             OutlinedTextField(
                 value = password,
                 onValueChange = onPasswordChange,
@@ -156,25 +162,31 @@ fun LoginScreen(
 
             Spacer(modifier = Modifier.height(16.dp))
 
+            // --- ¡¡SECCIÓN MODIFICADA!! ---
+            // Se elimina el Checkbox y "Recuérdame"
+            // Se alinea el texto restante a la derecha
             Row(
                 modifier = Modifier.fillMaxWidth(),
-                verticalAlignment = Alignment.CenterVertically
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.End // <-- CAMBIO: Alinea a la derecha
             ) {
-                Checkbox(
-                    checked = checkedState,
-                    onCheckedChange = onCheckedChange
-                )
-                Text("Recuérdame")
-                Spacer(modifier = Modifier.weight(1f))
+                /* (Checkbox y Texto "Recuérdame" eliminados) */
+                // Spacer(modifier = Modifier.weight(1f)) // <-- Ya no es necesario
+
                 Text(
                     "¿Olvidaste tu contraseña?",
                     color = MaterialTheme.colorScheme.primary,
-                    modifier = Modifier.clickable { /* TODO */ }
+                    modifier = Modifier.clickable {
+                        // ¡CAMBIO! Añadimos el Toast
+                        Toast.makeText(context, "que lastima, come pasas para la memoria", Toast.LENGTH_LONG).show()
+                    }
                 )
             }
+            // --- FIN DE LA MODIFICACIÓN ---
 
             Spacer(modifier = Modifier.height(24.dp))
 
+            // Botón de Login
             Button(
                 onClick = onLoginClick,
                 enabled = !isLoading,
@@ -197,6 +209,7 @@ fun LoginScreen(
                 }
             }
 
+            // Error de Login
             loginError?.let {
                 Spacer(modifier = Modifier.height(8.dp))
                 Text(text = it, color = MaterialTheme.colorScheme.error, style = MaterialTheme.typography.bodyMedium)
@@ -204,6 +217,7 @@ fun LoginScreen(
 
             Spacer(modifier = Modifier.height(24.dp))
 
+            // Link a Registro
             Row {
                 Text("¿No tienes una cuenta? ")
                 Text(
