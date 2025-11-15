@@ -22,17 +22,12 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 
-/**
- * Pantalla de Menú de Administrador.
- * Tiene las 2 funciones que pediste:
- * - Gestionar Especialidades
- * - Agregar Doctor
- */
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun AdminMenuScreen(
     onAddSpecialty: () -> Unit,
     onAddDoctor: () -> Unit,
+    onViewDoctors: () -> Unit, // <-- ¡¡CALLBACK AÑADIDO!!
     onLogout: () -> Unit
 ) {
     Scaffold(
@@ -74,6 +69,16 @@ fun AdminMenuScreen(
             ) {
                 Text("Agregar Nuevo Doctor")
             }
+
+            // --- ¡¡BOTÓN AÑADIDO!! ---
+            Spacer(modifier = Modifier.height(16.dp))
+            Button(
+                onClick = onViewDoctors,
+                modifier = Modifier.fillMaxWidth()
+            ) {
+                Text("Ver Lista de Doctores")
+            }
+            // --- FIN ---
         }
     }
 }

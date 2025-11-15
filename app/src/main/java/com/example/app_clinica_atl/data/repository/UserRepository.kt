@@ -3,19 +3,15 @@ package com.example.app_clinica_atl.data.repository
 import com.example.app_clinica_atl.data.local.user.UserDao
 import com.example.app_clinica_atl.data.local.user.UserEntity
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.withContext
 
-/**
- * Repositorio para TODOS los datos de usuario (pacientes, doctores, admins).
- */
 class UserRepository(
     private val userDao: UserDao
 ) {
 
-    /**
-     * Lógica de Login.
-     */
     suspend fun login(email: String, pass: String): Result<UserEntity> {
+        // ... (código de login sin cambios)
         return withContext(Dispatchers.IO) {
             try {
                 val user = userDao.getByEmail(email)
@@ -30,10 +26,8 @@ class UserRepository(
         }
     }
 
-    /**
-     * Lógica de Registro.
-     */
     suspend fun register(newUser: UserEntity): Result<UserEntity> {
+        // ... (código de register sin cambios)
         return withContext(Dispatchers.IO) {
             try {
                 val existingUser = userDao.getByEmail(newUser.email)
@@ -51,10 +45,8 @@ class UserRepository(
         }
     }
 
-    /**
-     * Obtiene un usuario por su ID.
-     */
     suspend fun getUserById(id: Long): Result<UserEntity> {
+        // ... (código de getUserById sin cambios)
         return withContext(Dispatchers.IO) {
             try {
                 val user = userDao.getById(id)
@@ -69,11 +61,17 @@ class UserRepository(
         }
     }
 
-    // --- ¡¡FUNCIÓN AÑADIDA PARA LA BÚSQUEDA!! ---
+    // --- ¡¡FUNCIÓN AÑADIDA!! ---
     /**
-     * Busca pacientes por nombre.
+     * Obtiene un usuario por su ID como un Flow (observable).
      */
+    fun getUserByIdAsFlow(id: Long): Flow<UserEntity?> {
+        return userDao.getByIdAsFlow(id)
+    }
+    // --- FIN ---
+
     suspend fun searchPatients(query: String): Result<List<UserEntity>> {
+        // ... (código de searchPatients sin cambios)
         return withContext(Dispatchers.IO) {
             try {
                 val patients = userDao.searchPatientsByName(query)
@@ -82,5 +80,10 @@ class UserRepository(
                 Result.failure(e)
             }
         }
+    }
+
+    fun getAllDoctors(): Flow<List<UserEntity>> {
+        // ... (código de getAllDoctors sin cambios)
+        return userDao.getAllDoctors()
     }
 }

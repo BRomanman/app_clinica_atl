@@ -9,7 +9,6 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.text.KeyboardOptions
@@ -21,7 +20,7 @@ import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
-import androidx.compose.material3.HorizontalDivider
+import androidx.compose.material3.HorizontalDivider // <-- Import añadido
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
@@ -32,9 +31,8 @@ import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.saveable.rememberSaveable
-import androidx.compose.runtime.setValue
+// import androidx.compose.runtime.mutableStateOf // <-- Ya no se usan
+// import androidx.compose.runtime.saveable.rememberSaveable // <-- Ya no se usan
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.font.FontWeight
@@ -51,9 +49,8 @@ fun AdminManageSpecialtiesScreen(
 ) {
     val uiState by viewModel.uiState.collectAsState()
 
-    // Estado local para los campos del formulario
-    var name by rememberSaveable { mutableStateOf("") }
-    var price by rememberSaveable { mutableStateOf("") }
+    // --- ¡¡ESTADO LOCAL ELIMINADO!! ---
+    // El ViewModel ahora maneja el estado de los campos.
 
     Scaffold(
         topBar = {
@@ -76,36 +73,49 @@ fun AdminManageSpecialtiesScreen(
             // --- Formulario para Añadir ---
             Text("Añadir Nueva Especialidad", style = MaterialTheme.typography.titleMedium)
             Spacer(modifier = Modifier.height(8.dp))
+
+            // --- CAMPO "NOMBRE" CONECTADO AL VIEWMODEL ---
             OutlinedTextField(
-                value = name,
-                onValueChange = { name = it },
+                value = uiState.newSpecialtyName,
+                onValueChange = viewModel::onNameChange,
                 label = { Text("Nombre (Ej: Cardiología)") },
                 modifier = Modifier.fillMaxWidth(),
-                singleLine = true
+                singleLine = true,
+                isError = uiState.nameError != null // Muestra error si existe
             )
+            // Muestra el error en tiempo real
+            uiState.nameError?.let {
+                Text(text = it, color = MaterialTheme.colorScheme.error, style = MaterialTheme.typography.labelSmall)
+            }
+
             Spacer(modifier = Modifier.height(8.dp))
+
+            // --- CAMPO "PRECIO" CONECTADO AL VIEWMODEL ---
             OutlinedTextField(
-                value = price,
-                onValueChange = { price = it },
+                value = uiState.newSpecialtyPrice,
+                onValueChange = viewModel::onPriceChange,
                 label = { Text("Precio (Ej: 25000)") },
                 modifier = Modifier.fillMaxWidth(),
                 keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
-                singleLine = true
+                singleLine = true,
+                isError = uiState.priceError != null // Muestra error si existe
             )
+            // Muestra el error en tiempo real
+            uiState.priceError?.let {
+                Text(text = it, color = MaterialTheme.colorScheme.error, style = MaterialTheme.typography.labelSmall)
+            }
+
             Spacer(modifier = Modifier.height(8.dp))
+
+            // --- BOTÓN CONECTADO AL VIEWMODEL ---
             Button(
-                onClick = {
-                    viewModel.addSpecialty(name, price)
-                    // Limpia los campos
-                    name = ""
-                    price = ""
-                },
+                onClick = viewModel::addSpecialty, // Llama a la función sin parámetros
                 modifier = Modifier.fillMaxWidth()
             ) {
                 Text("Guardar Especialidad")
             }
 
-            // Muestra mensaje de error del ViewModel
+            // Muestra mensaje de error general (ej. "Nombre duplicado")
             uiState.errorMsg?.let {
                 Text(
                     text = it,
@@ -118,7 +128,7 @@ fun AdminManageSpecialtiesScreen(
             HorizontalDivider()
             Spacer(modifier = Modifier.height(16.dp))
 
-            // --- Lista de Especialidades Existentes ---
+            // --- Lista de Especialidades Existentes (Sin cambios) ---
             Text("Especialidades Actuales", style = MaterialTheme.typography.titleMedium)
             Spacer(modifier = Modifier.height(8.dp))
 

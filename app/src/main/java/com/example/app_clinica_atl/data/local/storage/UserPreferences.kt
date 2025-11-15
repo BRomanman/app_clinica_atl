@@ -13,61 +13,55 @@ import kotlinx.coroutines.flow.catch
 import kotlinx.coroutines.flow.map
 import java.io.IOException
 
-// Nombre del archivo de preferencias
 private const val USER_PREFERENCES_NAME = "user_preferences"
 
-// Creamos la instancia de DataStore
 private val Context.dataStore: DataStore<Preferences> by preferencesDataStore(
     name = USER_PREFERENCES_NAME
 )
 
 /**
- * Clase para gestionar la sesión del usuario (ID y Rol) en DataStore.
+ * Clase para gestionar la sesión del usuario (ID y Rol) y preferencias (Tema).
  */
 class UserPreferences(context: Context) {
 
     private val dataStore = context.dataStore
 
-    // Definición de las "llaves" para guardar los datos
     private object PreferencesKeys {
         val USER_ID = longPreferencesKey("user_id")
         val USER_ROLE = stringPreferencesKey("user_role")
+        // --- ¡¡LLAVE AÑADIDA!! ---
+        val THEME_PREFERENCE = stringPreferencesKey("theme_preference")
     }
 
-    /**
-     * Un Flow público que emite el ID del usuario cada vez que cambia.
-     * Esto reemplaza a 'getUserId()'.
-     * El ViewModel (y el error de tu imagen) depende de ESTE flow.
-     */
+    // --- Flujos de Sesión (sin cambios) ---
     val userIdFlow: Flow<Long?> = dataStore.data
         .catch { exception ->
-            if (exception is IOException) {
-                emit(emptyPreferences())
-            } else {
-                throw exception
-            }
+            if (exception is IOException) { emit(emptyPreferences()) } else { throw exception }
         }.map { preferences ->
             preferences[PreferencesKeys.USER_ID]
         }
 
-    /**
-     * Un Flow público que emite el Rol del usuario ("paciente", "doctor", "admin")
-     */
     val userRoleFlow: Flow<String?> = dataStore.data
         .catch { exception ->
-            if (exception is IOException) {
-                emit(emptyPreferences())
-            } else {
-                throw exception
-            }
+            if (exception is IOException) { emit(emptyPreferences()) } else { throw exception }
         }.map { preferences ->
             preferences[PreferencesKeys.USER_ROLE]
         }
 
+    // --- ¡¡FLUJO AÑADIDO PARA EL TEMA!! ---
     /**
-     * Guarda el ID y el Rol del usuario al iniciar sesión.
-     * Reemplaza a 'saveUserId()'.
+     * Devuelve la preferencia de tema guardada (ej: "LIGHT", "DARK", "SYSTEM").
+     * Devuelve "SYSTEM" como valor por defecto.
      */
+    val themeFlow: Flow<String> = dataStore.data
+        .catch { exception ->
+            if (exception is IOException) { emit(emptyPreferences()) } else { throw exception }
+        }.map { preferences ->
+            preferences[PreferencesKeys.THEME_PREFERENCE] ?: "SYSTEM"
+        }
+
+    // --- Funciones de guardado ---
+
     suspend fun saveUserSession(id: Long, role: String) {
         dataStore.edit { preferences ->
             preferences[PreferencesKeys.USER_ID] = id
@@ -75,12 +69,20 @@ class UserPreferences(context: Context) {
         }
     }
 
-    /**
-     * Limpia la sesión al cerrar sesión.
-     */
     suspend fun clearUserSession() {
         dataStore.edit { preferences ->
-            preferences.clear()
+            preferences.remove(PreferencesKeys.USER_ID)
+            preferences.remove(PreferencesKeys.USER_ROLE)
+        }
+    }
+
+    // --- ¡¡FUNCIÓN AÑADIDA PARA EL TEMA!! ---
+    /**
+     * Guarda la nueva preferencia de tema del usuario.
+     */
+    suspend fun saveThemePreference(theme: String) {
+        dataStore.edit { preferences ->
+            preferences[PreferencesKeys.THEME_PREFERENCE] = theme
         }
     }
 }

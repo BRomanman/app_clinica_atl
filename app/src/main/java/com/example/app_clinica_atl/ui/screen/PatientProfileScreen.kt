@@ -13,9 +13,7 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
-import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
-import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Card
@@ -36,6 +34,7 @@ import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
@@ -50,6 +49,7 @@ import com.example.app_clinica_atl.ui.viewmodel.PatientViewModel
 @Composable
 fun PatientProfileScreen(
     onGoToSeguros: () -> Unit,
+    onLogout: () -> Unit, // <-- ¡¡PARÁMETRO AÑADIDO!!
     viewModel: PatientViewModel,
     modifier: Modifier = Modifier
 ) {
@@ -76,7 +76,7 @@ fun PatientProfileScreen(
             modifier = Modifier
                 .fillMaxSize()
                 .padding(innerPadding)
-                .padding(start = 16.dp, end = 16.dp, top = 16.dp), // Padding de la pantalla
+                .padding(start = 16.dp, end = 16.dp, top = 16.dp),
             contentAlignment = Alignment.Center
         ) {
             when {
@@ -91,14 +91,14 @@ fun PatientProfileScreen(
                     )
                 }
                 uiState.patient != null -> {
-                    // ¡CAMBIO! Pasamos la lista de citas y la acción de cancelar
                     PatientProfileContent(
                         patient = uiState.patient!!,
                         activeInsurance = uiState.activeInsuranceDetails,
                         appointments = uiState.activeAppointments,
                         onCancelInsurance = viewModel::cancelSubscription,
                         onCancelAppointment = viewModel::cancelAppointment,
-                        onGoToSeguros = onGoToSeguros
+                        onGoToSeguros = onGoToSeguros,
+                        onLogout = onLogout // <-- ¡¡ACCIÓN PASADA!!
                     )
                 }
             }
@@ -110,13 +110,12 @@ fun PatientProfileScreen(
 private fun PatientProfileContent(
     patient: UserEntity,
     activeInsurance: InsuranceEntity?,
-    appointments: List<AppointmentDetails>, // <-- ¡AÑADIDO!
+    appointments: List<AppointmentDetails>,
     onCancelInsurance: () -> Unit,
-    onCancelAppointment: (Long) -> Unit, // <-- ¡AÑADIDO!
-    onGoToSeguros: () -> Unit
+    onCancelAppointment: (Long) -> Unit,
+    onGoToSeguros: () -> Unit,
+    onLogout: () -> Unit // <-- ¡¡ACCIÓN RECIBIDA!!
 ) {
-    // ¡CAMBIO! Ya no usamos un Column con scroll, sino un LazyColumn
-    // para que el perfil completo sea scrolleable
     LazyColumn(
         modifier = Modifier.fillMaxSize(),
         horizontalAlignment = Alignment.CenterHorizontally
@@ -162,7 +161,7 @@ private fun PatientProfileContent(
             Spacer(modifier = Modifier.height(16.dp))
         }
 
-        // --- ¡¡SECCIÓN AÑADIDA!! (Item 3: Título de Citas) ---
+        // --- Item 3: Título de Citas ---
         item {
             Text(
                 text = "Mis Próximas Citas",
@@ -173,7 +172,7 @@ private fun PatientProfileContent(
             Spacer(modifier = Modifier.height(16.dp))
         }
 
-        // --- ¡¡SECCIÓN AÑADIDA!! (Item 4: Lista de Citas) ---
+        // --- Item 4: Lista de Citas ---
         if (appointments.isEmpty()) {
             item {
                 Text(
@@ -190,13 +189,27 @@ private fun PatientProfileContent(
                 Spacer(modifier = Modifier.height(12.dp))
             }
         }
+
+        // --- ¡¡ITEM 5: BOTÓN DE LOGOUT AÑADIDO!! ---
+        item {
+            Spacer(modifier = Modifier.height(24.dp))
+            Button(
+                onClick = onLogout,
+                colors = ButtonDefaults.buttonColors(
+                    containerColor = MaterialTheme.colorScheme.secondaryContainer,
+                    contentColor = MaterialTheme.colorScheme.onSecondaryContainer
+                ),
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(bottom = 32.dp)
+            ) {
+                Text("Cerrar Sesión")
+            }
+        }
     }
 }
 
-/**
- * ¡¡NUEVO COMPOSABLE!!
- * Tarjeta para mostrar una cita, basado en tu foto.
- */
+// ... (El resto de composables: AppointmentCard, InsuranceInfoCard, InfoRow no cambian)
 @Composable
 private fun AppointmentCard(
     appointment: AppointmentDetails,
@@ -240,7 +253,6 @@ private fun AppointmentCard(
     }
 }
 
-// (Composable de Tarjeta de Seguro - sin cambios)
 @Composable
 private fun InsuranceInfoCard(
     activeInsurance: InsuranceEntity?,
@@ -297,13 +309,12 @@ private fun InsuranceInfoCard(
     }
 }
 
-// (Composable de InfoRow - sin cambios)
 @Composable
 private fun InfoRow(label: String, value: String) {
     Column(
         modifier = Modifier
             .fillMaxWidth()
-            .padding(vertical = 4.dp) // Reducimos el padding para la tarjeta de cita
+            .padding(vertical = 4.dp)
     ) {
         Text(
             text = label,

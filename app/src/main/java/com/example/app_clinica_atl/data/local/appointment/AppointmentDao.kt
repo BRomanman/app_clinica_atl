@@ -25,6 +25,7 @@ interface AppointmentDao {
     /**
      * Obtiene una lista de todas las citas "agendadas" de un paciente,
      * uniéndolas con la tabla de usuarios (doctores) para obtener sus nombres.
+     * Usa la clase DTO 'AppointmentDetails' para guardar el resultado.
      */
     @Query("""
         SELECT

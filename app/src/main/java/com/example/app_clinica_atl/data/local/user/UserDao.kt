@@ -5,6 +5,7 @@ import androidx.room.Insert
 import androidx.room.OnConflictStrategy
 import androidx.room.Query
 import androidx.room.Update
+import kotlinx.coroutines.flow.Flow
 
 @Dao
 interface UserDao {
@@ -13,6 +14,14 @@ interface UserDao {
 
     @Query("SELECT * FROM user_table WHERE id = :id LIMIT 1")
     suspend fun getById(id: Long): UserEntity?
+
+    // --- ¡¡FUNCIÓN AÑADIDA!! ---
+    /**
+     * Obtiene un usuario por ID como un Flow (observable).
+     */
+    @Query("SELECT * FROM user_table WHERE id = :id LIMIT 1")
+    fun getByIdAsFlow(id: Long): Flow<UserEntity?>
+    // --- FIN ---
 
     @Insert(onConflict = OnConflictStrategy.REPLACE)
     suspend fun insert(user: UserEntity): Long
@@ -29,12 +38,9 @@ interface UserDao {
     @Query("SELECT * FROM user_table ORDER BY role, name ASC")
     suspend fun getAllUsers(): List<UserEntity>
 
-    // --- ¡¡FUNCIÓN AÑADIDA PARA LA BÚSQUEDA!! ---
-    /**
-     * Busca usuarios que sean pacientes y cuyo nombre contenga el texto de búsqueda.
-     * Los '%' son comodines que significan "cualquier cosa".
-     * Ej: buscar "ana" encontrará "Ana Torres".
-     */
     @Query("SELECT * FROM user_table WHERE role = 'paciente' AND name LIKE '%' || :query || '%'")
     suspend fun searchPatientsByName(query: String): List<UserEntity>
+
+    @Query("SELECT * FROM user_table WHERE role = 'doctor' ORDER BY name ASC")
+    fun getAllDoctors(): Flow<List<UserEntity>>
 }

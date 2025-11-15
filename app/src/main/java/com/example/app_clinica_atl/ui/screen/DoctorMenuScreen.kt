@@ -8,6 +8,7 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.Button
+import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
@@ -21,11 +22,10 @@ import androidx.compose.ui.unit.dp
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun DoctorMenuScreen(
-    // ¡¡AQUÍ ESTÁ LA SOLUCIÓN!!
-    // La firma de la función ahora acepta los 3 parámetros
     onProfileClick: () -> Unit,
     onScheduleClick: () -> Unit,
-    onSearchPatient: () -> Unit
+    onSearchPatient: () -> Unit,
+    onLogout: () -> Unit // <-- ¡¡PARÁMETRO AÑADIDO!!
 ) {
     Scaffold(
         topBar = {
@@ -53,6 +53,19 @@ fun DoctorMenuScreen(
             Spacer(modifier = Modifier.height(16.dp))
             Button(onClick = onSearchPatient, modifier = Modifier.fillMaxWidth()) {
                 Text("Buscar Pacientes")
+            }
+
+            // --- ¡¡BOTÓN DE LOGOUT AÑADIDO!! ---
+            Spacer(modifier = Modifier.height(32.dp))
+            Button(
+                onClick = onLogout,
+                colors = ButtonDefaults.buttonColors(
+                    containerColor = MaterialTheme.colorScheme.secondaryContainer,
+                    contentColor = MaterialTheme.colorScheme.onSecondaryContainer
+                ),
+                modifier = Modifier.fillMaxWidth()
+            ) {
+                Text("Cerrar Sesión")
             }
         }
     }
