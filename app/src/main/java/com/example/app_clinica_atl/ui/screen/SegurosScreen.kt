@@ -13,21 +13,15 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.ArrowBack
 import androidx.compose.material3.Button
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.CircularProgressIndicator
-import androidx.compose.material3.ExperimentalMaterial3Api
-import androidx.compose.material3.Icon
-import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.SnackbarHost
 import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.Text
-import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
@@ -35,7 +29,6 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
@@ -44,16 +37,17 @@ import com.example.app_clinica_atl.R
 import com.example.app_clinica_atl.data.local.insurance.InsuranceEntity
 import com.example.app_clinica_atl.ui.viewmodel.InsuranceViewModel
 
-@OptIn(ExperimentalMaterial3Api::class)
+/**
+ * Pantalla de Seguros
+ * ¡SIN TopBar y SIN 'onBackClick'!
+ */
 @Composable
 fun SegurosScreen(
-    viewModel: InsuranceViewModel, // <-- ¡CAMBIO! Recibe el ViewModel
-    onBackClick: () -> Unit
+    viewModel: InsuranceViewModel
 ) {
     val uiState by viewModel.uiState.collectAsState()
     val snackbarHostState = remember { SnackbarHostState() }
 
-    // Efecto para mostrar mensajes de error o éxito
     LaunchedEffect(uiState.errorMsg, uiState.successMsg) {
         uiState.errorMsg?.let {
             snackbarHostState.showSnackbar(it)
@@ -67,16 +61,7 @@ fun SegurosScreen(
 
     Scaffold(
         snackbarHost = { SnackbarHost(snackbarHostState) },
-        topBar = {
-            TopAppBar(
-                title = { Text("Seguros Médicos") },
-                navigationIcon = {
-                    IconButton(onClick = onBackClick) {
-                        Icon(Icons.Default.ArrowBack, contentDescription = "Volver")
-                    }
-                }
-            )
-        }
+        containerColor = MaterialTheme.colorScheme.background
     ) { paddingValues ->
         Box(
             modifier = Modifier
@@ -92,7 +77,6 @@ fun SegurosScreen(
                     contentPadding = PaddingValues(16.dp),
                     verticalArrangement = Arrangement.spacedBy(16.dp)
                 ) {
-                    // ¡Mostramos los items reales de la base de datos!
                     items(uiState.availableInsurances) { insurance ->
                         InsuranceCard(
                             insurance = insurance,
@@ -105,9 +89,6 @@ fun SegurosScreen(
     }
 }
 
-/**
- * Tarjeta de Seguro (Tu estética, conectada a InsuranceEntity)
- */
 @Composable
 private fun InsuranceCard(
     insurance: InsuranceEntity,
@@ -160,9 +141,6 @@ private fun InsuranceCard(
     }
 }
 
-/**
- * Función helper para obtener la imagen correcta
- */
 @Composable
 private fun getInsuranceImage(insuranceId: Long): Int {
     return when (insuranceId) {

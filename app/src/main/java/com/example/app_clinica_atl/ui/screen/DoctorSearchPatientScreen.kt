@@ -43,15 +43,11 @@ import com.example.app_clinica_atl.R
 import com.example.app_clinica_atl.data.local.user.UserEntity
 import com.example.app_clinica_atl.ui.viewmodel.DoctorSearchPatientViewModel
 
-/**
- * Pantalla para que el Doctor busque pacientes.
- * (Antigua PatientSearchScreen reciclada)
- */
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun DoctorSearchPatientScreen(
     viewModel: DoctorSearchPatientViewModel,
-    onBackClick: () -> Unit,
+    onBackClick: () -> Unit, // <-- ¡¡AQUÍ ESTÁ LA SOLUCIÓN!!
     onPatientClick: (Long) -> Unit
 ) {
     val uiState by viewModel.uiState.collectAsState()
@@ -61,7 +57,7 @@ fun DoctorSearchPatientScreen(
             TopAppBar(
                 title = { Text("Buscar Paciente") },
                 navigationIcon = {
-                    IconButton(onClick = onBackClick) {
+                    IconButton(onClick = onBackClick) { // <-- Ahora se usa el parámetro
                         Icon(Icons.Default.ArrowBack, contentDescription = "Volver")
                     }
                 }
@@ -74,7 +70,6 @@ fun DoctorSearchPatientScreen(
                 .padding(paddingValues)
                 .padding(16.dp)
         ) {
-            // Barra de Búsqueda
             OutlinedTextField(
                 value = uiState.query,
                 onValueChange = viewModel::onQueryChange,
@@ -85,7 +80,6 @@ fun DoctorSearchPatientScreen(
 
             Spacer(modifier = Modifier.height(16.dp))
 
-            // --- Resultados de la Búsqueda ---
             Box(modifier = Modifier.fillMaxSize()) {
                 if (uiState.isLoading) {
                     CircularProgressIndicator(modifier = Modifier.align(Alignment.Center))
@@ -122,10 +116,6 @@ fun DoctorSearchPatientScreen(
     }
 }
 
-/**
- * Tarjeta simple para mostrar un paciente.
- * (Mantenemos la estética)
- */
 @Composable
 private fun PatientCard(
     patient: UserEntity,
@@ -144,7 +134,7 @@ private fun PatientCard(
             verticalAlignment = Alignment.CenterVertically
         ) {
             Image(
-                painter = painterResource(id = R.drawable.goku_perfil), // Placeholder
+                painter = painterResource(id = R.drawable.goku_perfil),
                 contentDescription = "Foto de ${patient.name}",
                 modifier = Modifier
                     .size(50.dp)

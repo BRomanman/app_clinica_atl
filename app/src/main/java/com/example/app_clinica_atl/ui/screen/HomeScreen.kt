@@ -13,8 +13,10 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.Icon
@@ -36,12 +38,12 @@ import com.example.app_clinica_atl.R
 import com.example.app_clinica_atl.ui.viewmodel.HomeViewModel
 
 /**
- * Pantalla principal (Home) - ¡VERSIÓN FINAL Y LIMPIA!
+ * Pantalla principal (Home)
+ * ¡SIN 'onProfileClick' y SIN 'Scaffold'!
  */
 @Composable
 fun HomeScreen(
     viewModel: HomeViewModel,
-    onProfileClick: () -> Unit,
     onBookAppointmentClick: () -> Unit,
     onMyDatesClick: () -> Unit,
     onInsuranceClick: () -> Unit
@@ -51,8 +53,9 @@ fun HomeScreen(
     Column(
         modifier = Modifier
             .fillMaxSize()
+            .verticalScroll(rememberScrollState())
             .background(MaterialTheme.colorScheme.surfaceVariant)
-            .padding(16.dp),
+            .padding(16.dp), // Este padding es el de la pantalla
         horizontalAlignment = Alignment.CenterHorizontally
     ) {
         // Encabezado de bienvenida
@@ -80,7 +83,7 @@ fun HomeScreen(
                 modifier = Modifier
                     .size(50.dp)
                     .clip(CircleShape)
-                    .clickable { onProfileClick() }
+                // La navegación al perfil se hace desde el AppDrawer
             )
         }
 
@@ -142,14 +145,14 @@ fun HomeScreen(
 
         Row(
             modifier = Modifier.fillMaxWidth(),
-            horizontalArrangement = Arrangement.SpaceAround
+            horizontalArrangement = Arrangement.Start
         ) {
             MenuButton(
                 text = "Seguros",
                 icon = painterResource(id = R.drawable.ic_launcher_foreground), // Reemplazar icono
-                onClick = onInsuranceClick
+                onClick = onInsuranceClick,
+                modifier = Modifier.padding(start = 28.dp)
             )
-            // (El botón de Ver Doctores fue eliminado)
         }
     }
 }

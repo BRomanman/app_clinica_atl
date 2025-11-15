@@ -18,16 +18,14 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 
-/**
- * Pantalla de Menú para el Doctor - ¡ACTUALIZADA!
- * Ahora acepta el callback 'onSearchPatient'.
- */
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun DoctorMenuScreen(
+    // ¡¡AQUÍ ESTÁ LA SOLUCIÓN!!
+    // La firma de la función ahora acepta los 3 parámetros
     onProfileClick: () -> Unit,
     onScheduleClick: () -> Unit,
-    onSearchPatient: () -> Unit // <-- ¡¡AQUÍ ESTÁ LA SOLUCIÓN!!
+    onSearchPatient: () -> Unit
 ) {
     Scaffold(
         topBar = {
@@ -53,8 +51,6 @@ fun DoctorMenuScreen(
                 Text("Ver mi Agenda")
             }
             Spacer(modifier = Modifier.height(16.dp))
-
-            // Botón que usa el nuevo callback
             Button(onClick = onSearchPatient, modifier = Modifier.fillMaxWidth()) {
                 Text("Buscar Pacientes")
             }

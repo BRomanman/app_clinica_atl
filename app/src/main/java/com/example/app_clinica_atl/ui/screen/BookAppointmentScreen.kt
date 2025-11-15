@@ -4,50 +4,48 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.ArrowBack
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
-// NO MÁS HILT
-import com.example.app_clinica_atl.data.local.user.UserEntity // <-- Importamos UserEntity
+import com.example.app_clinica_atl.data.local.user.UserEntity
 import com.example.app_clinica_atl.ui.viewmodel.BookAppointmentViewModel
-import com.example.app_clinica_atl.ui.viewmodel.BookAppointmentUiState
 
+/**
+ * Pantalla de Agendar Cita
+ * ¡SIN TopBar y SIN 'onBackClick'!
+ */
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun BookAppointmentScreen(
-    onBackClick: () -> Unit,
     onViewProfile: (Long) -> Unit,
-    viewModel: BookAppointmentViewModel // <-- Recibe el VM como parámetro
+    viewModel: BookAppointmentViewModel
 ) {
     val state by viewModel.uiState.collectAsStateWithLifecycle()
     val bg = MaterialTheme.colorScheme.tertiaryContainer
+    val snackbarHostState = remember { SnackbarHostState() }
 
-    // (Lógica para navegar en éxito, si la necesitas, iría aquí)
-    // LaunchedEffect(state.bookingSuccess) { ... }
+    LaunchedEffect(state.errorMsg, state.bookingSuccess) {
+        state.errorMsg?.let {
+            snackbarHostState.showSnackbar(it)
+            viewModel.clearBookingResult()
+        }
+        if (state.bookingSuccess) {
+            snackbarHostState.showSnackbar("¡Cita agendada con éxito!")
+            viewModel.clearBookingResult()
+        }
+    }
 
     Scaffold(
-        topBar = {
-            TopAppBar(
-                title = { Text("Agendar Cita") },
-                navigationIcon = {
-                    IconButton(onClick = onBackClick) {
-                        Icon(Icons.Default.ArrowBack, contentDescription = "Volver")
-                    }
-                }
-            )
-        }
+        snackbarHost = { SnackbarHost(snackbarHostState) },
+        containerColor = bg
     ) { paddingValues ->
         Column(
             modifier = Modifier
                 .fillMaxSize()
                 .padding(paddingValues)
-                .background(bg)
                 .padding(16.dp)
                 .verticalScroll(rememberScrollState()),
             horizontalAlignment = Alignment.CenterHorizontally
@@ -58,7 +56,7 @@ fun BookAppointmentScreen(
             )
             Spacer(Modifier.height(20.dp))
 
-            // --- 1. Dropdown de Especialidades ---
+            // 1. Dropdown de Especialidades
             DropdownMenuField(
                 label = "Especialidad",
                 options = state.specialties,
@@ -68,16 +66,14 @@ fun BookAppointmentScreen(
             )
             Spacer(Modifier.height(8.dp))
 
-            // --- 2. Dropdown de Doctores ---
+            // 2. Dropdown de Doctores
             Row(verticalAlignment = Alignment.CenterVertically) {
                 Box(modifier = Modifier.weight(1f)) {
                     DropdownMenuField(
                         label = "Doctor",
-                        // CAMBIO: Mapeamos la UserEntity
                         options = state.doctors.map { it.name },
                         selectedOptionText = state.selectedDoctorName,
                         onOptionSelected = { name ->
-                            // CAMBIO: Buscamos la UserEntity
                             val doctor = state.doctors.first { it.name == name }
                             viewModel.onDoctorChange(doctor)
                         },
@@ -97,7 +93,7 @@ fun BookAppointmentScreen(
             }
             Spacer(Modifier.height(8.dp))
 
-            // --- 3. Selector de Fecha (Simulado) ---
+            // 3. Selector de Fecha
             OutlinedTextField(
                 value = state.selectedDate,
                 onValueChange = viewModel::onDateChange,
@@ -109,7 +105,7 @@ fun BookAppointmentScreen(
             )
             Spacer(Modifier.height(8.dp))
 
-            // --- 4. Dropdown de Horas ---
+            // 4. Dropdown de Horas
             DropdownMenuField(
                 label = "Hora",
                 options = state.availableTimes,
@@ -120,7 +116,7 @@ fun BookAppointmentScreen(
             )
             Spacer(Modifier.height(16.dp))
 
-            // --- 5. Botón de Enviar ---
+            // 5. Botón de Enviar
             Button(
                 onClick = viewModel::submitBooking,
                 enabled = !state.isBooking && state.selectedTime.isNotBlank(),
@@ -134,24 +130,10 @@ fun BookAppointmentScreen(
                     Text("Confirmar Cita")
                 }
             }
-
-            // --- 6. Mensaje de Éxito/Error ---
-            if (state.errorMsg != null) {
-                Spacer(Modifier.height(8.dp))
-                Text(state.errorMsg!!, color = MaterialTheme.colorScheme.error)
-            }
-            if (state.bookingSuccess) {
-                Spacer(Modifier.height(8.dp))
-                Text("¡Cita agendada con éxito!", color = MaterialTheme.colorScheme.primary)
-            }
         }
     }
 }
 
-
-/**
- * Componente reutilizable para un Dropdown Menu (Selector).
- */
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 private fun DropdownMenuField(

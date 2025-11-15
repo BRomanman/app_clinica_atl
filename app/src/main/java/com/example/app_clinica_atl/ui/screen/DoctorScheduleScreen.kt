@@ -16,21 +16,17 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 
-/**
- * Pantalla de Agenda del Doctor - ¡YA NO ES PRIVATE!
- * (Versión simplificada por ahora)
- */
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun DoctorScheduleScreen(
-    onBackClick: () -> Unit
+    onBackClick: () -> Unit // <-- ¡¡AQUÍ ESTÁ LA SOLUCIÓN!!
 ) {
     Scaffold(
         topBar = {
             TopAppBar(
                 title = { Text("Mi Agenda") },
                 navigationIcon = {
-                    IconButton(onClick = onBackClick) {
+                    IconButton(onClick = onBackClick) { // <-- Ahora se usa el parámetro
                         Icon(Icons.Default.ArrowBack, contentDescription = "Volver")
                     }
                 }

@@ -1,6 +1,12 @@
 package com.example.app_clinica_atl.navigation
 
+import android.os.Build
+import androidx.annotation.RequiresApi
+import androidx.compose.foundation.layout.PaddingValues
+import androidx.compose.foundation.layout.padding
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.rememberCoroutineScope // <-- ¡IMPORT AÑADIDO!
+import androidx.compose.ui.Modifier
 import androidx.navigation.NavHostController
 import androidx.navigation.NavType
 import androidx.navigation.compose.NavHost
@@ -15,10 +21,8 @@ import com.example.app_clinica_atl.ui.screen.BookAppointmentScreen
 import com.example.app_clinica_atl.ui.screen.DoctorMenuScreen
 import com.example.app_clinica_atl.ui.screen.DoctorProfileScreen
 import com.example.app_clinica_atl.ui.screen.DoctorScheduleScreen
-// --- ¡¡IMPORTS AÑADIDOS!! ---
 import com.example.app_clinica_atl.ui.screen.DoctorSearchPatientScreen
 import com.example.app_clinica_atl.ui.viewmodel.DoctorSearchPatientViewModel
-// --- FIN IMPORTS ---
 import com.example.app_clinica_atl.ui.screen.HomeScreen
 import com.example.app_clinica_atl.ui.viewmodel.InsuranceViewModel
 import com.example.app_clinica_atl.ui.screen.LoginScreenVm
@@ -31,10 +35,13 @@ import com.example.app_clinica_atl.ui.viewmodel.DoctorProfileViewModel
 import com.example.app_clinica_atl.ui.viewmodel.DoctorSearchViewModel
 import com.example.app_clinica_atl.ui.viewmodel.HomeViewModel
 import com.example.app_clinica_atl.ui.viewmodel.PatientViewModel
+import kotlinx.coroutines.launch // <-- ¡IMPORT AÑADIDO!
 
+@RequiresApi(Build.VERSION_CODES.O)
 @Composable
 fun AppNavGraph(
     navController: NavHostController,
+    paddingValues: PaddingValues,
     authViewModel: AuthViewModel,
     homeViewModel: HomeViewModel,
     patientViewModel: PatientViewModel,
@@ -44,13 +51,14 @@ fun AppNavGraph(
     adminManageSpecialtiesViewModel: AdminManageSpecialtiesViewModel,
     adminAddDoctorViewModel: AdminAddDoctorViewModel,
     insuranceViewModel: InsuranceViewModel,
-    // --- ¡¡NUEVO VIEWMODEL RECIBIDO!! ---
     doctorSearchPatientViewModel: DoctorSearchPatientViewModel
 ) {
     NavHost(
         navController = navController,
-        startDestination = Route.Login.path
+        startDestination = Route.Login.path,
+        modifier = Modifier.padding(paddingValues)
     ) {
+        // --- Rutas sin TopBar/Drawer ---
         composable(Route.Login.path) {
             LoginScreenVm(
                 authViewModel = authViewModel,
@@ -75,10 +83,11 @@ fun AppNavGraph(
                 }
             )
         }
+
+        // --- Rutas de Paciente (Con TopBar/Drawer) ---
         composable(Route.Home.path) {
             HomeScreen(
                 viewModel = homeViewModel,
-                onProfileClick = { navController.navigate(Route.PatientProfile.path) },
                 onBookAppointmentClick = { navController.navigate(Route.BookAppointment.path) },
                 onMyDatesClick = { /* TODO */ },
                 onInsuranceClick = { navController.navigate(Route.Seguros.path) }
@@ -86,20 +95,17 @@ fun AppNavGraph(
         }
         composable(Route.PatientProfile.path) {
             PatientProfileScreen(
-                onBackClick = { navController.popBackStack() },
                 viewModel = patientViewModel,
                 onGoToSeguros = { navController.navigate(Route.Seguros.path) }
             )
         }
         composable(Route.Seguros.path) {
             SegurosScreen(
-                viewModel = insuranceViewModel,
-                onBackClick = { navController.popBackStack() }
+                viewModel = insuranceViewModel
             )
         }
         composable(Route.BookAppointment.path) {
             BookAppointmentScreen(
-                onBackClick = { navController.popBackStack() },
                 viewModel = bookAppointmentViewModel,
                 onViewProfile = { doctorId ->
                     navController.navigate(Route.DoctorProfile.createRoute(doctorId))
@@ -107,40 +113,34 @@ fun AppNavGraph(
             )
         }
 
-        // --- RUTAS DE DOCTOR ---
+        // --- Rutas de Doctor (Sin TopBar/Drawer) ---
         composable(Route.DoctorMenu.path) {
             DoctorMenuScreen(
-                onProfileClick = { /* TODO: Navegar a DoctorProfile con el ID del doctor logueado */ },
+                onProfileClick = { /* TODO */ },
                 onScheduleClick = { navController.navigate(Route.DoctorSchedule.path) },
-                // --- ¡¡ACCIÓN CONECTADA!! ---
                 onSearchPatient = { navController.navigate(Route.DoctorSearchPatient.path) }
             )
         }
         composable(Route.DoctorSchedule.path) {
             DoctorScheduleScreen(onBackClick = { navController.popBackStack() })
         }
-
-        // --- ¡¡NUEVA PANTALLA CONECTADA!! ---
         composable(Route.DoctorSearchPatient.path) {
             DoctorSearchPatientScreen(
                 viewModel = doctorSearchPatientViewModel,
                 onBackClick = { navController.popBackStack() },
-                onPatientClick = { patientId ->
-                    // El doctor navega al perfil del paciente
-                    // (En el futuro, podríamos crear un 'DoctorViewPatientProfileScreen')
-                    // Por ahora, lo mandamos al perfil normal.
-                    navController.navigate(Route.PatientProfile.path)
-                }
+                onPatientClick = { /* TODO: Navegar a un perfil de paciente para doctor */ }
             )
         }
-        // --- FIN ---
 
-        // --- RUTAS DE ADMIN ---
+        // --- Rutas de Admin (Sin TopBar/Drawer) ---
         composable(Route.AdminMenu.path) {
+            // --- ¡¡ARREGLO DE SCOPE!! ---
+            val scope = rememberCoroutineScope()
             AdminMenuScreen(
                 onAddSpecialty = { navController.navigate(Route.AdminAddSpecialty.path) },
                 onAddDoctor = { navController.navigate(Route.AdminAddDoctor.path) },
                 onLogout = {
+                    scope.launch { authViewModel.logout() } // <-- Ahora 'scope' existe
                     navController.navigate(Route.Login.path) {
                         popUpTo(Route.AdminMenu.path) { inclusive = true }
                     }
@@ -160,6 +160,7 @@ fun AppNavGraph(
             )
         }
 
+        // --- Ruta Común (DoctorProfile) ---
         composable(
             route = Route.DoctorProfile.path,
             arguments = listOf(navArgument("doctorId") { type = NavType.LongType })
