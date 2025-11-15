@@ -1,193 +1,103 @@
 package com.example.app_clinica_atl.ui.screen
 
 import androidx.compose.foundation.Image
-import androidx.compose.foundation.background
-import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.ArrowBack
+import androidx.compose.material3.Button
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
+import androidx.compose.material3.CircularProgressIndicator
+import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Scaffold
+import androidx.compose.material3.SnackbarHost
+import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.Text
+import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.collectAsState
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
-import androidx.compose.ui.text.style.TextAlign
-import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import androidx.navigation.NavController
-import androidx.navigation.compose.rememberNavController
 import com.example.app_clinica_atl.R
-import com.example.app_clinica_atl.navigation.Route
+import com.example.app_clinica_atl.data.local.insurance.InsuranceEntity
+import com.example.app_clinica_atl.ui.viewmodel.InsuranceViewModel
 
-data class Seguro(
-    val area: String,
-    val nombre: String,
-    val descripción: String,
-    val imagen: Int
-)
-
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun SegurosScreen(navController: NavController) {
-    val seguros = listOf(
-        Seguro(
-            "Salud",
-            "Seguro de Salud Básico",
-            "Plan económico con cobertura de consultas y medicamentos esenciales.",
-            R.drawable.seguro_salud_2
-        ),
-        Seguro(
-            "Salud",
-            "Seguro de Salud Avanzado",
-            "Cobertura extendida con especialistas, chequeos preventivos y urgencias.",
-            R.drawable.seguro_salud_1
-        ),
-        Seguro(
-            "Salud",
-            "Seguro de Salud Premium",
-            "Cobertura completa que incluye hospitalización y atención de urgencia.",
-            R.drawable.seguro_3
-        ),
-        Seguro(
-            "Salud",
-            "Seguro de Salud Empresarial",
-            "Plan orientado a colaboradores con programas de bienestar y chequeos periodicos.",
-            R.drawable.seguro_empresarial3
-        ),
-        Seguro(
-            "Vida",
-            "Seguro de Vida Individual",
-            "Protección pensada para quienes buscan un plan base y flexible.",
-            R.drawable.seguro_vida_2
-        ),
-        Seguro(
-            "Vida",
-            "Seguro de Vida Individual Premium",
-            "Cobertura total con beneficios adicionales para toda la familia.",
-            R.drawable.seguro_vida_1
-        ),
-        Seguro(
-            "Vida",
-            "Seguro de Vida Familiar",
-            "Protege a tu familia ante eventualidades y asegura estabilidad económica.",
-            R.drawable.familia_feliz1
-        ),
-        Seguro(
-            "Vida",
-            "Seguro de Vida Estudiante",
-            "Pensado para estudiantes y jovenes adultos con cuotas accesibles.",
-            R.drawable.clinica_1
-        ),
-        Seguro(
-            "Vida",
-            "Seguro de Vida Senior",
-            "Cobertura enfocada en adultos mayores, con asistencia médica incluida.",
-            R.drawable.seguro_salud_3
-        ),
-        Seguro(
-            "Vida",
-            "Seguro de Vida Senior Premium",
-            "Plan integral con acompanamiento permanente y servicios domiciliarios.",
-            R.drawable.atencion_1
-        )
-    )
+fun SegurosScreen(
+    viewModel: InsuranceViewModel, // <-- ¡CAMBIO! Recibe el ViewModel
+    onBackClick: () -> Unit
+) {
+    val uiState by viewModel.uiState.collectAsState()
+    val snackbarHostState = remember { SnackbarHostState() }
 
-    val segurosAgrupados = seguros.groupBy { it.area }
+    // Efecto para mostrar mensajes de error o éxito
+    LaunchedEffect(uiState.errorMsg, uiState.successMsg) {
+        uiState.errorMsg?.let {
+            snackbarHostState.showSnackbar(it)
+            viewModel.clearMessages()
+        }
+        uiState.successMsg?.let {
+            snackbarHostState.showSnackbar(it)
+            viewModel.clearMessages()
+        }
+    }
 
-    Box(modifier = Modifier.fillMaxSize()) {
+    Scaffold(
+        snackbarHost = { SnackbarHost(snackbarHostState) },
+        topBar = {
+            TopAppBar(
+                title = { Text("Seguros Médicos") },
+                navigationIcon = {
+                    IconButton(onClick = onBackClick) {
+                        Icon(Icons.Default.ArrowBack, contentDescription = "Volver")
+                    }
+                }
+            )
+        }
+    ) { paddingValues ->
         Box(
             modifier = Modifier
                 .fillMaxSize()
-                .background(MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.25f))
-        )
-
-        Column(
-            modifier = Modifier
-                .fillMaxSize()
-                .padding(16.dp),
-            horizontalAlignment = Alignment.CenterHorizontally
+                .padding(paddingValues),
+            contentAlignment = Alignment.Center
         ) {
-            Text(
-                text = "Seguros Disponibles",
-                fontSize = 26.sp,
-                fontWeight = FontWeight.Bold,
-                color = MaterialTheme.colorScheme.onSurface,
-                modifier = Modifier.padding(vertical = 12.dp)
-            )
-
-            LazyColumn(
-                modifier = Modifier.fillMaxSize(),
-                verticalArrangement = Arrangement.spacedBy(16.dp)
-            ) {
-                segurosAgrupados.forEach { (area, lista) ->
-                    item {
-                        Text(
-                            text = area,
-                            fontSize = 22.sp,
-                            fontWeight = FontWeight.Bold,
-                            color = MaterialTheme.colorScheme.primary,
-                            modifier = Modifier.padding(top = 8.dp, bottom = 4.dp)
+            if (uiState.isLoading) {
+                CircularProgressIndicator()
+            } else {
+                LazyColumn(
+                    modifier = Modifier.fillMaxSize(),
+                    contentPadding = PaddingValues(16.dp),
+                    verticalArrangement = Arrangement.spacedBy(16.dp)
+                ) {
+                    // ¡Mostramos los items reales de la base de datos!
+                    items(uiState.availableInsurances) { insurance ->
+                        InsuranceCard(
+                            insurance = insurance,
+                            onSubscribe = { viewModel.subscribeToInsurance(insurance.id) }
                         )
-                    }
-
-                    items(lista) { seguro ->
-                        Card(
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .clickable {
-                                    navController.navigate(Route.InsuranceForm.path) {
-                                        launchSingleTop = true
-                                    }
-                                },
-                            elevation = CardDefaults.cardElevation(6.dp),
-                            colors = CardDefaults.cardColors(
-                                containerColor = MaterialTheme.colorScheme.background
-                            )
-                        ) {
-                            Column(
-                                modifier = Modifier
-                                    .fillMaxWidth()
-                                    .padding(12.dp)
-                            ) {
-                                Image(
-                                    painter = painterResource(id = seguro.imagen),
-                                    contentDescription = seguro.nombre,
-                                    modifier = Modifier
-                                        .fillMaxWidth()
-                                        .height(150.dp),
-                                    contentScale = ContentScale.Crop
-                                )
-
-                                Spacer(modifier = Modifier.height(8.dp))
-
-                                Text(
-                                    text = seguro.nombre,
-                                    fontWeight = FontWeight.Bold,
-                                    fontSize = 18.sp
-                                )
-
-                                Spacer(modifier = Modifier.height(4.dp))
-
-                                Text(
-                                    text = seguro.descripción,
-                                    fontSize = 14.sp,
-                                    color = MaterialTheme.colorScheme.onBackground,
-                                    textAlign = TextAlign.Start
-                                )
-                            }
-                        }
                     }
                 }
             }
@@ -195,8 +105,70 @@ fun SegurosScreen(navController: NavController) {
     }
 }
 
-@Preview(showBackground = true)
+/**
+ * Tarjeta de Seguro (Tu estética, conectada a InsuranceEntity)
+ */
 @Composable
-private fun SegurosScreenPreview() {
-    SegurosScreen(navController = rememberNavController())
+private fun InsuranceCard(
+    insurance: InsuranceEntity,
+    onSubscribe: () -> Unit
+) {
+    Card(
+        modifier = Modifier.fillMaxWidth(),
+        elevation = CardDefaults.cardElevation(4.dp),
+        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface)
+    ) {
+        Column(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(16.dp),
+            horizontalAlignment = Alignment.CenterHorizontally
+        ) {
+            Image(
+                painter = painterResource(id = getInsuranceImage(insurance.id)),
+                contentDescription = insurance.name,
+                modifier = Modifier.size(100.dp)
+            )
+            Spacer(modifier = Modifier.height(16.dp))
+            Text(
+                text = insurance.name,
+                style = MaterialTheme.typography.titleLarge,
+                fontWeight = FontWeight.Bold,
+                color = MaterialTheme.colorScheme.primary
+            )
+            Spacer(modifier = Modifier.height(8.dp))
+            Text(
+                text = insurance.description,
+                style = MaterialTheme.typography.bodyMedium,
+                modifier = Modifier.padding(horizontal = 16.dp)
+            )
+            Spacer(modifier = Modifier.height(16.dp))
+            Text(
+                text = "\$${insurance.price.toInt()} / mensual",
+                style = MaterialTheme.typography.titleMedium,
+                fontWeight = FontWeight.Bold,
+                fontSize = 20.sp
+            )
+            Spacer(modifier = Modifier.height(16.dp))
+            Button(
+                onClick = onSubscribe,
+                modifier = Modifier.fillMaxWidth(0.8f)
+            ) {
+                Text("Contratar Ahora")
+            }
+        }
+    }
+}
+
+/**
+ * Función helper para obtener la imagen correcta
+ */
+@Composable
+private fun getInsuranceImage(insuranceId: Long): Int {
+    return when (insuranceId) {
+        1L -> R.drawable.seguro_salud_1
+        2L -> R.drawable.familia_feliz1
+        3L -> R.drawable.seguro_vida_1
+        else -> R.drawable.logo_clean
+    }
 }

@@ -1,12 +1,12 @@
 package com.example.app_clinica_atl.ui.screen
 
-import android.os.Build
-import androidx.annotation.RequiresApi
-import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
+import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -14,268 +14,205 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
-import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.foundation.text.KeyboardOptions
-import androidx.compose.foundation.verticalScroll
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.Visibility
-import androidx.compose.material.icons.filled.VisibilityOff
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
+import androidx.compose.material3.Checkbox
 import androidx.compose.material3.CircularProgressIndicator
-import androidx.compose.material3.Icon
-import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.OutlinedTextField
-import androidx.compose.material3.OutlinedTextFieldDefaults
-import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.remember
-import androidx.compose.runtime.setValue
+import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.graphics.Brush
+import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.painterResource
-import androidx.compose.ui.text.input.KeyboardType
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.PasswordVisualTransformation
-import androidx.compose.ui.text.input.VisualTransformation
-import androidx.compose.ui.text.style.TextAlign
-import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.example.app_clinica_atl.R
-import com.example.app_clinica_atl.ui.theme.AppClinicaATLTheme
 import com.example.app_clinica_atl.ui.viewmodel.AuthViewModel
 
-@RequiresApi(Build.VERSION_CODES.O)
 @Composable
 fun LoginScreenVm(
-    vm: AuthViewModel,
-    onNavigateAfterLogin: (Long) -> Unit,
+    authViewModel: AuthViewModel,
+    onLoginSuccessNavigate: (role: String) -> Unit, // <-- ¡¡CAMBIO!!
     onGoRegister: () -> Unit
 ) {
-    val state by vm.login.collectAsStateWithLifecycle()
+    val uiState by authViewModel.loginUiState.collectAsState()
+    val (checkedState, onStateChange) = rememberSaveable { mutableStateOf(false) }
 
-    val loggedUser = state.loggedUser
-    if (state.success && loggedUser != null) {
-        onNavigateAfterLogin(loggedUser.id_rol)
-        vm.clearLoginResult()
+    // --- ¡¡CAMBIO!! ---
+    // Ahora reacciona al rol y lo pasa a la navegación
+    LaunchedEffect(uiState.loginSuccess, uiState.userRole) {
+        if (uiState.loginSuccess && uiState.userRole != null) {
+            onLoginSuccessNavigate(uiState.userRole!!)
+        }
     }
+    // --- FIN DEL CAMBIO ---
 
     LoginScreen(
-        email = state.email,
-        pass = state.pass,
-        emailError = state.emailError,
-        passError = state.passError,
-        canSubmit = state.canSubmit,
-        isSubmitting = state.isSubmitting,
-        errorMsg = state.errorMsg,
-        onEmailChange = vm::onLoginEmailChange,
-        onPassChange = vm::onLoginPassChange,
-        onSubmit = vm::submitLogin,
-        onGoRegister = onGoRegister
+        email = uiState.email,
+        onEmailChange = authViewModel::onLoginEmailChange,
+        emailError = uiState.emailError,
+        password = uiState.password,
+        onPasswordChange = authViewModel::onLoginPasswordChange,
+        passwordError = uiState.passwordError,
+        checkedState = checkedState,
+        onCheckedChange = onStateChange,
+        onLoginClick = authViewModel::loginUser,
+        onGoRegisterClick = onGoRegister,
+        isLoading = uiState.isLoading,
+        loginError = uiState.loginError
     )
 }
 
 @Composable
-private fun LoginScreen(
+fun LoginScreen(
     email: String,
-    pass: String,
-    emailError: String?,
-    passError: String?,
-    canSubmit: Boolean,
-    isSubmitting: Boolean,
-    errorMsg: String?,
     onEmailChange: (String) -> Unit,
-    onPassChange: (String) -> Unit,
-    onSubmit: () -> Unit,
-    onGoRegister: () -> Unit
+    emailError: String?,
+    password: String,
+    onPasswordChange: (String) -> Unit,
+    passwordError: String?,
+    checkedState: Boolean,
+    onCheckedChange: (Boolean) -> Unit,
+    onLoginClick: () -> Unit,
+    onGoRegisterClick: () -> Unit,
+    isLoading: Boolean,
+    loginError: String?
 ) {
-    var showPass by remember { mutableStateOf(false) }
-    val scrollState = rememberScrollState()
-    val textFieldColors = OutlinedTextFieldDefaults.colors(
-        focusedBorderColor = MaterialTheme.colorScheme.primary,
-        unfocusedBorderColor = MaterialTheme.colorScheme.outline,
-        focusedLabelColor = MaterialTheme.colorScheme.primary,
-        cursorColor = MaterialTheme.colorScheme.primary
-    )
-    val gradient = Brush.verticalGradient(
-        colors = listOf(
-            MaterialTheme.colorScheme.primary,
-            MaterialTheme.colorScheme.secondary
-        )
-    )
-
     Box(
         modifier = Modifier
             .fillMaxSize()
-            .background(gradient)
-            .padding(horizontal = 24.dp, vertical = 32.dp),
-        contentAlignment = Alignment.Center
+            .background(MaterialTheme.colorScheme.background)
     ) {
         Column(
             modifier = Modifier
-                .fillMaxWidth()
-                .verticalScroll(scrollState),
+                .fillMaxSize()
+                .padding(16.dp),
+            verticalArrangement = Arrangement.Center,
             horizontalAlignment = Alignment.CenterHorizontally
         ) {
-            Surface(
+            Image(
+                painter = painterResource(id = R.drawable.logo_clean),
+                contentDescription = "Logo de la Clínica",
+                modifier = Modifier
+                    .height(120.dp)
+                    .width(120.dp)
+            )
+
+            Spacer(modifier = Modifier.height(24.dp))
+
+            Text(
+                "¡Bienvenido de vuelta!",
+                fontSize = 24.sp,
+                fontWeight = FontWeight.Bold,
+                color = MaterialTheme.colorScheme.primary
+            )
+            Text(
+                "Inicia sesión para continuar",
+                fontSize = 16.sp,
+                color = MaterialTheme.colorScheme.onBackground
+            )
+
+            Spacer(modifier = Modifier.height(24.dp))
+
+            OutlinedTextField(
+                value = email,
+                onValueChange = onEmailChange,
+                label = { Text("Correo Electrónico") },
                 modifier = Modifier.fillMaxWidth(),
-                shape = RoundedCornerShape(28.dp),
-                tonalElevation = 8.dp
+                shape = RoundedCornerShape(8.dp),
+                isError = emailError != null,
+                singleLine = true
+            )
+            emailError?.let {
+                Text(text = it, color = MaterialTheme.colorScheme.error, style = MaterialTheme.typography.labelSmall)
+            }
+
+            Spacer(modifier = Modifier.height(16.dp))
+
+            OutlinedTextField(
+                value = password,
+                onValueChange = onPasswordChange,
+                label = { Text("Contraseña") },
+                modifier = Modifier.fillMaxWidth(),
+                shape = RoundedCornerShape(8.dp),
+                isError = passwordError != null,
+                singleLine = true,
+                visualTransformation = PasswordVisualTransformation()
+            )
+            passwordError?.let {
+                Text(text = it, color = MaterialTheme.colorScheme.error, style = MaterialTheme.typography.labelSmall)
+            }
+
+            Spacer(modifier = Modifier.height(16.dp))
+
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                verticalAlignment = Alignment.CenterVertically
             ) {
-                Column(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(horizontal = 24.dp, vertical = 28.dp),
-                    horizontalAlignment = Alignment.CenterHorizontally
-                ) {
-                    Image(
-                        painter = painterResource(id = R.drawable.logo_clean),
-                        contentDescription = "Logo Clínica ATL",
-                        modifier = Modifier.size(96.dp)
+                Checkbox(
+                    checked = checkedState,
+                    onCheckedChange = onCheckedChange
+                )
+                Text("Recuérdame")
+                Spacer(modifier = Modifier.weight(1f))
+                Text(
+                    "¿Olvidaste tu contraseña?",
+                    color = MaterialTheme.colorScheme.primary,
+                    modifier = Modifier.clickable { /* TODO */ }
+                )
+            }
+
+            Spacer(modifier = Modifier.height(24.dp))
+
+            Button(
+                onClick = onLoginClick,
+                enabled = !isLoading,
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .height(50.dp),
+                colors = ButtonDefaults.buttonColors(
+                    containerColor = MaterialTheme.colorScheme.primary
+                ),
+                shape = RoundedCornerShape(8.dp)
+            ) {
+                if (isLoading) {
+                    CircularProgressIndicator(
+                        modifier = Modifier.size(24.dp),
+                        color = Color.White,
+                        strokeWidth = 2.dp
                     )
-                    Spacer(Modifier.height(12.dp))
-                    Text(
-                        text = "Bienvenido a Clínica ATL",
-                        style = MaterialTheme.typography.headlineSmall,
-                        color = MaterialTheme.colorScheme.primary,
-                        textAlign = TextAlign.Center
-                    )
-                    Spacer(Modifier.height(4.dp))
-                    Text(
-                        text = "Inicia sesión para gestionar tus atenciones y reservas.",
-                        style = MaterialTheme.typography.bodyMedium,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant,
-                        textAlign = TextAlign.Center,
-                        lineHeight = 20.sp
-                    )
-                    Spacer(Modifier.height(24.dp))
-
-                    OutlinedTextField(
-                        value = email,
-                        onValueChange = onEmailChange,
-                        label = { Text("Correo") },
-                        singleLine = true,
-                        isError = emailError != null,
-                        keyboardOptions = KeyboardOptions(
-                            keyboardType = KeyboardType.Email
-                        ),
-                        modifier = Modifier.fillMaxWidth(),
-                        colors = textFieldColors
-                    )
-                    if (emailError != null) {
-                        Spacer(Modifier.height(4.dp))
-                        Text(
-                            emailError,
-                            color = MaterialTheme.colorScheme.error,
-                            style = MaterialTheme.typography.labelSmall
-                        )
-                    }
-
-                    Spacer(Modifier.height(12.dp))
-
-                    OutlinedTextField(
-                        value = pass,
-                        onValueChange = onPassChange,
-                        label = { Text("Contraseña") },
-                        singleLine = true,
-                        visualTransformation = if (showPass) VisualTransformation.None else PasswordVisualTransformation(),
-                        trailingIcon = {
-                            IconButton(onClick = { showPass = !showPass }) {
-                                Icon(
-                                    imageVector = if (showPass) Icons.Filled.VisibilityOff else Icons.Filled.Visibility,
-                                    contentDescription = if (showPass) "Ocultar contraseña" else "Mostrar contraseña"
-                                )
-                            }
-                        },
-                        isError = passError != null,
-                        modifier = Modifier.fillMaxWidth(),
-                        colors = textFieldColors
-                    )
-                    if (passError != null) {
-                        Spacer(Modifier.height(4.dp))
-                        Text(
-                            passError,
-                            color = MaterialTheme.colorScheme.error,
-                            style = MaterialTheme.typography.labelSmall
-                        )
-                    }
-
-                    Spacer(Modifier.height(20.dp))
-
-                    Button(
-                        onClick = onSubmit,
-                        enabled = canSubmit && !isSubmitting,
-                        modifier = Modifier.fillMaxWidth(),
-                        colors = ButtonDefaults.buttonColors(
-                            containerColor = MaterialTheme.colorScheme.primary,
-                            contentColor = MaterialTheme.colorScheme.onPrimary
-                        )
-                    ) {
-                        if (isSubmitting) {
-                            CircularProgressIndicator(
-                                strokeWidth = 2.dp,
-                                modifier = Modifier.size(18.dp),
-                                color = MaterialTheme.colorScheme.onPrimary
-                            )
-                            Spacer(Modifier.width(8.dp))
-                            Text("Validando...")
-                        } else {
-                            Text("Entrar")
-                        }
-                    }
-
-                    if (errorMsg != null) {
-                        Spacer(Modifier.height(12.dp))
-                        Text(
-                            errorMsg,
-                            color = MaterialTheme.colorScheme.error,
-                            textAlign = TextAlign.Center,
-                            style = MaterialTheme.typography.bodySmall
-                        )
-                    }
-
-                    Spacer(Modifier.height(20.dp))
-
-                    OutlinedButton(
-                        onClick = onGoRegister,
-                        modifier = Modifier.fillMaxWidth(),
-                        colors = ButtonDefaults.outlinedButtonColors(
-                            contentColor = MaterialTheme.colorScheme.primary
-                        ),
-                        border = BorderStroke(1.dp, MaterialTheme.colorScheme.primary)
-                    ) {
-                        Text("Crear cuenta")
-                    }
+                } else {
+                    Text("Iniciar Sesión", color = Color.White, fontSize = 16.sp)
                 }
             }
-        }
-    }
-}
 
-@Preview(showBackground = true)
-@Composable
-fun LoginScreenPreview() {
-    AppClinicaATLTheme {
-        LoginScreen(
-            email = "test@example.com",
-            pass = "password",
-            emailError = null,
-            passError = null,
-            canSubmit = true,
-            isSubmitting = false,
-            errorMsg = null,
-            onEmailChange = {},
-            onPassChange = {},
-            onSubmit = {},
-            onGoRegister = {}
-        )
+            loginError?.let {
+                Spacer(modifier = Modifier.height(8.dp))
+                Text(text = it, color = MaterialTheme.colorScheme.error, style = MaterialTheme.typography.bodyMedium)
+            }
+
+            Spacer(modifier = Modifier.height(24.dp))
+
+            Row {
+                Text("¿No tienes una cuenta? ")
+                Text(
+                    "Regístrate",
+                    color = MaterialTheme.colorScheme.primary,
+                    fontWeight = FontWeight.Bold,
+                    modifier = Modifier.clickable { onGoRegisterClick() }
+                )
+            }
+        }
     }
 }

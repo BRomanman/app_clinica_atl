@@ -7,11 +7,9 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.width
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Assignment
 import androidx.compose.material.icons.filled.CalendarToday
@@ -49,7 +47,7 @@ data class DrawerItem(
     val action: () -> Unit
 )
 
-// --- 3. COMPOSABLE "INTELIGENTE" (NUEVO) ---
+// --- 3. COMPOSABLE "INTELIGENTE" (CORREGIDO) ---
 @RequiresApi(Build.VERSION_CODES.O)
 @Composable
 fun AppDrawerVm(
@@ -64,14 +62,14 @@ fun AppDrawerVm(
     onBookAppointment: () -> Unit,
     modifier: Modifier = Modifier
 ) {
-    // Observa el rol del usuario desde el "cerebro"
-    val user by vm.currentUserData.collectAsStateWithLifecycle()
-    val userRole = user?.id_rol ?: 1L // Default a Paciente (1) si es nulo
+    // --- ¡SOLUCIÓN 1, 2 y 3! ---
+    // Observa el rol del usuario directamente desde el userRoleFlow
+    val userRole by vm.userRoleFlow.collectAsStateWithLifecycle(initialValue = "paciente")
 
     // Decide dinámicamente a qué perfil ir
     val onGoToProfile: () -> Unit = when (userRole) {
-        2L -> onGoToDoctorProfile // Rol 2 (Doctor) -> Perfil de Doctor
-        else -> onGoToPatientProfile // Rol 1 o 3 -> Perfil de Paciente
+        "doctor" -> onGoToDoctorProfile // Rol "doctor" -> Perfil de Doctor
+        else -> onGoToPatientProfile // Rol "paciente" o "admin" -> Perfil de Paciente
     }
 
     // Genera la lista de ítems dinámicamente
@@ -91,7 +89,7 @@ fun AppDrawerVm(
 }
 
 
-// --- 4. COMPOSABLE "TONTO" (UI) ---
+// --- 4. COMPOSABLE "TONTO" (UI - Sin cambios) ---
 @Composable
 fun AppDrawer(
     currentRoute: String?,
@@ -110,7 +108,7 @@ fun AppDrawer(
             verticalAlignment = Alignment.CenterVertically
         ) {
             Image(
-                painter = painterResource(id = R.drawable.logo),
+                painter = painterResource(id = R.drawable.logo_clean), // Usa logo_clean
                 contentDescription = "Logo",
                 modifier = Modifier
                     .height(60.dp)
@@ -159,14 +157,13 @@ fun AppDrawer(
     }
 }
 
-// --- 5. LISTA DE ÍTEMS (ACTUALIZADA) ---
-// (Esta función ahora es 'private' porque solo la usa el AppDrawerVm)
+// --- 5. LISTA DE ÍTEMS (CORREGIDA) ---
 @Composable
-fun defaultDrawerItems(
+private fun defaultDrawerItems(
     onHome: () -> Unit,
     onInsurance: () -> Unit,
     onBookAppointment: () -> Unit,
-    onProfile: () -> Unit // <-- Ahora es una sola acción genérica
+    onProfile: () -> Unit
 ): List<DrawerItem> {
     return listOf(
         DrawerItem(
@@ -176,7 +173,8 @@ fun defaultDrawerItems(
             action = onHome
         ),
         DrawerItem(
-            route = Route.Insurance.path,
+            // --- ¡SOLUCIÓN 4! ---
+            route = Route.Seguros.path,
             icon = Icons.Default.FavoriteBorder,
             label = stringResource(id = R.string.drawer_insurance),
             action = onInsurance
@@ -187,17 +185,14 @@ fun defaultDrawerItems(
             label = stringResource(id = R.string.drawer_book_appointment),
             action = onBookAppointment
         ),
-        // --- 6. ÍTEM DE PERFIL (ACTUALIZADO) ---
-        // (Ya no sabemos si es paciente o doctor, solo usamos la acción genérica)
+        // --- 6. ÍTEM DE PERFIL (CORREGIDO) ---
         DrawerItem(
-            route = Route.Profile.path, // (El 'selected' solo funcionará para Paciente)
+            // --- ¡SOLUCIÓN 5! ---
+            route = Route.PatientProfile.path,
             icon = Icons.Default.Person,
             label = stringResource(id = R.string.drawer_profile),
-            action = onProfile // <-- ¡USA LA ACCIÓN DINÁMICA!
+            action = onProfile
         )
-        // (Si quisiéramos que el "seleccionado" funcione para ambos,
-        // necesitaríamos que el 'route' también sea dinámico,
-        // pero esto es suficiente para arreglar la navegación)
     )
 }
 

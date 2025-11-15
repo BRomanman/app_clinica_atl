@@ -2,23 +2,18 @@ package com.example.app_clinica_atl.ui.viewmodel
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.ViewModelProvider
-import com.example.app_clinica_atl.data.local.storage.UserPreferences
+import com.example.app_clinica_atl.data.repository.SpecialtyRepository
 import com.example.app_clinica_atl.data.repository.UserRepository
 
-/**
- * Factory manual para crear AuthViewModel.
- * Solo debe pedir UserRepository y UserPreferences.
- */
-class AuthViewModelFactory(
+class AdminAddDoctorViewModelFactory(
     private val userRepository: UserRepository,
-    private val userPreferences: UserPreferences
+    private val specialtyRepository: SpecialtyRepository
 ) : ViewModelProvider.Factory {
 
     @Suppress("UNCHECKED_CAST")
     override fun <T : ViewModel> create(modelClass: Class<T>): T {
-        if (modelClass.isAssignableFrom(AuthViewModel::class.java)) {
-            // Le pasa solo las 2 dependencias que necesita
-            return AuthViewModel(userRepository, userPreferences) as T
+        if (modelClass.isAssignableFrom(AdminAddDoctorViewModel::class.java)) {
+            return AdminAddDoctorViewModel(userRepository, specialtyRepository) as T
         }
         throw IllegalArgumentException("Unknown ViewModel class")
     }

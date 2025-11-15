@@ -4,24 +4,28 @@ import androidx.room.Dao
 import androidx.room.Insert
 import androidx.room.OnConflictStrategy
 import androidx.room.Query
-import kotlinx.coroutines.flow.Flow
 
 @Dao
 interface AppointmentDao {
+    @Insert(onConflict = OnConflictStrategy.IGNORE)
+    suspend fun insert(appointment: AppointmentEntity): Long
 
-    @Insert(onConflict = OnConflictStrategy.REPLACE)
-    suspend fun insertAppointment(appointment: AppointmentEntity)
+    @Query("SELECT * FROM appointments")
+    suspend fun getAll(): List<AppointmentEntity>
 
-    // (Esta consulta sigue igual, para el perfil del paciente)
-    @Query("SELECT * FROM appointments WHERE patient_id = :patientId ORDER BY date DESC, time DESC")
-    fun getAppointmentsForUser(patientId: Long): Flow<List<AppointmentEntity>>
+    // --- FUNCIONES AÑADIDAS (REQUERIDAS POR EL REPOSITORIO) ---
 
-    // --- ¡NUEVA CONSULTA! ---
-    // (Esta es para la agenda del doctor)
-    @Query("SELECT * FROM appointments WHERE doctor_id = :doctorId ORDER BY date ASC, time ASC")
-    fun getAppointmentsForDoctor(doctorId: String): Flow<List<AppointmentEntity>>
-    // --- FIN NUEVA CONSULTA ---
+    /**
+     * Busca si ya existe una cita para un doctor en una fecha y hora específicas.
+     * Usado para evitar agendamientos duplicados.
+     */
+    @Query("SELECT * FROM appointments WHERE doctorId = :doctorId AND date = :date AND time = :time LIMIT 1")
+    suspend fun getAppointmentByDoctorDateTime(doctorId: Long, date: String, time: String): AppointmentEntity?
 
-    @Query("DELETE FROM appointments WHERE id = :appointmentId")
-    suspend fun deleteAppointmentById(appointmentId: Long)
+    /**
+     * Devuelve una lista de Strings (horas, ej: "09:00", "10:30") que
+     * ya están ocupadas para un doctor en una fecha específica.
+     */
+    @Query("SELECT time FROM appointments WHERE doctorId = :doctorId AND date = :date")
+    suspend fun getBookedTimesForDoctorOnDate(doctorId: Long, date: String): List<String>
 }

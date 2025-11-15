@@ -4,35 +4,37 @@ import androidx.room.Dao
 import androidx.room.Insert
 import androidx.room.OnConflictStrategy
 import androidx.room.Query
-import kotlinx.coroutines.flow.Flow
+import androidx.room.Update
 
-// 1. Data Access Object (DAO) para la entidad User.
-//    Define cómo interactuamos con la tabla 'users' en la BD.
 @Dao
 interface UserDao {
+    @Query("SELECT * FROM user_table WHERE email = :email LIMIT 1")
+    suspend fun getByEmail(email: String): UserEntity?
 
-    // 2. Inserta un nuevo usuario. Si el email ya existe (conflicto), aborta la operación.
-    @Insert(onConflict = OnConflictStrategy.ABORT)
-    suspend fun insertUser(user: UserEntity)
+    @Query("SELECT * FROM user_table WHERE id = :id LIMIT 1")
+    suspend fun getById(id: Long): UserEntity?
 
-    // 3. Busca un usuario por su email (para el login).
-    @Query("SELECT * FROM users WHERE email = :email LIMIT 1")
-    suspend fun getUserByEmail(email: String): UserEntity?
+    @Insert(onConflict = OnConflictStrategy.REPLACE)
+    suspend fun insert(user: UserEntity): Long
 
-    // 4. Obtiene el usuario que está actualmente logueado (para el 'init' del ViewModel).
-    @Query("SELECT * FROM users WHERE isLoggedIn = 1 LIMIT 1")
-    fun getLoggedInUser(): Flow<UserEntity?>
+    @Update
+    suspend fun update(user: UserEntity)
 
-    // 5. Marca a un usuario como 'logueado'.
-    @Query("UPDATE users SET isLoggedIn = 1 WHERE id = :userId")
-    suspend fun setLoggedIn(userId: Long)
+    @Query("SELECT COUNT(*) FROM user_table")
+    suspend fun count(): Int
 
-    // 6. Desmarca a TODOS los usuarios como 'logueados' (para el logout).
-    @Query("UPDATE users SET isLoggedIn = 0")
-    suspend fun setAllLoggedOut()
+    @Query("SELECT * FROM user_table WHERE role = 'doctor' AND specialty = :specialty")
+    suspend fun getDoctorsBySpecialty(specialty: String): List<UserEntity>
 
-    // --- ¡NUEVA FUNCIÓN! ---
-    @Query("UPDATE users SET photoUri = :uri WHERE id = :userId")
-    suspend fun updateUserPhoto(userId: Long, uri: String?)
-    // --- FIN ---
+    @Query("SELECT * FROM user_table ORDER BY role, name ASC")
+    suspend fun getAllUsers(): List<UserEntity>
+
+    // --- ¡¡FUNCIÓN AÑADIDA PARA LA BÚSQUEDA!! ---
+    /**
+     * Busca usuarios que sean pacientes y cuyo nombre contenga el texto de búsqueda.
+     * Los '%' son comodines que significan "cualquier cosa".
+     * Ej: buscar "ana" encontrará "Ana Torres".
+     */
+    @Query("SELECT * FROM user_table WHERE role = 'paciente' AND name LIKE '%' || :query || '%'")
+    suspend fun searchPatientsByName(query: String): List<UserEntity>
 }

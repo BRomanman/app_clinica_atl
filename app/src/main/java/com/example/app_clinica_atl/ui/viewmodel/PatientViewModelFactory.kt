@@ -2,18 +2,29 @@ package com.example.app_clinica_atl.ui.viewmodel
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.ViewModelProvider
-import com.example.app_clinica_atl.data.repository.PatientRepository
+import com.example.app_clinica_atl.data.local.storage.UserPreferences
+import com.example.app_clinica_atl.data.repository.InsuranceRepository
+import com.example.app_clinica_atl.data.repository.UserRepository
 
-// Esta es la Factory separada que querías
+/**
+ * Factory manual para crear PatientViewModel.
+ * ¡CAMBIO! Ahora también inyecta InsuranceRepository.
+ */
 class PatientViewModelFactory(
-    private val repository: PatientRepository
+    private val userRepository: UserRepository,
+    private val userPreferences: UserPreferences,
+    private val insuranceRepository: InsuranceRepository // <-- ¡AÑADIDO!
 ) : ViewModelProvider.Factory {
 
     @Suppress("UNCHECKED_CAST")
     override fun <T : ViewModel> create(modelClass: Class<T>): T {
         if (modelClass.isAssignableFrom(PatientViewModel::class.java)) {
-            return PatientViewModel(repository) as T
+            return PatientViewModel(
+                userRepository,
+                userPreferences,
+                insuranceRepository // <-- ¡PASADO AL VIEWMODEL!
+            ) as T
         }
-        throw IllegalArgumentException("Unknown ViewModel class: ${modelClass.name}")
+        throw IllegalArgumentException("Unknown ViewModel class")
     }
 }

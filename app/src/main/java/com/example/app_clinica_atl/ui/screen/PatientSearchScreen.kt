@@ -1,170 +1,168 @@
 package com.example.app_clinica_atl.ui.screen
 
-import androidx.compose.foundation.background
-import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.Image
+import androidx.compose.foundation.clickable
+import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.PaddingValues
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
-import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.Search
-import androidx.compose.material3.*
+import androidx.compose.material.icons.filled.ArrowBack
+import androidx.compose.material3.Card
+import androidx.compose.material3.CardDefaults
+import androidx.compose.material3.CircularProgressIndicator
+import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.OutlinedTextField
+import androidx.compose.material3.Scaffold
+import androidx.compose.material3.Text
+import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.draw.clip
+import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
-import androidx.lifecycle.compose.collectAsStateWithLifecycle
-import com.example.app_clinica_atl.data.model.Patient
-import com.example.app_clinica_atl.ui.viewmodel.PatientViewModel
+import com.example.app_clinica_atl.R
+import com.example.app_clinica_atl.data.local.user.UserEntity
+import com.example.app_clinica_atl.ui.viewmodel.DoctorSearchPatientViewModel
 
-// 1. El Composable "Inteligente" (conecta con el VM)
+/**
+ * Pantalla para que el Doctor busque pacientes.
+ * (Antigua PatientSearchScreen reciclada)
+ */
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun PatientSearchScreenVm(vm: PatientViewModel) {
-    val uiState by vm.uiState.collectAsStateWithLifecycle()
-
-    PatientSearchScreen(
-        searchText = uiState.searchText,
-        patients = uiState.patients,
-        onSearchChange = vm::onSearchTextChange
-    )
-}
-
-// 2. El Composable "Tonto" (solo UI)
-@Composable
-private fun PatientSearchScreen(
-    searchText: String,
-    patients: List<Patient>,
-    onSearchChange: (String) -> Unit
+fun DoctorSearchPatientScreen(
+    viewModel: DoctorSearchPatientViewModel,
+    onBackClick: () -> Unit,
+    onPatientClick: (Long) -> Unit
 ) {
-    Column(
-        modifier = Modifier
-            .fillMaxSize()
-            .background(MaterialTheme.colorScheme.background) // Usa el color de fondo de tu tema
-            .padding(16.dp),
-        verticalArrangement = Arrangement.spacedBy(16.dp)
-    ) {
-        // --- BUSCADOR (Estilo de la foto) ---
-        OutlinedTextField(
-            value = searchText,
-            onValueChange = onSearchChange,
-            modifier = Modifier.fillMaxWidth(),
-            label = { Text("buscador") }, // Texto de la foto
-            leadingIcon = { Icon(Icons.Filled.Search, "Buscar") }, // Icono de la foto
-            singleLine = true,
-            colors = TextFieldDefaults.colors(
-                // Usa los colores de tu tema
-                focusedContainerColor = MaterialTheme.colorScheme.surface,
-                unfocusedContainerColor = MaterialTheme.colorScheme.surface
+    val uiState by viewModel.uiState.collectAsState()
+
+    Scaffold(
+        topBar = {
+            TopAppBar(
+                title = { Text("Buscar Paciente") },
+                navigationIcon = {
+                    IconButton(onClick = onBackClick) {
+                        Icon(Icons.Default.ArrowBack, contentDescription = "Volver")
+                    }
+                }
             )
-        )
-
-
-
-
-
-
-
-
-
-
-
-
-        // --- LISTA DE RESULTADOS ---
-        LazyColumn(
-            modifier = Modifier.fillMaxSize(),
-            verticalArrangement = Arrangement.spacedBy(16.dp)
+        }
+    ) { paddingValues ->
+        Column(
+            modifier = Modifier
+                .fillMaxSize()
+                .padding(paddingValues)
+                .padding(16.dp)
         ) {
-            items(patients, key = { it.id }) { patient ->
-                // Cada item de la lista es una "Ficha de Paciente"
-                PatientInfoCard(patient = patient)
+            // Barra de Búsqueda
+            OutlinedTextField(
+                value = uiState.query,
+                onValueChange = viewModel::onQueryChange,
+                label = { Text("Buscar por nombre...") },
+                modifier = Modifier.fillMaxWidth(),
+                singleLine = true
+            )
+
+            Spacer(modifier = Modifier.height(16.dp))
+
+            // --- Resultados de la Búsqueda ---
+            Box(modifier = Modifier.fillMaxSize()) {
+                if (uiState.isLoading) {
+                    CircularProgressIndicator(modifier = Modifier.align(Alignment.Center))
+                }
+
+                uiState.errorMsg?.let {
+                    Text(
+                        text = it,
+                        color = MaterialTheme.colorScheme.error,
+                        modifier = Modifier.align(Alignment.Center)
+                    )
+                }
+
+                if (uiState.patients.isEmpty() && !uiState.isLoading && uiState.query.isNotBlank()) {
+                    Text(
+                        text = "No se encontraron pacientes.",
+                        modifier = Modifier.align(Alignment.Center)
+                    )
+                }
+
+                LazyColumn(
+                    contentPadding = PaddingValues(vertical = 8.dp),
+                    verticalArrangement = Arrangement.spacedBy(12.dp)
+                ) {
+                    items(uiState.patients) { patient ->
+                        PatientCard(
+                            patient = patient,
+                            onClick = { onPatientClick(patient.id) }
+                        )
+                    }
+                }
             }
         }
     }
 }
 
-// 3. La "Ficha" de información (basada en tu imagen)
+/**
+ * Tarjeta simple para mostrar un paciente.
+ * (Mantenemos la estética)
+ */
 @Composable
-private fun PatientInfoCard(patient: Patient) {
-    // Tomo el color teal de tu PatientProfileScreen, que coincide con la foto
-    val sectionColor = Color(0xFF6FD2D4)
-    val headerColor = Color(0xFF4CB4B6)
-
+private fun PatientCard(
+    patient: UserEntity,
+    onClick: () -> Unit
+) {
     Card(
-        modifier = Modifier.fillMaxWidth(),
-        shape = RoundedCornerShape(12.dp),
-        colors = CardDefaults.cardColors(
-            containerColor = sectionColor.copy(alpha = 0.5f) // Fondo teal
-        )
+        modifier = Modifier
+            .fillMaxWidth()
+            .clickable { onClick() },
+        elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
     ) {
-        Column(
-            modifier = Modifier.padding(16.dp),
-            verticalArrangement = Arrangement.spacedBy(12.dp)
-        ) {
-            // --- TÍTULO (Información Personal) ---
-            Text(
-                text = "Información Personal",
-                style = MaterialTheme.typography.titleLarge,
-                color = Color.Black, // Texto oscuro como en la foto
-                fontWeight = FontWeight.Bold
-            )
-
-            // --- CAMPOS DE DATOS ---
-            InfoRow("Nombre:", patient.nombre)
-            InfoRow("Dirección:", patient.direccion)
-            InfoRow("Número de contacto:", patient.numeroContacto)
-            InfoRow("Correo electrónico:", patient.correo)
-
-            HorizontalDivider(
-                modifier = Modifier.padding(vertical = 8.dp),
-                color = headerColor
-            )
-
-            // --- HISTORIAL MÉDICO (Estilo de la foto) ---
-            Text(
-                text = "Historial médico",
-                style = MaterialTheme.typography.titleMedium,
-                color = Color.Black.copy(alpha = 0.8f),
-                fontWeight = FontWeight.SemiBold
-            )
-            Text(
-                text = patient.historialMedico,
-                style = MaterialTheme.typography.bodyMedium,
-                color = Color.Black.copy(alpha = 0.7f)
-            )
-        }
-    }
-}
-
-// Helper para mostrar una fila de "Etiqueta: Valor"
-@Composable
-
-
-private fun InfoRow(label: String, value: String) {
-    Row(
-        modifier = Modifier.fillMaxWidth(),
-        verticalAlignment = Alignment.CenterVertically
-    ) {
-        Text(
-            text = label,
-            style = MaterialTheme.typography.labelLarge, // Un poco más grande
-            color = Color.Black.copy(alpha = 0.7f),
-            fontWeight = FontWeight.Bold,
-            modifier = Modifier.weight(0.4f) // 40% del espacio
-        )
-        // Esto simula el campo de texto blanco de tu foto
-        Box(
+        Row(
             modifier = Modifier
-                .weight(0.6f) // 60% del espacio
-                .background(Color.White, RoundedCornerShape(4.dp))
-                .padding(horizontal = 8.dp, vertical = 4.dp)
+                .fillMaxWidth()
+                .padding(16.dp),
+            verticalAlignment = Alignment.CenterVertically
         ) {
-            Text(
-                text = value,
-                style = MaterialTheme.typography.bodyMedium,
-                color = Color.Black
+            Image(
+                painter = painterResource(id = R.drawable.goku_perfil), // Placeholder
+                contentDescription = "Foto de ${patient.name}",
+                modifier = Modifier
+                    .size(50.dp)
+                    .clip(CircleShape)
             )
+            Spacer(modifier = Modifier.width(16.dp))
+            Column(modifier = Modifier.weight(1f)) {
+                Text(
+                    text = patient.name,
+                    style = MaterialTheme.typography.titleMedium,
+                    fontWeight = FontWeight.Bold
+                )
+                Text(
+                    text = patient.email,
+                    style = MaterialTheme.typography.bodyMedium,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                )
+            }
         }
     }
 }

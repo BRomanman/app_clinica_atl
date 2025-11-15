@@ -1,5 +1,6 @@
 package com.example.app_clinica_atl.ui.theme
 
+import android.app.Activity
 import android.os.Build
 import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.material3.MaterialTheme
@@ -8,73 +9,41 @@ import androidx.compose.material3.dynamicDarkColorScheme
 import androidx.compose.material3.dynamicLightColorScheme
 import androidx.compose.material3.lightColorScheme
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.SideEffect
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.toArgb
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.LocalView
+import androidx.core.view.WindowCompat
 
-// --- ¡IMPORTANTE! ---
-// Estas son las variables de tu archivo "Color.kt"
-// Nos aseguramos de importarlas
-import com.example.app_clinica_atl.ui.theme.Primary
-import com.example.app_clinica_atl.ui.theme.PrimaryLight
-import com.example.app_clinica_atl.ui.theme.PrimaryDark
-import com.example.app_clinica_atl.ui.theme.Secondary
-import com.example.app_clinica_atl.ui.theme.SecondaryLight
-import com.example.app_clinica_atl.ui.theme.SecondaryDark
-import com.example.app_clinica_atl.ui.theme.NeutralLight
-import com.example.app_clinica_atl.ui.theme.NeutralDark
+// Nota: Ya NO hay imports para Primary, Secondary, etc.
+// Esas variables ya viven en el archivo Color.kt,
+// y como están en el mismo paquete, Theme.kt ya las puede "ver".
 
-// --- TU CÓDIGO (Esto ya lo tenías) ---
-private val LightColorScheme = lightColorScheme(
-    primary = Primary, // Azul 4A90E2
-    onPrimary = Color.White, // Texto blanco sobre azul
-    primaryContainer = PrimaryLight, // Azul claro B3D4FC
-    onPrimaryContainer = PrimaryDark, // Azul oscuro 005BB5
-
-    secondary = Secondary, // Verde menta 50E3C2
-    onSecondary = NeutralDark, // Gris oscuro 4A4A4A
-    secondaryContainer = SecondaryLight, // Verde suave B2FFF2
-    onSecondaryContainer = SecondaryDark, // Verde profundo 00B894
-
-    tertiary = SecondaryDark, // Reusamos el verde profundo
-    onTertiary = NeutralLight,
-
-    background = NeutralLight, // Gris muy claro F5F5F5
-    onBackground = NeutralDark, // Gris oscuro 4A4A4A
-
-    surface = NeutralLight, // Fondo para 'Cards' (igual al fondo)
-    onSurface = NeutralDark, // Texto para 'Cards'
-)
-
-// --- TU CÓDIGO (Esto ya lo tenías) ---
 private val DarkColorScheme = darkColorScheme(
-    primary = PrimaryLight, // Azul claro B3D4FC
-    onPrimary = PrimaryDark, // Azul oscuro 005BB5
-    primaryContainer = PrimaryDark,
-    onPrimaryContainer = PrimaryLight,
-
-    secondary = Secondary, // Verde menta 50E3C2
-    onSecondary = SecondaryDark, // Verde profundo 00B894
-    secondaryContainer = SecondaryDark,
-    onSecondaryContainer = Secondary,
-
-    tertiary = SecondaryLight, // Verde suave B2FFF2
-    onTertiary = SecondaryDark,
-
-    background = Color(0xFF1C1B1F), // Un fondo oscuro estándar
-    onBackground = NeutralLight, // Texto claro F5F5F5
-
-    surface = Color(0xFF2C2C2E), // Fondo oscuro ligeramente más claro para 'Cards'
-    onSurface = NeutralLight, // Texto claro para 'Cards'
+    primary = PrimaryDark,
+    secondary = SecondaryDark,
+    tertiary = NeutralDark,
+    // (Puedes personalizar el resto de los colores oscuros si quieres)
 )
 
-
+private val LightColorScheme = lightColorScheme(
+    primary = Primary,
+    secondary = Secondary,
+    tertiary = NeutralLight,
+    background = Color(0xFFF7F7F7),
+    surface = Color.White,
+    onPrimary = Color.White,
+    onSecondary = Color.White,
+    onTertiary = Color.White,
+    onBackground = Color(0xFF1C1B1F),
+    onSurface = Color(0xFF1C1B1F),
+)
 
 @Composable
-fun AppClinicaATLTheme(
-    darkTheme: Boolean = false,
-    // Pongo 'dynamicColor' en 'false' para que TUS colores azules
-    // siempre ganen y no sean reemplazados por el color del fondo de pantalla
-    // del teléfono (que es lo que causa el morado).
+fun App_clinica_atlTheme( // <-- El nombre de tu tema
+    darkTheme: Boolean = isSystemInDarkTheme(),
+    // Dynamic color is available on Android 12+
     dynamicColor: Boolean = false,
     content: @Composable () -> Unit
 ) {
@@ -83,9 +52,17 @@ fun AppClinicaATLTheme(
             val context = LocalContext.current
             if (darkTheme) dynamicDarkColorScheme(context) else dynamicLightColorScheme(context)
         }
-        // Si no hay color dinámico, usa nuestros esquemas
+
         darkTheme -> DarkColorScheme
         else -> LightColorScheme
+    }
+    val view = LocalView.current
+    if (!view.isInEditMode) {
+        SideEffect {
+            val window = (view.context as Activity).window
+            window.statusBarColor = colorScheme.primary.toArgb()
+            WindowCompat.getInsetsController(window, view).isAppearanceLightStatusBars = darkTheme
+        }
     }
 
     MaterialTheme(

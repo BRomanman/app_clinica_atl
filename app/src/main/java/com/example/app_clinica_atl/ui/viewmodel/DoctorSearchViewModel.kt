@@ -2,52 +2,67 @@ package com.example.app_clinica_atl.ui.viewmodel
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import com.example.app_clinica_atl.data.model.DoctorInfo
+import com.example.app_clinica_atl.data.local.user.UserEntity
 import com.example.app_clinica_atl.data.repository.DoctorRepository
+// NO MÁS IMPORTS DE HILT
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 
+// Estado de la UI
 data class DoctorSearchUiState(
-    val searchText: String = "",
-    val doctors: List<DoctorInfo> = emptyList()
+    val selectedSpecialty: String = "Cardiología",
+    val doctors: List<UserEntity> = emptyList(),
+    val isLoading: Boolean = false,
+    val errorMsg: String? = null
 )
 
-class DoctorSearchViewModel(
-    private val repository: DoctorRepository
+// NO MÁS @HiltViewModel
+class DoctorSearchViewModel( // <-- Constructor normal
+    private val doctorRepository: DoctorRepository
 ) : ViewModel() {
-
-    private var allDoctors: List<DoctorInfo> = emptyList()
 
     private val _uiState = MutableStateFlow(DoctorSearchUiState())
     val uiState: StateFlow<DoctorSearchUiState> = _uiState.asStateFlow()
 
+    val specialties = listOf(
+        "Cardiología",
+        "Dermatología",
+        "Medicina General",
+        "Pediatría",
+        "Psicología"
+    )
+
     init {
+        loadDoctorsBySpecialty(_uiState.value.selectedSpecialty)
+    }
+
+    fun onSpecialtyChange(newSpecialty: String) {
+        _uiState.update { it.copy(selectedSpecialty = newSpecialty) }
+        loadDoctorsBySpecialty(newSpecialty)
+    }
+
+    private fun loadDoctorsBySpecialty(specialty: String) {
         viewModelScope.launch {
-            repository.observeDoctors().collect { doctors ->
-                allDoctors = doctors
-                _uiState.update { state ->
-                    state.copy(doctors = filterDoctors(state.searchText, doctors))
+            _uiState.update { it.copy(isLoading = true, errorMsg = null) }
+            val result = doctorRepository.getDoctorsBySpecialty(specialty)
+
+            _uiState.update {
+                if (result.isSuccess) {
+                    it.copy(
+                        isLoading = false,
+                        doctors = result.getOrNull() ?: emptyList()
+                    )
+                } else {
+                    it.copy(
+                        isLoading = false,
+                        doctors = emptyList(),
+                        errorMsg = result.exceptionOrNull()?.message ?: "Error al cargar doctores"
+                    )
                 }
             }
-        }
-    }
-
-    fun onSearchTextChange(text: String) {
-        _uiState.update { it.copy(searchText = text) }
-        _uiState.update { it.copy(doctors = filterDoctors(text, allDoctors)) }
-    }
-
-    private fun filterDoctors(query: String, source: List<DoctorInfo>): List<DoctorInfo> {
-        if (query.isBlank()) return source
-        val normalized = query.trim()
-        return source.filter { doctor ->
-            doctor.id.contains(normalized, ignoreCase = true) ||
-                doctor.name.contains(normalized, ignoreCase = true) ||
-                doctor.specialty.contains(normalized, ignoreCase = true) ||
-                doctor.email.contains(normalized, ignoreCase = true)
         }
     }
 }

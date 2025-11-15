@@ -1,332 +1,212 @@
 package com.example.app_clinica_atl.ui.screen
 
-import android.widget.Toast
-import androidx.compose.foundation.Image
-import androidx.compose.foundation.background
-import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.verticalScroll
-import androidx.compose.material3.*
-import androidx.compose.runtime.*
-import androidx.compose.ui.Alignment
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.ArrowBack
+import androidx.compose.material3.Button
+import androidx.compose.material3.CircularProgressIndicator
+import androidx.compose.material3.DropdownMenuItem
+import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.ExposedDropdownMenuBox
+import androidx.compose.material3.ExposedDropdownMenuDefaults
+import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.OutlinedTextField
+import androidx.compose.material3.Scaffold
+import androidx.compose.material3.Text
+import androidx.compose.material3.TopAppBar
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.collectAsState
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.platform.LocalContext
-import androidx.compose.ui.res.painterResource
-import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.input.KeyboardType
+import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.unit.sp
-import com.example.app_clinica_atl.R
-import com.example.app_clinica_atl.domain.validation.validateEmail
-import com.example.app_clinica_atl.domain.validation.validateFechaNacimiento
-import com.example.app_clinica_atl.domain.validation.validateNamePart
-import com.example.app_clinica_atl.domain.validation.validatePhoneDigitsOnly
+import com.example.app_clinica_atl.ui.viewmodel.AdminAddDoctorViewModel
 
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun AdminAddDoctorScreen(
-    onCreateDoctor: () -> Unit = {},
-    modifier: Modifier = Modifier
+    viewModel: AdminAddDoctorViewModel,
+    onBackClick: () -> Unit
 ) {
-    var firstName by remember { mutableStateOf("") }
-    var firstNameError by remember { mutableStateOf<String?>(null) }
+    val uiState by viewModel.uiState.collectAsState()
+    var expanded by remember { mutableStateOf(false) }
 
-    var lastName by remember { mutableStateOf("") }
-    var lastNameError by remember { mutableStateOf<String?>(null) }
+    // Muestra mensaje de éxito
+    LaunchedEffect(uiState.registrationSuccess) {
+        if (uiState.registrationSuccess) {
+            // (Aquí podríamos mostrar un Snackbar)
+            viewModel.clearSuccess() // Resetea el estado
+        }
+    }
 
-    var birthDate by remember { mutableStateOf("") }
-    var birthDateError by remember { mutableStateOf<String?>(null) }
-
-    var email by remember { mutableStateOf("") }
-    var emailError by remember { mutableStateOf<String?>(null) }
-
-    var phone by remember { mutableStateOf("") }
-    var phoneError by remember { mutableStateOf<String?>(null) }
-
-    var password by remember { mutableStateOf("") }
-    var passwordError by remember { mutableStateOf<String?>(null) }
-
-    var rate by remember { mutableStateOf("") }
-    var rateError by remember { mutableStateOf<String?>(null) }
-
-    var salary by remember { mutableStateOf("") }
-    var salaryError by remember { mutableStateOf<String?>(null) }
-
-    var bonus by remember { mutableStateOf("") }
-    var bonusError by remember { mutableStateOf<String?>(null) }
-
-    var specialtyId by remember { mutableStateOf("") }
-    var specialtyIdError by remember { mutableStateOf<String?>(null) }
-
-    val context = LocalContext.current
-
-    val textFieldColors = TextFieldDefaults.colors(
-        focusedContainerColor = Color.White,
-        unfocusedContainerColor = Color.White,
-        cursorColor = Color.Black,
-        focusedIndicatorColor = Color(0xFF2196F3),
-        unfocusedIndicatorColor = Color.Gray
-    )
-
-    Column(
-        modifier = modifier
-            .fillMaxSize()
-            .background(MaterialTheme.colorScheme.background)
-            .verticalScroll(rememberScrollState())
-            .padding(horizontal = 24.dp, vertical = 32.dp),
-        horizontalAlignment = Alignment.CenterHorizontally
-    ) {
-        Image(
-            painter = painterResource(id = R.drawable.logo),
-            contentDescription = "Logo Clinica",
-            modifier = Modifier.height(90.dp)
-        )
-        Spacer(modifier = Modifier.height(24.dp))
-        Text(
-            text = "Agregar Doctor",
-            style = MaterialTheme.typography.headlineSmall.copy(fontWeight = FontWeight.Bold),
-            color = MaterialTheme.colorScheme.onBackground
-        )
-        Spacer(modifier = Modifier.height(24.dp))
-
-        Surface(
-            color = MaterialTheme.colorScheme.primaryContainer,
-            shape = MaterialTheme.shapes.small,
-            modifier = Modifier.fillMaxWidth()
-        ) {
-            Text(
-                text = "Información Personal",
-                style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold),
-                color = MaterialTheme.colorScheme.onPrimaryContainer,
-                modifier = Modifier.padding(horizontal = 16.dp, vertical = 12.dp)
+    Scaffold(
+        topBar = {
+            TopAppBar(
+                title = { Text("Añadir Nuevo Doctor") },
+                navigationIcon = {
+                    IconButton(onClick = onBackClick) {
+                        Icon(Icons.Default.ArrowBack, contentDescription = "Volver")
+                    }
+                }
             )
         }
-
-        Spacer(modifier = Modifier.height(20.dp))
-
-        // --- Nombre ---
-        OutlinedTextField(
-            value = firstName,
-            onValueChange = {
-                firstName = it
-                if (firstNameError != null) firstNameError = validateNamePart(it.trim(), "Nombre")
-            },
-            label = { Text("Nombre") },
-            modifier = Modifier.fillMaxWidth(),
-            colors = textFieldColors,
-            isError = firstNameError != null,
-            supportingText = { firstNameError?.let { e -> Text(e, color = Color.Red) } },
-            singleLine = true
-        )
-
-        Spacer(modifier = Modifier.height(16.dp))
-
-        // --- Apellido ---
-        OutlinedTextField(
-            value = lastName,
-            onValueChange = {
-                lastName = it
-                if (lastNameError != null) lastNameError = validateNamePart(it.trim(), "Apellido")
-            },
-            label = { Text("Apellido") },
-            modifier = Modifier.fillMaxWidth(),
-            colors = textFieldColors,
-            isError = lastNameError != null,
-            supportingText = { lastNameError?.let { e -> Text(e, color = Color.Red) } },
-            singleLine = true
-        )
-
-        Spacer(modifier = Modifier.height(16.dp))
-
-        // --- Fecha de nacimiento ---
-        OutlinedTextField(
-            value = birthDate,
-            onValueChange = {
-                val digits = it.filter(Char::isDigit).take(8)
-                val formatted = buildString {
-                    for ((i, c) in digits.withIndex()) {
-                        append(c)
-                        if (i == 3 || i == 5) append('-')
-                    }
-                }
-                birthDate = formatted
-                if (birthDateError != null) {
-                    birthDateError = when {
-                        formatted.isBlank() -> "La fecha es obligatoria"
-                        formatted.length == 10 -> validateFechaNacimiento(formatted)
-                        else -> null
-                    }
-                }
-            },
-            label = { Text("Fecha de nacimiento (DD-MM-YYYY)") },
-            modifier = Modifier.fillMaxWidth(),
-            colors = textFieldColors,
-            isError = birthDateError != null,
-            supportingText = { birthDateError?.let { e -> Text(e, color = Color.Red) } },
-            singleLine = true
-        )
-
-        Spacer(modifier = Modifier.height(16.dp))
-
-        // --- Correo ---
-        OutlinedTextField(
-            value = email,
-            onValueChange = {
-                email = it
-                if (emailError != null) emailError = validateEmail(it.trim())
-            },
-            label = { Text("Correo electrónico") },
-            modifier = Modifier.fillMaxWidth(),
-            colors = textFieldColors,
-            isError = emailError != null,
-            supportingText = { emailError?.let { e -> Text(e, color = Color.Red) } },
-            singleLine = true
-        )
-
-        Spacer(modifier = Modifier.height(16.dp))
-
-        // --- Teléfono ---
-        OutlinedTextField(
-            value = phone,
-            onValueChange = {
-                val digits = it.filter(Char::isDigit).take(15)
-                phone = digits
-                if (phoneError != null) phoneError = validatePhoneDigitsOnly(digits)
-            },
-            label = { Text("Teléfono") },
-            modifier = Modifier.fillMaxWidth(),
-            colors = textFieldColors,
-            isError = phoneError != null,
-            supportingText = { phoneError?.let { e -> Text(e, color = Color.Red) } },
-            singleLine = true
-        )
-
-        Spacer(modifier = Modifier.height(16.dp))
-
-        // --- Contraseña ---
-        OutlinedTextField(
-            value = password,
-            onValueChange = {
-                password = it
-                passwordError = if (it.length < 6) "Mínimo 6 caracteres" else null
-            },
-            label = { Text("Contraseña") },
-            modifier = Modifier.fillMaxWidth(),
-            colors = textFieldColors,
-            isError = passwordError != null,
-            supportingText = { passwordError?.let { e -> Text(e, color = Color.Red) } },
-            singleLine = true
-        )
-
-        Spacer(modifier = Modifier.height(16.dp))
-
-        // --- Tarifa Consulta ---
-        OutlinedTextField(
-            value = rate,
-            onValueChange = {
-                rate = it.filter(Char::isDigit)
-                rateError = if (rate.isBlank()) "Campo obligatorio" else null
-            },
-            label = { Text("Tarifa Consulta") },
-            modifier = Modifier.fillMaxWidth(),
-            colors = textFieldColors,
-            isError = rateError != null,
-            supportingText = { rateError?.let { e -> Text(e, color = Color.Red) } },
-            singleLine = true
-        )
-
-        Spacer(modifier = Modifier.height(16.dp))
-
-        // --- Sueldo ---
-        OutlinedTextField(
-            value = salary,
-            onValueChange = {
-                salary = it.filter(Char::isDigit)
-                salaryError = if (salary.isBlank()) "Campo obligatorio" else null
-            },
-            label = { Text("Sueldo") },
-            modifier = Modifier.fillMaxWidth(),
-            colors = textFieldColors,
-            isError = salaryError != null,
-            supportingText = { salaryError?.let { e -> Text(e, color = Color.Red) } },
-            singleLine = true
-        )
-
-        Spacer(modifier = Modifier.height(16.dp))
-
-        // --- Bono ---
-        OutlinedTextField(
-            value = bonus,
-            onValueChange = {
-                bonus = it.filter(Char::isDigit)
-                bonusError = if (bonus.isBlank()) "Campo obligatorio" else null
-            },
-            label = { Text("Bono") },
-            modifier = Modifier.fillMaxWidth(),
-            colors = textFieldColors,
-            isError = bonusError != null,
-            supportingText = { bonusError?.let { e -> Text(e, color = Color.Red) } },
-            singleLine = true
-        )
-
-        Spacer(modifier = Modifier.height(16.dp))
-
-        // --- ID Especialidad ---
-        OutlinedTextField(
-            value = specialtyId,
-            onValueChange = {
-                specialtyId = it.filter(Char::isDigit)
-                specialtyIdError = if (specialtyId.isBlank()) "Campo obligatorio" else null
-            },
-            label = { Text("ID Especialidad") },
-            modifier = Modifier.fillMaxWidth(),
-            colors = textFieldColors,
-            isError = specialtyIdError != null,
-            supportingText = { specialtyIdError?.let { e -> Text(e, color = Color.Red) } },
-            singleLine = true
-        )
-
-        Spacer(modifier = Modifier.height(32.dp))
-
-        Button(
-            onClick = {
-                firstNameError = validateNamePart(firstName.trim(), "Nombre")
-                lastNameError = validateNamePart(lastName.trim(), "Apellido")
-                birthDateError = validateFechaNacimiento(birthDate.trim())
-                emailError = validateEmail(email.trim())
-                phoneError = validatePhoneDigitsOnly(phone.trim())
-                passwordError = if (password.length < 6) "Mínimo 6 caracteres" else null
-                rateError = if (rate.isBlank()) "Campo obligatorio" else null
-                salaryError = if (salary.isBlank()) "Campo obligatorio" else null
-                bonusError = if (bonus.isBlank()) "Campo obligatorio" else null
-                specialtyIdError = if (specialtyId.isBlank()) "Campo obligatorio" else null
-
-                val hasError = listOf(
-                    firstNameError,
-                    lastNameError,
-                    birthDateError,
-                    emailError,
-                    phoneError,
-                    passwordError,
-                    rateError,
-                    salaryError,
-                    bonusError,
-                    specialtyIdError
-                ).any { it != null }
-
-                if (hasError) {
-                    Toast.makeText(context, "Corrige los errores antes de continuar", Toast.LENGTH_SHORT).show()
-                } else {
-                    Toast.makeText(context, "Formulario válido", Toast.LENGTH_SHORT).show()
-                    onCreateDoctor()
-                }
-            },
-            modifier = Modifier.fillMaxWidth(),
-            colors = ButtonDefaults.buttonColors(
-                containerColor = Color(0xFF27AE60),
-                contentColor = Color.White
-            )
+    ) { paddingValues ->
+        Column(
+            modifier = Modifier
+                .fillMaxSize()
+                .padding(paddingValues)
+                .padding(16.dp)
+                .verticalScroll(rememberScrollState())
         ) {
-            Text(text = "Agregar Doctor", fontSize = 16.sp, fontWeight = FontWeight.Bold)
+            // --- Formulario de Registro ---
+            OutlinedTextField(
+                value = uiState.name,
+                onValueChange = viewModel::onNameChange,
+                label = { Text("Nombre Completo") },
+                modifier = Modifier.fillMaxWidth(),
+                isError = uiState.nameError != null,
+                singleLine = true
+            )
+            uiState.nameError?.let { Text(it, color = MaterialTheme.colorScheme.error) }
+            Spacer(modifier = Modifier.height(8.dp))
+
+            OutlinedTextField(
+                value = uiState.email,
+                onValueChange = viewModel::onEmailChange,
+                label = { Text("Email") },
+                modifier = Modifier.fillMaxWidth(),
+                isError = uiState.emailError != null,
+                singleLine = true,
+                keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Email)
+            )
+            uiState.emailError?.let { Text(it, color = MaterialTheme.colorScheme.error) }
+            Spacer(modifier = Modifier.height(8.dp))
+
+            OutlinedTextField(
+                value = uiState.phone,
+                onValueChange = viewModel::onPhoneChange,
+                label = { Text("Teléfono") },
+                modifier = Modifier.fillMaxWidth(),
+                isError = uiState.phoneError != null,
+                singleLine = true,
+                keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Phone)
+            )
+            uiState.phoneError?.let { Text(it, color = MaterialTheme.colorScheme.error) }
+            Spacer(modifier = Modifier.height(8.dp))
+
+            OutlinedTextField(
+                value = uiState.password,
+                onValueChange = viewModel::onPasswordChange,
+                label = { Text("Contraseña") },
+                modifier = Modifier.fillMaxWidth(),
+                isError = uiState.passwordError != null,
+                singleLine = true,
+                visualTransformation = PasswordVisualTransformation()
+            )
+            uiState.passwordError?.let { Text(it, color = MaterialTheme.colorScheme.error) }
+            Spacer(modifier = Modifier.height(8.dp))
+
+            OutlinedTextField(
+                value = uiState.confirmPassword,
+                onValueChange = viewModel::onConfirmPasswordChange,
+                label = { Text("Confirmar Contraseña") },
+                modifier = Modifier.fillMaxWidth(),
+                isError = uiState.confirmPasswordError != null,
+                singleLine = true,
+                visualTransformation = PasswordVisualTransformation()
+            )
+            uiState.confirmPasswordError?.let { Text(it, color = MaterialTheme.colorScheme.error) }
+            Spacer(modifier = Modifier.height(8.dp))
+
+            OutlinedTextField(
+                value = uiState.salary,
+                onValueChange = viewModel::onSalaryChange,
+                label = { Text("Salario (Ej: 2500000)") },
+                modifier = Modifier.fillMaxWidth(),
+                isError = uiState.salaryError != null,
+                singleLine = true,
+                keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number)
+            )
+            uiState.salaryError?.let { Text(it, color = MaterialTheme.colorScheme.error) }
+            Spacer(modifier = Modifier.height(8.dp))
+
+            // --- ¡¡EL COMBO BOX (DROPDOWN)!! ---
+            ExposedDropdownMenuBox(
+                expanded = expanded,
+                onExpandedChange = { expanded = !expanded }
+            ) {
+                OutlinedTextField(
+                    value = uiState.selectedSpecialty?.name ?: "",
+                    onValueChange = {},
+                    readOnly = true,
+                    label = { Text("Especialidad") },
+                    trailingIcon = {
+                        ExposedDropdownMenuDefaults.TrailingIcon(expanded = expanded)
+                    },
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .menuAnchor(),
+                    isError = uiState.specialtyError != null
+                )
+                ExposedDropdownMenu(
+                    expanded = expanded,
+                    onDismissRequest = { expanded = false }
+                ) {
+                    if (uiState.isLoading) {
+                        DropdownMenuItem(
+                            text = { Text("Cargando...") },
+                            onClick = { }
+                        )
+                    }
+                    uiState.specialties.forEach { specialty ->
+                        DropdownMenuItem(
+                            text = { Text("${specialty.name} (\$${specialty.price.toInt()})") },
+                            onClick = {
+                                viewModel.onSpecialtyChange(specialty)
+                                expanded = false
+                            }
+                        )
+                    }
+                }
+            }
+            uiState.specialtyError?.let { Text(it, color = MaterialTheme.colorScheme.error) }
+            // --- FIN DEL COMBO BOX ---
+
+            Spacer(modifier = Modifier.height(16.dp))
+
+            Button(
+                onClick = viewModel::registerDoctor,
+                enabled = !uiState.isLoading,
+                modifier = Modifier.fillMaxWidth()
+            ) {
+                if (uiState.isLoading) {
+                    CircularProgressIndicator(modifier = Modifier.height(24.dp))
+                } else {
+                    Text("Registrar Doctor")
+                }
+            }
+
+            uiState.errorMsg?.let {
+                Text(it, color = MaterialTheme.colorScheme.error, modifier = Modifier.padding(top = 8.dp))
+            }
+            if (uiState.registrationSuccess) {
+                Text("¡Doctor registrado con éxito!", color = MaterialTheme.colorScheme.primary, modifier = Modifier.padding(top = 8.dp))
+            }
         }
     }
 }

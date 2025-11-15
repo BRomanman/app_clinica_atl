@@ -1,199 +1,200 @@
 package com.example.app_clinica_atl.ui.viewmodel
 
-import android.os.Build
-import androidx.annotation.RequiresApi
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import com.example.app_clinica_atl.data.model.DoctorInfo
+import com.example.app_clinica_atl.data.local.appointment.AppointmentEntity
+import com.example.app_clinica_atl.data.local.storage.UserPreferences
+import com.example.app_clinica_atl.data.local.user.UserEntity
 import com.example.app_clinica_atl.data.repository.AppointmentRepository
-import com.example.app_clinica_atl.data.repository.UserRepository
-// --- 1. IMPORTAR DOCTOR REPOSITORY ---
 import com.example.app_clinica_atl.data.repository.DoctorRepository
+// NO MÁS HILT
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.firstOrNull
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
-import java.time.Instant
-import java.time.LocalDate
-import java.time.LocalTime
-import java.time.ZoneId
 
-/**
- * Estado de la UI para la pantalla de agendamiento.
- * Esta es la definición completa que la UI (BookAppointmentScreen) espera.
- */
+// Estado de la UI para Agendar Cita
 data class BookAppointmentUiState(
-    val departments: List<String> = emptyList(),
-    val doctors: List<DoctorInfo> = emptyList(),
-    val availableTimes: List<LocalTime> = emptyList(),
-
-    val selectedDepartment: String? = null,
-    val selectedDoctor: DoctorInfo? = null,
-    val selectedDate: LocalDate? = null,
-    val selectedTime: LocalTime? = null,
-
-    val departmentExpanded: Boolean = false,
-    val doctorExpanded: Boolean = false,
-    val timeExpanded: Boolean = false,
-    val showDatePicker: Boolean = false, // Para controlar el DatePickerDialog
-
-    val isSubmitting: Boolean = false,
-    val showConfirmationDialog: Boolean = false,
-    val submissionError: String? = null,
-    val notificationData: AppointmentNotification? = null
+    val specialties: List<String> = listOf(
+        "Cardiología",
+        "Dermatología",
+        "Medicina General",
+        "Pediatría",
+        "Psicología"
+    ),
+    val doctors: List<UserEntity> = emptyList(), // <-- CAMBIO: UserEntity real
+    val availableTimes: List<String> = emptyList(),
+    val selectedSpecialty: String = "",
+    val selectedDoctorId: Long? = null,
+    val selectedDoctorName: String = "",
+    val selectedDate: String = "", // Formato "YYYY-MM-DD"
+    val selectedTime: String = "", // Formato "HH:MM"
+    val isLoadingDoctors: Boolean = false,
+    val isLoadingTimes: Boolean = false,
+    val isBooking: Boolean = false,
+    val bookingSuccess: Boolean = false,
+    val errorMsg: String? = null
 )
 
-@RequiresApi(Build.VERSION_CODES.O)
-class BookAppointmentViewModel(
-    private val repository: AppointmentRepository,
-    private val userRepository: UserRepository,
-    // --- 2. INYECTAR EL DOCTOR REPOSITORY ---
-    private val doctorRepository: DoctorRepository
+// NO MÁS @HiltViewModel
+class BookAppointmentViewModel( // <-- Constructor normal
+    private val doctorRepository: DoctorRepository,
+    private val appointmentRepository: AppointmentRepository,
+    private val userPreferences: UserPreferences
 ) : ViewModel() {
 
     private val _uiState = MutableStateFlow(BookAppointmentUiState())
     val uiState: StateFlow<BookAppointmentUiState> = _uiState.asStateFlow()
 
-    init {
-        loadInitialData()
-    }
+    // Horas disponibles (lógica de negocio)
+    private val allDaySlots = listOf(
+        "09:00", "09:30", "10:00", "10:30", "11:00", "11:30", "12:00", "12:30",
+        "14:00", "14:30", "15:00", "15:30", "16:00", "16:30", "17:00"
+    )
 
-    private fun loadInitialData() {
-        // --- 3. ACTUALIZADO: Carga departamentos desde el repo real ---
+    // --- Handlers de UI ---
+
+    fun onSpecialtyChange(specialty: String) {
         _uiState.update {
             it.copy(
-                // ¡YA NO ES MOCKEADO!
-                departments = doctorRepository.getSpecialties(),
-                // (La lógica de horas disponibles sigue siendo mockeada, lo cual está bien)
-                availableTimes = repository.getAvailableSlots(LocalDate.now(), DoctorInfo())
+                selectedSpecialty = specialty,
+                doctors = emptyList(),
+                selectedDoctorId = null,
+                selectedDoctorName = "",
+                availableTimes = emptyList(),
+                selectedDate = "",
+                selectedTime = ""
+            )
+        }
+        loadDoctorsBySpecialty(specialty)
+    }
+
+    fun onDoctorChange(doctor: UserEntity) { // <-- CAMBIO: Recibe UserEntity
+        _uiState.update {
+            it.copy(
+                selectedDoctorId = doctor.id,
+                selectedDoctorName = doctor.name,
+                availableTimes = emptyList(),
+                selectedDate = "",
+                selectedTime = ""
             )
         }
     }
 
-    // --- 4. ACTUALIZADO: Carga doctores desde el repo real ---
-    fun onDepartmentSelected(department: String) {
-        // ¡YA NO ES MOCKEADO!
-        val doctors = doctorRepository.getDoctorsBySpecialty(department)
+    fun onDateChange(date: String) {
         _uiState.update {
             it.copy(
-                selectedDepartment = department,
-                doctors = doctors,
-                selectedDoctor = if (it.selectedDoctor !in doctors) null else it.selectedDoctor,
-                departmentExpanded = false,
-                doctorExpanded = false
+                selectedDate = date,
+                availableTimes = emptyList(),
+                selectedTime = ""
             )
         }
-    }
-
-    fun onDoctorSelected(doctor: DoctorInfo) {
-        _uiState.update { it.copy(selectedDoctor = doctor, doctorExpanded = false) }
-    }
-
-    fun onDateSelected(millis: Long?) { // Recibe milisegundos del DatePicker
-        val date = millis?.let {
-            Instant.ofEpochMilli(it).atZone(ZoneId.systemDefault()).toLocalDate()
-        }
-        _uiState.update { it.copy(selectedDate = date, showDatePicker = false) }
-    }
-
-    fun onTimeSelected(time: LocalTime) {
-        _uiState.update { it.copy(selectedTime = time, timeExpanded = false) }
-    }
-
-    // --- Handlers de UI (Sin cambios) ---
-    fun onDepartmentExpandedChange(expanded: Boolean) {
-        _uiState.update { it.copy(departmentExpanded = expanded) }
-    }
-    fun onDoctorExpandedChange(expanded: Boolean) {
-        if (_uiState.value.doctors.isNotEmpty()) {
-            _uiState.update { it.copy(doctorExpanded = expanded) }
+        val doctorId = _uiState.value.selectedDoctorId
+        if (doctorId != null) {
+            loadAvailableTimes(doctorId, date)
         }
     }
-    fun onTimeExpandedChange(expanded: Boolean) {
-        if (_uiState.value.selectedDate != null) {
-            _uiState.update { it.copy(timeExpanded = expanded) }
-        }
-    }
-    fun showDatePicker(show: Boolean) {
-        _uiState.update { it.copy(showDatePicker = show) }
-    }
-    fun dismissConfirmationDialog() {
-        _uiState.update { it.copy(showConfirmationDialog = false) }
+
+    fun onTimeChange(time: String) {
+        _uiState.update { it.copy(selectedTime = time) }
     }
 
-    // --- 5. ACTUALIZADO: Lógica de Guardar la Cita ---
-    fun submitAppointment() {
-        val state = _uiState.value
-        val doctor = state.selectedDoctor
-        val date = state.selectedDate
-        val time = state.selectedTime
-        val department = state.selectedDepartment
+    fun clearBookingResult() {
+        _uiState.update { it.copy(bookingSuccess = false, errorMsg = null) }
+    }
 
-        if (doctor == null || date == null || time == null || department == null) {
-            _uiState.update { it.copy(submissionError = "Por favor, completa todos los campos.") }
-            return
-        }
+    // --- Lógica de Carga de Datos ---
 
-        _uiState.update { it.copy(isSubmitting = true, submissionError = null) }
-
+    private fun loadDoctorsBySpecialty(specialty: String) {
         viewModelScope.launch {
-            try {
-                // 3. OBTENER EL ID Y NOMBRE DEL PACIENTE
-                val currentUser = userRepository.getLoggedInUser().firstOrNull()
-
-                if (currentUser == null || currentUser.id_rol != 1L) {
-                    _uiState.update { it.copy(isSubmitting = false, submissionError = "Error: No se encontró un paciente válido. Vuelve a iniciar sesión.") }
-                    return@launch
-                }
-
-                // ¡Obtenemos el nombre completo del paciente!
-                val patientName = "${currentUser.nombre} ${currentUser.apellido}"
-
-                // 4. GUARDAR LA CITA REAL en la base de datos
-                repository.saveAppointment(
-                    patientId = currentUser.id,
-                    patientName = patientName,  // <-- NUEVO
-                    doctorId = doctor.id,       // <-- NUEVO
-                    doctorName = doctor.name,
-                    department = department,
-                    date = date,
-                    time = time
-                )
-
-                // 5. Éxito
-                _uiState.update {
+            _uiState.update { it.copy(isLoadingDoctors = true, errorMsg = null) }
+            val result = doctorRepository.getDoctorsBySpecialty(specialty)
+            _uiState.update {
+                if (result.isSuccess) {
                     it.copy(
-                        isSubmitting = false,
-                        showConfirmationDialog = true,
-                        notificationData = AppointmentNotification(
-                            doctorName = doctor.name,
-                            date = date,
-                            time = time
-                        ),
-                        // Limpiamos el formulario
-                        selectedDepartment = null,
-                        selectedDoctor = null,
-                        selectedDate = null,
-                        selectedTime = null,
-                        doctors = emptyList()
+                        isLoadingDoctors = false,
+                        doctors = result.getOrNull() ?: emptyList()
+                    )
+                } else {
+                    it.copy(
+                        isLoadingDoctors = false,
+                        errorMsg = result.exceptionOrNull()?.message ?: "Error al cargar doctores"
                     )
                 }
-
-            } catch (e: Exception) {
-                _uiState.update { it.copy(isSubmitting = false, submissionError = "Error al guardar la cita: ${e.message}") }
             }
         }
     }
 
-    fun consumeNotification() {
-        _uiState.update { it.copy(notificationData = null) }
+    private fun loadAvailableTimes(doctorId: Long, date: String) {
+        viewModelScope.launch {
+            _uiState.update { it.copy(isLoadingTimes = true, errorMsg = null) }
+            val result = appointmentRepository.getBookedTimes(doctorId, date)
+            _uiState.update {
+                if (result.isSuccess) {
+                    val bookedTimes = result.getOrNull() ?: emptyList()
+                    val availableSlots = allDaySlots.filter { it !in bookedTimes }
+                    it.copy(
+                        isLoadingTimes = false,
+                        availableTimes = availableSlots
+                    )
+                } else {
+                    it.copy(
+                        isLoadingTimes = false,
+                        errorMsg = result.exceptionOrNull()?.message ?: "Error al cargar horas"
+                    )
+                }
+            }
+        }
+    }
+
+    // --- Acción Principal ---
+
+    fun submitBooking() {
+        val s = _uiState.value
+
+        if (s.isBooking || s.selectedDoctorId == null || s.selectedDate.isBlank() || s.selectedTime.isBlank()) {
+            _uiState.update { it.copy(errorMsg = "Debe seleccionar especialidad, doctor, fecha y hora.") }
+            return
+        }
+
+        viewModelScope.launch {
+            _uiState.update { it.copy(isBooking = true, errorMsg = null, bookingSuccess = false) }
+
+            // ¡OBTENEMOS EL PACIENTE REAL!
+            val patientId = userPreferences.userIdFlow.firstOrNull()
+
+            if (patientId == null) {
+                _uiState.update {
+                    it.copy(
+                        isBooking = false,
+                        errorMsg = "No se pudo identificar al usuario. Inicie sesión de nuevo."
+                    )
+                }
+                return@launch
+            }
+
+            val newAppointment = AppointmentEntity(
+                patientId = patientId, // <-- ID Real del paciente
+                doctorId = s.selectedDoctorId,
+                date = s.selectedDate,
+                time = s.selectedTime,
+                status = "agendada"
+            )
+
+            val result = appointmentRepository.bookAppointment(newAppointment)
+
+            _uiState.update {
+                if (result.isSuccess) {
+                    it.copy(isBooking = false, bookingSuccess = true)
+                } else {
+                    it.copy(
+                        isBooking = false,
+                        errorMsg = result.exceptionOrNull()?.message ?: "Error al agendar"
+                    )
+                }
+            }
+        }
     }
 }
-
-data class AppointmentNotification(
-    val doctorName: String,
-    val date: LocalDate,
-    val time: LocalTime
-)

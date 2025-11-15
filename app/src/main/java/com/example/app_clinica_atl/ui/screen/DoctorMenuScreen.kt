@@ -1,7 +1,5 @@
 package com.example.app_clinica_atl.ui.screen
 
-import androidx.compose.foundation.Image
-import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Spacer
@@ -10,152 +8,56 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.Button
-import androidx.compose.material3.ButtonDefaults
+import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
+import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.res.painterResource
-import androidx.compose.ui.res.stringResource
-import androidx.compose.ui.text.font.FontWeight
-import androidx.compose.ui.text.style.TextAlign
-import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.unit.sp
-import androidx.lifecycle.compose.collectAsStateWithLifecycle
-import com.example.app_clinica_atl.R
-// --- 1. IMPORTAR EL AUTHVIEWMODEL ---
-import com.example.app_clinica_atl.ui.viewmodel.AuthViewModel
 
-// --- 2. NUEVO COMPOSABLE "INTELIGENTE" (VM) ---
+/**
+ * Pantalla de Menú para el Doctor - ¡ACTUALIZADA!
+ * Ahora acepta el callback 'onSearchPatient'.
+ */
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun DoctorMenuScreenVm(
-    vm: AuthViewModel,
-    onGoAppointments: () -> Unit,
-    onGoProfile: () -> Unit,
-    onLogout: () -> Unit,
-    modifier: Modifier = Modifier
+fun DoctorMenuScreen(
+    onProfileClick: () -> Unit,
+    onScheduleClick: () -> Unit,
+    onSearchPatient: () -> Unit // <-- ¡¡AQUÍ ESTÁ LA SOLUCIÓN!!
 ) {
-    // Obtenemos los datos del usuario (que tiene el nombre)
-    val userData by vm.currentUserData.collectAsStateWithLifecycle()
-
-    // Creamos el nombre a mostrar. Si por alguna razón es nulo, usamos "Doctor"
-    val displayName = userData?.nombre ?: "Doctor"
-
-    // Llamamos a la pantalla "tonta" pasándole el nombre
-    DoctorMenuScreen(
-        doctorName = displayName,
-        onGoAppointments = onGoAppointments,
-        onGoProfile = onGoProfile,
-        onLogout = onLogout,
-        modifier = modifier
-    )
-}
-
-// --- 3. COMPOSABLE "TONTO" (UI) ACTUALIZADO ---
-@Composable
-private fun DoctorMenuScreen( // Se vuelve 'private'
-    doctorName: String, // <-- Acepta el nombre
-    onGoAppointments: () -> Unit,
-    // onGoHistories: () -> Unit, // <-- Eliminado
-    onGoProfile: () -> Unit,
-    onLogout: () -> Unit,
-    modifier: Modifier = Modifier
-) {
-    Column(
-        modifier = modifier
-            .fillMaxSize()
-            .background(MaterialTheme.colorScheme.background)
-            .padding(horizontal = 32.dp, vertical = 40.dp),
-        horizontalAlignment = Alignment.CenterHorizontally,
-        verticalArrangement = Arrangement.SpaceBetween
-    ) {
-        Column(horizontalAlignment = Alignment.CenterHorizontally) {
-            Image(
-                painter = painterResource(id = R.drawable.logo),
-                contentDescription = "Logo Clinica",
-                modifier = Modifier.height(90.dp)
-            )
-            Spacer(modifier = Modifier.height(24.dp))
-
-            // --- 4. TEXTO DEL SALUDO ACTUALIZADO ---
-            Text(
-                text = "Hola, Dr. $doctorName",
-                style = MaterialTheme.typography.titleMedium.copy(
-                    fontWeight = FontWeight.Bold,
-                    fontSize = 20.sp
-                ),
-                color = MaterialTheme.colorScheme.onBackground
-            )
-            Text(
-                text = "Menu Perfil de Doctor",
-                style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold),
-                color = MaterialTheme.colorScheme.onBackground
-            )
+    Scaffold(
+        topBar = {
+            TopAppBar(title = { Text("Portal del Doctor") })
         }
-
+    ) { paddingValues ->
         Column(
-            modifier = Modifier.fillMaxWidth(),
-            verticalArrangement = Arrangement.spacedBy(24.dp)
+            modifier = Modifier
+                .fillMaxSize()
+                .padding(paddingValues)
+                .padding(16.dp),
+            horizontalAlignment = Alignment.CenterHorizontally,
+            verticalArrangement = Arrangement.Center
         ) {
-            DoctorMenuButton(text = "Citas", onClick = onGoAppointments)
-            // --- 5. BOTÓN "HISTORIALES" ELIMINADO ---
-            // DoctorMenuButton(text = "Historiales", onClick = onGoHistories)
-            DoctorMenuButton(text = "Mi Perfil", onClick = onGoProfile)
-        }
+            Text("Menú del Doctor", style = MaterialTheme.typography.headlineMedium)
+            Spacer(modifier = Modifier.height(32.dp))
 
-        Button(
-            onClick = onLogout,
-            modifier = Modifier.fillMaxWidth(),
-            colors = ButtonDefaults.buttonColors(
-                containerColor = MaterialTheme.colorScheme.error,
-                contentColor = MaterialTheme.colorScheme.onError
-            )
-        ) {
-            Text(
-                text = stringResource(id = R.string.common_logout),
-                fontSize = 16.sp,
-                textAlign = TextAlign.Center,
-                modifier = Modifier.fillMaxWidth()
-            )
+            Button(onClick = onProfileClick, modifier = Modifier.fillMaxWidth()) {
+                Text("Ver mi Perfil")
+            }
+            Spacer(modifier = Modifier.height(16.dp))
+            Button(onClick = onScheduleClick, modifier = Modifier.fillMaxWidth()) {
+                Text("Ver mi Agenda")
+            }
+            Spacer(modifier = Modifier.height(16.dp))
+
+            // Botón que usa el nuevo callback
+            Button(onClick = onSearchPatient, modifier = Modifier.fillMaxWidth()) {
+                Text("Buscar Pacientes")
+            }
         }
     }
-}
-
-@Composable
-private fun DoctorMenuButton(
-    text: String,
-    onClick: () -> Unit,
-    modifier: Modifier = Modifier
-) {
-    Button(
-        onClick = onClick,
-        modifier = modifier
-            .fillMaxWidth(),
-        colors = ButtonDefaults.buttonColors(
-            containerColor = MaterialTheme.colorScheme.primary,
-            contentColor = MaterialTheme.colorScheme.onPrimary
-        )
-    ) {
-        Text(
-            text = text,
-            fontSize = 16.sp,
-            textAlign = TextAlign.Center,
-            modifier = Modifier.fillMaxWidth()
-        )
-    }
-}
-
-
-@Preview(showBackground = true) // <-- Añadí el @Preview
-@Composable
-private fun DoctorMenuScreenPreview() {
-    DoctorMenuScreen(
-        doctorName = "Víctor Rosendo", // <-- Nombre de prueba
-        onGoAppointments = {},
-        onGoProfile = {},
-        onLogout = {}
-    )
 }

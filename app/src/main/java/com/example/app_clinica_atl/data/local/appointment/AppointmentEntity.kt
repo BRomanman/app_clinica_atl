@@ -1,52 +1,54 @@
 package com.example.app_clinica_atl.data.local.appointment
 
-import androidx.room.ColumnInfo
 import androidx.room.Entity
 import androidx.room.ForeignKey
 import androidx.room.Index
 import androidx.room.PrimaryKey
 import com.example.app_clinica_atl.data.local.user.UserEntity
 
-// 1. Define la entidad (tabla) para las citas.
+/**
+ * Entidad para la tabla de Citas.
+ * Ahora incluye 'doctorId' y 'status'.
+ */
 @Entity(
     tableName = "appointments",
-    // 2. Creamos una "Foreign Key" (llave foránea) para conectar la cita con el usuario (paciente).
-    //    Esto asegura que si un usuario se elimina, sus citas también se eliminen (onDelete = CASCADE).
+    // Índices para mejorar el rendimiento de las consultas
+    indices = [Index("patientId"), Index("doctorId")],
+    // Foreign Keys (relaciones) para asegurar la integridad de los datos
     foreignKeys = [
         ForeignKey(
             entity = UserEntity::class,
             parentColumns = ["id"],
-            childColumns = ["patient_id"],
-            onDelete = ForeignKey.CASCADE
+            childColumns = ["patientId"],
+            onDelete = ForeignKey.CASCADE // Si se borra un usuario, se borran sus citas
+        ),
+        ForeignKey(
+            entity = UserEntity::class,
+            parentColumns = ["id"],
+            childColumns = ["doctorId"],
+            onDelete = ForeignKey.CASCADE // Si se borra un doctor, se borran sus citas
         )
-    ],
-    // 3. Creamos un "índice" en 'patient_id' para que buscar citas por usuario sea ultra-rápido.
-    indices = [Index("patient_id"), Index("doctor_id")] // <-- AÑADIDO ÍNDICE PARA DOCTOR ID
+    ]
 )
 data class AppointmentEntity(
     @PrimaryKey(autoGenerate = true)
     val id: Long = 0,
 
-    @ColumnInfo(name = "patient_id")
-    val patientId: Long, // El ID del UserEntity (paciente)
+    val patientId: Long, // <-- ID del paciente (UserEntity)
 
-    // --- ¡NUEVOS CAMPOS! ---
-    @ColumnInfo(name = "patient_name")
-    val patientName: String, // El nombre del paciente (para mostrar al doctor)
+    // --- ESTAS SON LAS COLUMNAS QUE FALTABAN ---
 
-    @ColumnInfo(name = "doctor_id")
-    val doctorId: String, // El ID del DoctorInfo (ej: "000")
-    // --- FIN NUEVOS CAMPOS ---
+    /**
+     * ID del doctor (UserEntity) con el que se agenda.
+     * ESTA es la columna que faltaba y causaba el error de KSP.
+     */
+    val doctorId: Long,
 
-    @ColumnInfo(name = "doctor_name")
-    val doctorName: String,
+    val date: String,    // "YYYY-MM-DD"
+    val time: String,    // "HH:MM"
 
-    @ColumnInfo(name = "department")
-    val department: String,
-
-    @ColumnInfo(name = "date")
-    val date: String, // Guardamos la fecha como texto (ej: "2025-11-20")
-
-    @ColumnInfo(name = "time")
-    val time: String // Guardamos la hora como texto (ej: "10:30")
+    /**
+     * Estado de la cita (ej: "agendada", "cancelada", "completada")
+     */
+    val status: String
 )

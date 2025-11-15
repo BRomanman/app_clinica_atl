@@ -1,50 +1,39 @@
 package com.example.app_clinica_atl.data.local.user
 
-import androidx.room.ColumnInfo
 import androidx.room.Entity
-import androidx.room.Index
 import androidx.room.PrimaryKey
 
-// 1. Define la entidad (tabla) para los usuarios.
-@Entity(
-    tableName = "users",
-    // 2. Creamos un "índice" en la columna 'email' y lo marcamos como 'UNIQUE'.
-    //    Esto previene que dos usuarios se registren con el mismo email.
-    indices = [Index(value = ["email"], unique = true)]
-)
+/**
+ * Entidad ÚNICA para todos los usuarios de la app (pacientes, doctores, admins).
+ * Reemplaza a los modelos falsos 'DoctorInfo' y 'Patient'.
+ */
+@Entity(tableName = "user_table")
 data class UserEntity(
     @PrimaryKey(autoGenerate = true)
     val id: Long = 0,
-
-    @ColumnInfo(name = "nombre")
-    val nombre: String,
-
-    @ColumnInfo(name = "apellido")
-    val apellido: String,
-
-    @ColumnInfo(name = "fecha_nacimiento")
-    val fecha_nacimiento: String,
-
-    @ColumnInfo(name = "email")
+    val name: String,
     val email: String,
-
-    @ColumnInfo(name = "phone")
-    val phone: String,
-
-    @ColumnInfo(name = "password")
+    val phone: String, // Añadimos teléfono, es útil para todos los roles
     val password: String,
+    val profileImageUrl: String? = null,
 
-    // 1 = Paciente, 2 = Doctor, 3 = Admin
-    @ColumnInfo(name = "id_rol")
-    val id_rol: Long,
+    // --- CAMPOS AÑADIDOS ---
+    /**
+     * Define el tipo de usuario.
+     * Puede ser "paciente", "doctor" o "admin".
+     */
+    val role: String,
 
-    @ColumnInfo(name = "photoUri")
-    val photoUri: String? = null,
+    /**
+     * Si el rol es "doctor", aquí se almacena su especialidad como un simple String.
+     * (Ej: "Cardiología", "Dermatología").
+     * Es nullable porque los pacientes y admins no la tienen.
+     */
+    val specialty: String? = null,
 
-    // --- ¡NUEVO CAMPO PARA EL LOGIN! ---
-    // Room mapea Boolean a INTEGER (0 = false, 1 = true)
-    // El valor por defecto 0 (false) es crucial.
-    @ColumnInfo(name = "isLoggedIn", defaultValue = "0")
-    val isLoggedIn: Boolean = false
-    // --- FIN ---
+    /**
+     * Salario del doctor (nullable, ya que pacientes y admins no lo tienen).
+     * Lo añadimos ahora para que la base de datos esté completa.
+     */
+    val salary: Double? = null
 )
