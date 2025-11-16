@@ -111,8 +111,7 @@ class MainActivity : ComponentActivity() {
                                     AppTopBar(
                                         onMenuClick = { scope.launch { drawerState.open() } },
 
-                                        // --- ¡¡LÓGICA DE LOGOUT ELIMINADA!! ---
-                                        // onLogoutClick = { ... }
+                                        // --- ¡¡PARÁMETRO onLogoutClick ELIMINADO!! ---
 
                                         isDarkTheme = isDark,
                                         onToggleTheme = {

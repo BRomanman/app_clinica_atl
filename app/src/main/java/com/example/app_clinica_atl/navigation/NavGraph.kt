@@ -13,36 +13,8 @@ import androidx.navigation.NavType
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.navArgument
-
-// Imports de Pantallas
-import com.example.app_clinica_atl.ui.screen.AdminAddDoctorScreen
-import com.example.app_clinica_atl.ui.screen.AdminManageSpecialtiesScreen
-import com.example.app_clinica_atl.ui.screen.AdminMenuScreen
-import com.example.app_clinica_atl.ui.screen.AdminViewDoctorsScreen
-import com.example.app_clinica_atl.ui.screen.BookAppointmentScreen
-import com.example.app_clinica_atl.ui.screen.DoctorMenuScreen
-import com.example.app_clinica_atl.ui.screen.DoctorProfileScreen
-import com.example.app_clinica_atl.ui.screen.DoctorScheduleScreen
-import com.example.app_clinica_atl.ui.screen.DoctorSearchPatientScreen
-import com.example.app_clinica_atl.ui.screen.HomeScreen
-import com.example.app_clinica_atl.ui.screen.LoginScreenVm
-import com.example.app_clinica_atl.ui.screen.PatientProfileScreen
-import com.example.app_clinica_atl.ui.screen.RegisterScreenVm
-import com.example.app_clinica_atl.ui.screen.SegurosScreen
-
-// Imports de ViewModels
-import com.example.app_clinica_atl.ui.viewmodel.AdminAddDoctorViewModel
-import com.example.app_clinica_atl.ui.viewmodel.AdminManageSpecialtiesViewModel
-import com.example.app_clinica_atl.ui.viewmodel.AdminViewDoctorsViewModel
-import com.example.app_clinica_atl.ui.viewmodel.AuthViewModel
-import com.example.app_clinica_atl.ui.viewmodel.BookAppointmentViewModel
-import com.example.app_clinica_atl.ui.viewmodel.DoctorProfileViewModel
-import com.example.app_clinica_atl.ui.viewmodel.DoctorSearchPatientViewModel
-import com.example.app_clinica_atl.ui.viewmodel.DoctorSearchViewModel
-import com.example.app_clinica_atl.ui.viewmodel.HomeViewModel
-import com.example.app_clinica_atl.ui.viewmodel.InsuranceViewModel
-import com.example.app_clinica_atl.ui.viewmodel.PatientViewModel
-
+import com.example.app_clinica_atl.ui.screen.*
+import com.example.app_clinica_atl.ui.viewmodel.*
 import kotlinx.coroutines.launch
 
 @RequiresApi(Build.VERSION_CODES.O)
@@ -62,7 +34,6 @@ fun AppNavGraph(
     doctorSearchPatientViewModel: DoctorSearchPatientViewModel,
     adminViewDoctorsViewModel: AdminViewDoctorsViewModel
 ) {
-    // El scope se usará para todas las acciones de logout
     val scope = rememberCoroutineScope()
 
     NavHost(
@@ -110,25 +81,28 @@ fun AppNavGraph(
             PatientProfileScreen(
                 viewModel = patientViewModel,
                 onGoToSeguros = { navController.navigate(Route.Seguros.path) },
-                // --- ¡¡LÓGICA DE LOGOUT CORREGIDA!! ---
-                onLogout = {
-                    scope.launch {
-                        authViewModel.logout() // 1. Borra la sesión
-                        // 2. Navega DESPUÉS de borrar
-                        navController.navigate(Route.Login.path) { popUpTo(0) { inclusive = true } }
-                    }
-                }
+                onLogout = { navController.navigate(Route.LogoutConfirmation.path) }
             )
         }
         composable(Route.Seguros.path) {
             SegurosScreen(viewModel = insuranceViewModel)
         }
+
+        // --- ¡¡RUTA DE AGENDAR CITA ACTUALIZADA!! ---
         composable(Route.BookAppointment.path) {
             BookAppointmentScreen(
                 viewModel = bookAppointmentViewModel,
-                onViewProfile = { doctorId -> navController.navigate(Route.DoctorProfile.createRoute(doctorId)) }
+                onViewProfile = { doctorId -> navController.navigate(Route.DoctorProfile.createRoute(doctorId)) },
+                // ¡AÑADIDO! Redirige al perfil al terminar
+                onBookingSuccess = {
+                    navController.navigate(Route.PatientProfile.path) {
+                        // Vuelve a la pantalla Home (la base del paciente)
+                        popUpTo(Route.Home.path)
+                    }
+                }
             )
         }
+        // --- FIN DEL CAMBIO ---
 
         // --- Rutas de Doctor ---
         composable(Route.DoctorMenu.path) {
@@ -136,14 +110,7 @@ fun AppNavGraph(
                 onProfileClick = { /* TODO */ },
                 onScheduleClick = { navController.navigate(Route.DoctorSchedule.path) },
                 onSearchPatient = { navController.navigate(Route.DoctorSearchPatient.path) },
-                // --- ¡¡LÓGICA DE LOGOUT CORREGIDA!! ---
-                onLogout = {
-                    scope.launch {
-                        authViewModel.logout() // 1. Borra la sesión
-                        // 2. Navega DESPUÉS de borrar
-                        navController.navigate(Route.Login.path) { popUpTo(0) { inclusive = true } }
-                    }
-                }
+                onLogout = { navController.navigate(Route.LogoutConfirmation.path) }
             )
         }
         composable(Route.DoctorSchedule.path) {
@@ -163,16 +130,7 @@ fun AppNavGraph(
                 onAddSpecialty = { navController.navigate(Route.AdminAddSpecialty.path) },
                 onAddDoctor = { navController.navigate(Route.AdminAddDoctor.path) },
                 onViewDoctors = { navController.navigate(Route.AdminViewDoctors.path) },
-                // --- ¡¡LÓGICA DE LOGOUT CORREGIDA!! ---
-                onLogout = {
-                    scope.launch {
-                        authViewModel.logout() // 1. Borra la sesión
-                        // 2. Navega DESPUÉS de borrar
-                        navController.navigate(Route.Login.path) {
-                            popUpTo(0) { inclusive = true }
-                        }
-                    }
-                }
+                onLogout = { navController.navigate(Route.LogoutConfirmation.path) }
             )
         }
         composable(Route.AdminAddSpecialty.path) {
@@ -205,6 +163,21 @@ fun AppNavGraph(
                 onBackClick = { navController.popBackStack() },
                 viewModel = doctorProfileViewModel,
                 modifier = Modifier.padding(PaddingValues(0.dp))
+            )
+        }
+
+        // --- Ruta de Confirmación de Logout ---
+        composable(Route.LogoutConfirmation.path) {
+            LogoutConfirmationScreen(
+                onGoToLogin = {
+                    scope.launch {
+                        authViewModel.logout()
+                        navController.navigate(Route.Login.path) {
+                            popUpTo(0) { inclusive = true }
+                        }
+                    }
+                },
+                onExitApp = { /* Lógica de 'finish' en la pantalla */ }
             )
         }
     }
