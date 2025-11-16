@@ -83,17 +83,23 @@ class MainActivity : ComponentActivity() {
                     val isPatient = userRole == "paciente"
                     val drawerState = rememberDrawerState(initialValue = DrawerValue.Closed, confirmStateChange = { isPatient })
 
+                    // Esta variable ahora controla AMBAS cosas: la barra y el gesto
                     val topBarVisible = when (currentRoute) {
                         Route.Login.path, Route.Register.path -> false
                         Route.AdminMenu.path, Route.AdminAddSpecialty.path, Route.AdminAddDoctor.path, Route.AdminViewDoctors.path -> false
                         Route.DoctorMenu.path, Route.DoctorSchedule.path, Route.DoctorSearchPatient.path, Route.DoctorProfile.path -> false
+                        Route.LogoutConfirmation.path -> false
                         null -> false
-                        else -> true
+                        else -> true // Solo es visible (y deslizable) en las pantallas de paciente
                     }
 
                     ModalNavigationDrawer(
                         drawerState = drawerState,
-                        gesturesEnabled = isPatient,
+                        // --- ¡¡AQUÍ ESTÁ LA CORRECCIÓN!! ---
+                        // El gesto de deslizar solo se activa si la TopBar es visible
+                        // Como en Login la TopBar es 'false', el gesto se desactivará.
+                        gesturesEnabled = topBarVisible,
+                        // --- FIN DE LA CORRECCIÓN ---
                         drawerContent = {
                             AppDrawerVm(
                                 vm = authViewModel, currentRoute = currentRoute,
@@ -110,9 +116,6 @@ class MainActivity : ComponentActivity() {
                                 if (topBarVisible) {
                                     AppTopBar(
                                         onMenuClick = { scope.launch { drawerState.open() } },
-
-                                        // --- ¡¡PARÁMETRO onLogoutClick ELIMINADO!! ---
-
                                         isDarkTheme = isDark,
                                         onToggleTheme = {
                                             val newTheme = if (isDark) "LIGHT" else "DARK"
