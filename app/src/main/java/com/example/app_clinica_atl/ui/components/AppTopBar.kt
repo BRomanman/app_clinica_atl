@@ -1,9 +1,8 @@
 package com.example.app_clinica_atl.ui.components
 
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.DarkMode // <-- ¡IMPORT AÑADIDO!
-import androidx.compose.material.icons.filled.ExitToApp
-import androidx.compose.material.icons.filled.LightMode // <-- ¡IMPORT AÑADIDO!
+import androidx.compose.material.icons.filled.DarkMode
+import androidx.compose.material.icons.filled.LightMode
 import androidx.compose.material.icons.filled.Menu
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
@@ -18,9 +17,9 @@ import com.example.app_clinica_atl.R
 @Composable
 fun AppTopBar(
     onMenuClick: () -> Unit,
-    onLogoutClick: () -> Unit,
-    onToggleTheme: () -> Unit, // <-- ¡PARÁMETRO AÑADIDO!
-    isDarkTheme: Boolean      // <-- ¡PARÁMETRO AÑADIDO!
+    // onLogoutClick: () -> Unit, // <-- ¡¡PARÁMETRO ELIMINADO!!
+    onToggleTheme: () -> Unit,
+    isDarkTheme: Boolean
 ) {
     TopAppBar(
         title = {
@@ -35,21 +34,15 @@ fun AppTopBar(
             }
         },
         actions = {
-            // --- ¡¡BOTÓN DE TEMA AÑADIDO!! ---
+            // --- Botón de Tema (Sol/Luna) ---
             IconButton(onClick = onToggleTheme) {
                 Icon(
                     imageVector = if (isDarkTheme) Icons.Default.LightMode else Icons.Default.DarkMode,
                     contentDescription = if (isDarkTheme) "Activar modo claro" else "Activar modo oscuro"
                 )
             }
-            // --- FIN ---
 
-            IconButton(onClick = onLogoutClick) {
-                Icon(
-                    imageVector = Icons.Default.ExitToApp,
-                    contentDescription = "Cerrar Sesión"
-                )
-            }
+            // --- ¡¡BOTÓN DE LOGOUT ELIMINADO!! ---
         }
     )
 }

@@ -86,8 +86,9 @@ class MainActivity : ComponentActivity() {
                     val topBarVisible = when (currentRoute) {
                         Route.Login.path, Route.Register.path -> false
                         Route.AdminMenu.path, Route.AdminAddSpecialty.path, Route.AdminAddDoctor.path, Route.AdminViewDoctors.path -> false
-                        Route.DoctorMenu.path, Route.DoctorSchedule.path, Route.DoctorSearchPatient.path -> false
-                        else -> isPatient
+                        Route.DoctorMenu.path, Route.DoctorSchedule.path, Route.DoctorSearchPatient.path, Route.DoctorProfile.path -> false
+                        null -> false
+                        else -> true
                     }
 
                     ModalNavigationDrawer(
@@ -109,15 +110,10 @@ class MainActivity : ComponentActivity() {
                                 if (topBarVisible) {
                                     AppTopBar(
                                         onMenuClick = { scope.launch { drawerState.open() } },
-                                        // --- ¡¡LÓGICA DE LOGOUT CORREGIDA!! ---
-                                        onLogoutClick = {
-                                            scope.launch { authViewModel.logout() }
-                                            // Navega a Login y limpia todo el historial
-                                            navController.navigate(Route.Login.path) {
-                                                popUpTo(0) { inclusive = true }
-                                            }
-                                        },
-                                        // --- FIN DE LA CORRECCIÓN ---
+
+                                        // --- ¡¡LÓGICA DE LOGOUT ELIMINADA!! ---
+                                        // onLogoutClick = { ... }
+
                                         isDarkTheme = isDark,
                                         onToggleTheme = {
                                             val newTheme = if (isDark) "LIGHT" else "DARK"

@@ -13,8 +13,36 @@ import androidx.navigation.NavType
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.navArgument
-import com.example.app_clinica_atl.ui.screen.*
-import com.example.app_clinica_atl.ui.viewmodel.*
+
+// Imports de Pantallas
+import com.example.app_clinica_atl.ui.screen.AdminAddDoctorScreen
+import com.example.app_clinica_atl.ui.screen.AdminManageSpecialtiesScreen
+import com.example.app_clinica_atl.ui.screen.AdminMenuScreen
+import com.example.app_clinica_atl.ui.screen.AdminViewDoctorsScreen
+import com.example.app_clinica_atl.ui.screen.BookAppointmentScreen
+import com.example.app_clinica_atl.ui.screen.DoctorMenuScreen
+import com.example.app_clinica_atl.ui.screen.DoctorProfileScreen
+import com.example.app_clinica_atl.ui.screen.DoctorScheduleScreen
+import com.example.app_clinica_atl.ui.screen.DoctorSearchPatientScreen
+import com.example.app_clinica_atl.ui.screen.HomeScreen
+import com.example.app_clinica_atl.ui.screen.LoginScreenVm
+import com.example.app_clinica_atl.ui.screen.PatientProfileScreen
+import com.example.app_clinica_atl.ui.screen.RegisterScreenVm
+import com.example.app_clinica_atl.ui.screen.SegurosScreen
+
+// Imports de ViewModels
+import com.example.app_clinica_atl.ui.viewmodel.AdminAddDoctorViewModel
+import com.example.app_clinica_atl.ui.viewmodel.AdminManageSpecialtiesViewModel
+import com.example.app_clinica_atl.ui.viewmodel.AdminViewDoctorsViewModel
+import com.example.app_clinica_atl.ui.viewmodel.AuthViewModel
+import com.example.app_clinica_atl.ui.viewmodel.BookAppointmentViewModel
+import com.example.app_clinica_atl.ui.viewmodel.DoctorProfileViewModel
+import com.example.app_clinica_atl.ui.viewmodel.DoctorSearchPatientViewModel
+import com.example.app_clinica_atl.ui.viewmodel.DoctorSearchViewModel
+import com.example.app_clinica_atl.ui.viewmodel.HomeViewModel
+import com.example.app_clinica_atl.ui.viewmodel.InsuranceViewModel
+import com.example.app_clinica_atl.ui.viewmodel.PatientViewModel
+
 import kotlinx.coroutines.launch
 
 @RequiresApi(Build.VERSION_CODES.O)
@@ -84,8 +112,11 @@ fun AppNavGraph(
                 onGoToSeguros = { navController.navigate(Route.Seguros.path) },
                 // --- ¡¡LÓGICA DE LOGOUT CORREGIDA!! ---
                 onLogout = {
-                    scope.launch { authViewModel.logout() }
-                    navController.navigate(Route.Login.path) { popUpTo(0) { inclusive = true } }
+                    scope.launch {
+                        authViewModel.logout() // 1. Borra la sesión
+                        // 2. Navega DESPUÉS de borrar
+                        navController.navigate(Route.Login.path) { popUpTo(0) { inclusive = true } }
+                    }
                 }
             )
         }
@@ -107,8 +138,11 @@ fun AppNavGraph(
                 onSearchPatient = { navController.navigate(Route.DoctorSearchPatient.path) },
                 // --- ¡¡LÓGICA DE LOGOUT CORREGIDA!! ---
                 onLogout = {
-                    scope.launch { authViewModel.logout() }
-                    navController.navigate(Route.Login.path) { popUpTo(0) { inclusive = true } }
+                    scope.launch {
+                        authViewModel.logout() // 1. Borra la sesión
+                        // 2. Navega DESPUÉS de borrar
+                        navController.navigate(Route.Login.path) { popUpTo(0) { inclusive = true } }
+                    }
                 }
             )
         }
@@ -131,10 +165,12 @@ fun AppNavGraph(
                 onViewDoctors = { navController.navigate(Route.AdminViewDoctors.path) },
                 // --- ¡¡LÓGICA DE LOGOUT CORREGIDA!! ---
                 onLogout = {
-                    scope.launch { authViewModel.logout() }
-                    navController.navigate(Route.Login.path) {
-                        // Limpia el historial hasta el inicio (0)
-                        popUpTo(0) { inclusive = true }
+                    scope.launch {
+                        authViewModel.logout() // 1. Borra la sesión
+                        // 2. Navega DESPUÉS de borrar
+                        navController.navigate(Route.Login.path) {
+                            popUpTo(0) { inclusive = true }
+                        }
                     }
                 }
             )
