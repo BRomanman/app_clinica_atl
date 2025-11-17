@@ -25,14 +25,15 @@ class HomeViewModel(
     // 'uiState' ahora es un Flow que reacciona a los cambios en 'userIdFlow'.
     val uiState: StateFlow<HomeUiState> = userPreferences.userIdFlow
         .flatMapLatest { userId ->
-            // flatMapLatest cancela la corutina anterior si el userId cambia (ej. al hacer login/logout)
+            // flatMapLatest cancela la corutina anterior si el userId cambia
+            // (ej. al hacer login/logout)
             if (userId == null) {
                 // Si no hay ID (logout), devuelve un estado por defecto
                 flowOf(HomeUiState(userName = "Usuario"))
             } else {
                 // Si hay ID, busca el nombre de ese usuario
                 // y lo transforma en un HomeUiState
-                userRepository.getUserByIdAsFlow(userId) // (Crearemos esta función en el sig. paso)
+                userRepository.getUserByIdAsFlow(userId)
                     .map { user ->
                         HomeUiState(userName = user?.name ?: "Usuario")
                     }

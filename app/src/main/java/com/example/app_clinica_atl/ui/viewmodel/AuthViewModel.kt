@@ -174,7 +174,9 @@ class AuthViewModel(
         viewModelScope.launch {
             // 1. Limpia la sesión en DataStore
             userPreferences.clearUserSession()
-            // 2. Resetea el estado de este ViewModel a su estado inicial
+
+            // 2. Resetea el estado de ESTE ViewModel a su estado inicial
+            // (Esto arregla el bug del "amague")
             _loginUiState.update { LoginUiState() }
             _registerUiState.update { RegisterUiState() }
         }

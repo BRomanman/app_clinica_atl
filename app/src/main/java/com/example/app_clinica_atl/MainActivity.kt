@@ -1,5 +1,6 @@
 package com.example.app_clinica_atl
 
+import android.content.Intent // <-- ¡¡IMPORT AÑADIDO!!
 import android.os.Build
 import android.os.Bundle
 import androidx.activity.ComponentActivity
@@ -14,6 +15,7 @@ import androidx.compose.material3.ModalNavigationDrawer
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Surface
 import androidx.compose.material3.rememberDrawerState
+import androidx.compose.runtime.LaunchedEffect // <-- ¡¡IMPORT AÑADIDO!!
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.Modifier
@@ -30,6 +32,7 @@ import com.example.app_clinica_atl.ui.components.AppTopBar
 import com.example.app_clinica_atl.ui.theme.App_clinica_atlTheme
 import com.example.app_clinica_atl.ui.viewmodel.*
 import kotlinx.coroutines.launch
+import java.lang.Runtime // <-- ¡¡IMPORT AÑADIDO!!
 
 class MainActivity : ComponentActivity() {
 
@@ -80,26 +83,38 @@ class MainActivity : ComponentActivity() {
                     val currentRoute = navBackStackEntry?.destination?.route
                     val userRole by authViewModel.userRoleFlow.collectAsStateWithLifecycle(initialValue = null)
 
+                    // --- ¡¡LÓGICA DE REINICIO (SOLUCIÓN NUCLEAR)!! ---
+                    LaunchedEffect(currentRoute) {
+                        if (currentRoute == Route.Restart.path) {
+                            // Cierra la sesión en el ViewModel (resetea su estado)
+                            authViewModel.logout()
+                            // Crea el intent para reiniciar la app
+                            val intent = packageManager.getLaunchIntentForPackage(packageName)
+                            val componentName = intent?.component
+                            val mainIntent = Intent.makeRestartActivityTask(componentName)
+                            // Lanza la nueva actividad y cierra el proceso actual
+                            startActivity(mainIntent)
+                            Runtime.getRuntime().exit(0)
+                        }
+                    }
+                    // --- FIN DE LA LÓGICA DE REINICIO ---
+
                     val isPatient = userRole == "paciente"
                     val drawerState = rememberDrawerState(initialValue = DrawerValue.Closed, confirmStateChange = { isPatient })
 
-                    // Esta variable ahora controla AMBAS cosas: la barra y el gesto
                     val topBarVisible = when (currentRoute) {
                         Route.Login.path, Route.Register.path -> false
                         Route.AdminMenu.path, Route.AdminAddSpecialty.path, Route.AdminAddDoctor.path, Route.AdminViewDoctors.path -> false
                         Route.DoctorMenu.path, Route.DoctorSchedule.path, Route.DoctorSearchPatient.path, Route.DoctorProfile.path -> false
                         Route.LogoutConfirmation.path -> false
+                        Route.Restart.path -> false // Oculta en la ruta de reinicio
                         null -> false
-                        else -> true // Solo es visible (y deslizable) en las pantallas de paciente
+                        else -> true
                     }
 
                     ModalNavigationDrawer(
                         drawerState = drawerState,
-                        // --- ¡¡AQUÍ ESTÁ LA CORRECCIÓN!! ---
-                        // El gesto de deslizar solo se activa si la TopBar es visible
-                        // Como en Login la TopBar es 'false', el gesto se desactivará.
-                        gesturesEnabled = topBarVisible,
-                        // --- FIN DE LA CORRECCIÓN ---
+                        gesturesEnabled = topBarVisible, // Usamos la misma lógica
                         drawerContent = {
                             AppDrawerVm(
                                 vm = authViewModel, currentRoute = currentRoute,

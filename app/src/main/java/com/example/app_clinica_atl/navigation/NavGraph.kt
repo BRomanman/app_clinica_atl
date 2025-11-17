@@ -13,7 +13,10 @@ import androidx.navigation.NavType
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.navArgument
+
+// Imports de Pantallas
 import com.example.app_clinica_atl.ui.screen.*
+// Imports de ViewModels
 import com.example.app_clinica_atl.ui.viewmodel.*
 import kotlinx.coroutines.launch
 
@@ -87,22 +90,17 @@ fun AppNavGraph(
         composable(Route.Seguros.path) {
             SegurosScreen(viewModel = insuranceViewModel)
         }
-
-        // --- ¡¡RUTA DE AGENDAR CITA ACTUALIZADA!! ---
         composable(Route.BookAppointment.path) {
             BookAppointmentScreen(
                 viewModel = bookAppointmentViewModel,
                 onViewProfile = { doctorId -> navController.navigate(Route.DoctorProfile.createRoute(doctorId)) },
-                // ¡AÑADIDO! Redirige al perfil al terminar
                 onBookingSuccess = {
                     navController.navigate(Route.PatientProfile.path) {
-                        // Vuelve a la pantalla Home (la base del paciente)
                         popUpTo(Route.Home.path)
                     }
                 }
             )
         }
-        // --- FIN DEL CAMBIO ---
 
         // --- Rutas de Doctor ---
         composable(Route.DoctorMenu.path) {
@@ -166,19 +164,25 @@ fun AppNavGraph(
             )
         }
 
-        // --- Ruta de Confirmación de Logout ---
+        // --- ¡¡LÓGICA DE LOGOUT ACTUALIZADA (SOLUCIÓN NUCLEAR)!! ---
         composable(Route.LogoutConfirmation.path) {
             LogoutConfirmationScreen(
                 onGoToLogin = {
-                    scope.launch {
-                        authViewModel.logout()
-                        navController.navigate(Route.Login.path) {
-                            popUpTo(0) { inclusive = true }
-                        }
+                    // ¡¡CAMBIO!! No llamamos a logout()
+                    // Simplemente navegamos a la nueva ruta de reinicio
+                    navController.navigate(Route.Restart.path) {
+                        popUpTo(0) { inclusive = true }
                     }
                 },
                 onExitApp = { /* Lógica de 'finish' en la pantalla */ }
             )
+        }
+
+        // --- ¡¡NUEVA RUTA DE REINICIO!! ---
+        // Esta ruta no muestra UI. Su único propósito es
+        // ser detectada por MainActivity para reiniciar la app.
+        composable(Route.Restart.path) {
+            // No se muestra nada
         }
     }
 }

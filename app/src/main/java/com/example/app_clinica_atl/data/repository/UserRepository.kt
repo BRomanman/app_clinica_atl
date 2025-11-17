@@ -11,7 +11,6 @@ class UserRepository(
 ) {
 
     suspend fun login(email: String, pass: String): Result<UserEntity> {
-        // ... (código de login sin cambios)
         return withContext(Dispatchers.IO) {
             try {
                 val user = userDao.getByEmail(email)
@@ -27,7 +26,6 @@ class UserRepository(
     }
 
     suspend fun register(newUser: UserEntity): Result<UserEntity> {
-        // ... (código de register sin cambios)
         return withContext(Dispatchers.IO) {
             try {
                 val existingUser = userDao.getByEmail(newUser.email)
@@ -46,7 +44,6 @@ class UserRepository(
     }
 
     suspend fun getUserById(id: Long): Result<UserEntity> {
-        // ... (código de getUserById sin cambios)
         return withContext(Dispatchers.IO) {
             try {
                 val user = userDao.getById(id)
@@ -61,17 +58,11 @@ class UserRepository(
         }
     }
 
-    // --- ¡¡FUNCIÓN AÑADIDA!! ---
-    /**
-     * Obtiene un usuario por su ID como un Flow (observable).
-     */
     fun getUserByIdAsFlow(id: Long): Flow<UserEntity?> {
         return userDao.getByIdAsFlow(id)
     }
-    // --- FIN ---
 
     suspend fun searchPatients(query: String): Result<List<UserEntity>> {
-        // ... (código de searchPatients sin cambios)
         return withContext(Dispatchers.IO) {
             try {
                 val patients = userDao.searchPatientsByName(query)
@@ -83,7 +74,21 @@ class UserRepository(
     }
 
     fun getAllDoctors(): Flow<List<UserEntity>> {
-        // ... (código de getAllDoctors sin cambios)
         return userDao.getAllDoctors()
+    }
+
+    // --- ¡¡FUNCIÓN AÑADIDA PARA LA CÁMARA!! ---
+    /**
+     * Llama al DAO para actualizar la URL de la imagen de perfil.
+     */
+    suspend fun updateProfileImageUrl(userId: Long, imageUrl: String): Result<Unit> {
+        return withContext(Dispatchers.IO) {
+            try {
+                userDao.updateProfileImageUrl(userId, imageUrl)
+                Result.success(Unit)
+            } catch (e: Exception) {
+                Result.failure(e)
+            }
+        }
     }
 }
