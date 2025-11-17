@@ -121,7 +121,10 @@ class AuthViewModel(
         }
         _loginUiState.update { it.copy(isLoading = true, loginError = null) }
         viewModelScope.launch {
-            val result = userRepository.login(_loginUiState.value.email, _loginUiState.value.password)
+            // 1) Intentamos contra la API remota
+            val apiResult = userRepository.loginViaApi(_loginUiState.value.email, _loginUiState.value.password)
+            // 2) Fallback a Room local si falla la llamada o credenciales
+            val result = if (apiResult.isSuccess) apiResult else userRepository.login(_loginUiState.value.email, _loginUiState.value.password)
             if (result.isSuccess) {
                 val user = result.getOrNull()!!
                 userPreferences.saveUserSession(user.id, user.role)

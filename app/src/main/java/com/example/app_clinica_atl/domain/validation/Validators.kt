@@ -44,7 +44,6 @@ fun validateLoginPassword(password: String): String? {
  */
 fun validateRegisterPassword(password: String, confirm: String): Result<Unit> {
     val passwordErrors = mutableListOf<String>()
-
     if (password.length < 8) {
         passwordErrors.add("• Al menos 8 caracteres.")
     }
