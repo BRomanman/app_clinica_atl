@@ -50,7 +50,6 @@ import java.text.SimpleDateFormat
 import java.util.Calendar
 import java.util.Date
 import java.util.Locale
-import com.example.app_clinica_atl.data.local.user.UserEntity
 import com.example.app_clinica_atl.ui.viewmodel.BookAppointmentViewModel
 
 

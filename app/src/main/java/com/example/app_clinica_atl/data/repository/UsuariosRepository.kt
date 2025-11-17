@@ -88,4 +88,18 @@ class UsuariosRepository(
         // ... (código de getAllDoctors sin cambios)
         return userDao.getAllDoctors()
     }
+
+    /**
+     * Actualiza solo la URL de la imagen de perfil del usuario.
+     */
+    suspend fun updateProfileImageUrl(userId: Long, imageUrl: String): Result<Unit> {
+        return withContext(Dispatchers.IO) {
+            try {
+                userDao.updateProfileImageUrl(userId, imageUrl)
+                Result.success(Unit)
+            } catch (e: Exception) {
+                Result.failure(e)
+            }
+        }
+    }
 }

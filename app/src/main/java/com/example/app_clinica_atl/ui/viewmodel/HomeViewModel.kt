@@ -4,6 +4,7 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.example.app_clinica_atl.data.local.storage.UserPreferences
 import com.example.app_clinica_atl.data.repository.UsuariosRepository
+import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
@@ -17,7 +18,7 @@ import kotlinx.coroutines.launch
 // --- ¡¡ESTADO DE UI ACTUALIZADO!! ---
 data class HomeUiState(
     val userName: String = "",
-    val debugInfo: String? = null
+    val debugInfo: String? = null,
     val profileImageUrl: String? = null // <-- ¡¡CAMPO AÑADIDO!!
 )
 
@@ -33,6 +34,7 @@ class HomeViewModel(
     // --- ¡¡LÓGICA ACTUALIZADA!! ---
     // Ya no usamos 'init'.
     // 'uiState' ahora es un Flow que reacciona a los cambios en 'userIdFlow'.
+    @OptIn(ExperimentalCoroutinesApi::class)
     val uiState: StateFlow<HomeUiState> = userPreferences.userIdFlow
         .flatMapLatest { userId ->
             if (userId == null) {

@@ -11,6 +11,7 @@ import com.example.app_clinica_atl.data.local.usuario.UsuarioEntity
 import com.example.app_clinica_atl.data.repository.CitasRepository
 import com.example.app_clinica_atl.data.repository.SegurosRepository
 import com.example.app_clinica_atl.data.repository.UsuariosRepository
+import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
@@ -43,6 +44,7 @@ class PatientViewModel(
     // --- LÓGICA REACTIVA ---
     private val _messageState = MutableStateFlow(Pair<String?, String?>(null, null))
 
+    @OptIn(ExperimentalCoroutinesApi::class)
     val uiState: StateFlow<PatientProfileUiState> = userPreferences.userIdFlow
         .flatMapLatest { userId ->
             if (userId == null) {

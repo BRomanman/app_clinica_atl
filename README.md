@@ -76,7 +76,7 @@ app_clinica_atl/
 │       │   ├── navigation/          # NavGraph, routes y helpers de Drawer/TopBar
 │       │   ├── notifications/       # NotificationHelper y canales
 │       │   ├── data/
-│       │   │   ├── local/           # Room (AppDatabase, UserDao, UserEntity) y DataStore
+│       │   │   ├── local/           # Room (AppDatabase, UsuarioDao, UsuarioEntity) y DataStore
 │       │   │   ├── model/           # Entidades de dominio (DoctorInfo, Patient)
 │       │   │   └── repository/      # Repositorios por agregado (usuarios, doctores, reservas, pacientes)
 │       │   ├── domain/validation/   # Reglas de validación reutilizables
@@ -92,12 +92,12 @@ app_clinica_atl/
 ```
 
 ## Persistencia y fuentes de datos
-- **Room (`data/local/database/AppDatabase.kt`):** base `ui_navegacion.db` con `UserEntity`. Al crear la base se cargan tres usuarios semilla (paciente, doctor y administrador). Las migraciones utilizan `fallbackToDestructiveMigration`.
-- **UserRepository:** expone `login` y `register`. Las nuevas cuentas se registran como pacientes (rol 1) y se valida duplicidad de correo.
+- **Room (`data/local/database/AppDatabase.kt`):** base `app_clinica_atl.db` con `UsuarioEntity`. Al crear la base se insertan usuarios semilla (admin, pacientes y doctores). Las migraciones utilizan `fallbackToDestructiveMigration`.
+- **UsuariosRepository:** expone `login`, `register`, búsqueda por id y flujo del usuario autenticado sobre Room.
 - **UserPreferences (DataStore):** almacena un flag de sesión para mantener al usuario conectado entre reinicios.
-- **DoctorRepository:** mantiene un listado de doctores en memoria con `MutableStateFlow`; soporta búsqueda, actualización y eliminación para las pantallas de administración y doctor.
-- **PatientRepository:** lista mockeada de pacientes reconocidos (Keanu Reeves, Taylor Swift, Lionel Messi) para demostración del flujo de búsqueda.
-- **AppointmentRepository:** provee departamentos, doctores por especialidad y horarios disponibles; la confirmación de reserva simula una respuesta remota con `delay`.
+- **DoctorRepository:** consulta doctores desde Room (vía `UsuarioDao`) y filtra por especialidad.
+- **CitasRepository:** gestiona citas en Room y devuelve horas ocupadas por doctor/fecha.
+- **SegurosRepository:** administra seguros (`SeguroEntity`) y la relación `UsuarioSeguroEntity`.
 
 ## Navegación y flujo de pantallas
 - `Routes.kt` define una sealed class con todas las rutas utilizadas por `NavHost`.

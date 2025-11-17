@@ -11,7 +11,7 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.Assignment
+import androidx.compose.material.icons.automirrored.filled.Assignment
 import androidx.compose.material.icons.filled.CalendarToday
 import androidx.compose.material.icons.filled.FavoriteBorder
 import androidx.compose.material.icons.filled.Home
@@ -206,7 +206,7 @@ val adminDrawerItems = listOf(
     ),
     DrawerItem(
         route = "admin_history",
-        icon = Icons.Default.Assignment,
+        icon = Icons.AutoMirrored.Filled.Assignment,
         label = "Historiales",
         action = {}
     )

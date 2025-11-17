@@ -16,7 +16,7 @@ interface UsuarioDao {
     suspend fun getById(id: Long): UsuarioEntity?
 
     @Query("SELECT * FROM user_table WHERE id = :id LIMIT 1")
-    fun getByIdAsFlow(id: Long): Flow<UserEntity?>
+    fun getByIdAsFlow(id: Long): Flow<UsuarioEntity?>
 
     @Insert(onConflict = OnConflictStrategy.REPLACE)
     suspend fun insert(user: UsuarioEntity): Long
@@ -37,7 +37,7 @@ interface UsuarioDao {
     suspend fun searchPatientsByName(query: String): List<UsuarioEntity>
 
     @Query("SELECT * FROM user_table WHERE role = 'doctor' ORDER BY name ASC")
-    fun getAllDoctors(): Flow<List<UserEntity>>
+    fun getAllDoctors(): Flow<List<UsuarioEntity>>
 
     // --- ¡¡FUNCIÓN AÑADIDA PARA LA CÁMARA!! ---
     /**
