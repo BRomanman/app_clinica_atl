@@ -45,7 +45,7 @@ import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 // NO MÁS HILT
-import com.example.app_clinica_atl.data.local.user.UserEntity
+import com.example.app_clinica_atl.data.local.usuario.UsuarioEntity
 import com.example.app_clinica_atl.ui.viewmodel.DoctorSearchViewModel
 import com.example.app_clinica_atl.R // Asegúrate de tener este import
 
@@ -144,7 +144,7 @@ fun AdminDoctorSearchScreen(
 
 @Composable
 private fun DoctorCard(
-    doctor: UserEntity,
+    doctor: UsuarioEntity,
     onClick: () -> Unit
 ) {
     Card(

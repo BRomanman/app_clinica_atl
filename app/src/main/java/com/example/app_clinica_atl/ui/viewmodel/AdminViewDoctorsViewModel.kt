@@ -2,8 +2,8 @@ package com.example.app_clinica_atl.ui.viewmodel
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import com.example.app_clinica_atl.data.local.user.UserEntity
-import com.example.app_clinica_atl.data.repository.UserRepository
+import com.example.app_clinica_atl.data.local.usuario.UsuarioEntity
+import com.example.app_clinica_atl.data.repository.UsuariosRepository
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -14,11 +14,11 @@ import kotlinx.coroutines.flow.SharingStarted
 data class AdminViewDoctorsUiState(
     val searchQuery: String = "",
     val isLoading: Boolean = true,
-    val filteredDoctors: List<UserEntity> = emptyList()
+    val filteredDoctors: List<UsuarioEntity> = emptyList()
 )
 
 class AdminViewDoctorsViewModel(
-    userRepository: UserRepository
+    userRepository: UsuariosRepository
 ) : ViewModel() {
 
     private val _searchQuery = MutableStateFlow("")

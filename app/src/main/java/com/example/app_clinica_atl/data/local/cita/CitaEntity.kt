@@ -1,10 +1,10 @@
-package com.example.app_clinica_atl.data.local.appointment
+package com.example.app_clinica_atl.data.local.cita
 
 import androidx.room.Entity
 import androidx.room.ForeignKey
 import androidx.room.Index
 import androidx.room.PrimaryKey
-import com.example.app_clinica_atl.data.local.user.UserEntity
+import com.example.app_clinica_atl.data.local.usuario.UsuarioEntity
 
 /**
  * Entidad para la tabla de Citas.
@@ -17,29 +17,29 @@ import com.example.app_clinica_atl.data.local.user.UserEntity
     // Foreign Keys (relaciones) para asegurar la integridad de los datos
     foreignKeys = [
         ForeignKey(
-            entity = UserEntity::class,
+            entity = UsuarioEntity::class,
             parentColumns = ["id"],
             childColumns = ["patientId"],
             onDelete = ForeignKey.CASCADE // Si se borra un usuario, se borran sus citas
         ),
         ForeignKey(
-            entity = UserEntity::class,
+            entity = UsuarioEntity::class,
             parentColumns = ["id"],
             childColumns = ["doctorId"],
             onDelete = ForeignKey.CASCADE // Si se borra un doctor, se borran sus citas
         )
     ]
 )
-data class AppointmentEntity(
+data class CitaEntity(
     @PrimaryKey(autoGenerate = true)
     val id: Long = 0,
 
-    val patientId: Long, // <-- ID del paciente (UserEntity)
+    val patientId: Long, // <-- ID del paciente (UsuarioEntity)
 
     // --- ESTAS SON LAS COLUMNAS QUE FALTABAN ---
 
     /**
-     * ID del doctor (UserEntity) con el que se agenda.
+     * ID del doctor (UsuarioEntity) con el que se agenda.
      * ESTA es la columna que faltaba y causaba el error de KSP.
      */
     val doctorId: Long,

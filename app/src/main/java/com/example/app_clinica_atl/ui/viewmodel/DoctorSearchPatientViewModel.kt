@@ -2,8 +2,8 @@ package com.example.app_clinica_atl.ui.viewmodel
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import com.example.app_clinica_atl.data.local.user.UserEntity
-import com.example.app_clinica_atl.data.repository.UserRepository
+import com.example.app_clinica_atl.data.local.usuario.UsuarioEntity
+import com.example.app_clinica_atl.data.repository.UsuariosRepository
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -15,13 +15,13 @@ import kotlinx.coroutines.launch
  */
 data class DoctorSearchPatientUiState(
     val query: String = "",
-    val patients: List<UserEntity> = emptyList(),
+    val patients: List<UsuarioEntity> = emptyList(),
     val isLoading: Boolean = false,
     val errorMsg: String? = null
 )
 
 class DoctorSearchPatientViewModel(
-    private val userRepository: UserRepository
+    private val userRepository: UsuariosRepository
 ) : ViewModel() {
 
     private val _uiState = MutableStateFlow(DoctorSearchPatientUiState())

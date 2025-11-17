@@ -1,7 +1,7 @@
 package com.example.app_clinica_atl.data.repository
 
-import com.example.app_clinica_atl.data.local.specialty.SpecialtyDao
-import com.example.app_clinica_atl.data.local.specialty.SpecialtyEntity
+import com.example.app_clinica_atl.data.local.especialidad.EspecialidadDao
+import com.example.app_clinica_atl.data.local.especialidad.EspecialidadEntity
 import kotlinx.coroutines.flow.Flow
 import java.io.IOException
 
@@ -10,14 +10,14 @@ import java.io.IOException
  * Recibe el DAO manualmente.
  */
 class SpecialtyRepositoryImpl(
-    private val specialtyDao: SpecialtyDao
+    private val specialtyDao: EspecialidadDao
 ) : SpecialtyRepository {
 
-    override fun getAllSpecialties(): Flow<List<SpecialtyEntity>> {
+    override fun getAllSpecialties(): Flow<List<EspecialidadEntity>> {
         return specialtyDao.getAllSpecialties()
     }
 
-    override suspend fun addSpecialty(specialty: SpecialtyEntity): Result<Unit> {
+    override suspend fun addSpecialty(specialty: EspecialidadEntity): Result<Unit> {
         return try {
             // Validaciones de lógica de negocio
             if (specialty.name.isBlank()) {
@@ -35,7 +35,7 @@ class SpecialtyRepositoryImpl(
         }
     }
 
-    override suspend fun deleteSpecialty(specialty: SpecialtyEntity): Result<Unit> {
+    override suspend fun deleteSpecialty(specialty: EspecialidadEntity): Result<Unit> {
         return try {
             specialtyDao.delete(specialty)
             Result.success(Unit)

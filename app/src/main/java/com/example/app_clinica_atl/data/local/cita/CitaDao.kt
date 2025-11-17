@@ -1,4 +1,4 @@
-package com.example.app_clinica_atl.data.local.appointment
+package com.example.app_clinica_atl.data.local.cita
 
 import androidx.room.Dao
 import androidx.room.Insert
@@ -7,15 +7,15 @@ import androidx.room.Query
 import kotlinx.coroutines.flow.Flow
 
 @Dao
-interface AppointmentDao {
+interface CitaDao {
     @Insert(onConflict = OnConflictStrategy.IGNORE)
-    suspend fun insert(appointment: AppointmentEntity): Long
+    suspend fun insert(appointment: CitaEntity): Long
 
     @Query("SELECT * FROM appointments")
-    suspend fun getAll(): List<AppointmentEntity>
+    suspend fun getAll(): List<CitaEntity>
 
     @Query("SELECT * FROM appointments WHERE doctorId = :doctorId AND date = :date AND time = :time LIMIT 1")
-    suspend fun getAppointmentByDoctorDateTime(doctorId: Long, date: String, time: String): AppointmentEntity?
+    suspend fun getAppointmentByDoctorDateTime(doctorId: Long, date: String, time: String): CitaEntity?
 
     @Query("SELECT time FROM appointments WHERE doctorId = :doctorId AND date = :date")
     suspend fun getBookedTimesForDoctorOnDate(doctorId: Long, date: String): List<String>
@@ -25,7 +25,7 @@ interface AppointmentDao {
     /**
      * Obtiene una lista de todas las citas "agendadas" de un paciente,
      * uniéndolas con la tabla de usuarios (doctores) para obtener sus nombres.
-     * Usa la clase DTO 'AppointmentDetails' para guardar el resultado.
+     * Usa la clase DTO 'CitaDetalle' para guardar el resultado.
      */
     @Query("""
         SELECT
@@ -40,7 +40,7 @@ interface AppointmentDao {
         WHERE a.patientId = :patientId AND a.status = 'agendada'
         ORDER BY a.date, a.time ASC
     """)
-    fun getActiveAppointmentsForPatient(patientId: Long): Flow<List<AppointmentDetails>>
+    fun getActiveAppointmentsForPatient(patientId: Long): Flow<List<CitaDetalle>>
 
     /**
      * Actualiza el estado de una cita (para cancelarla).

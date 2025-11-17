@@ -2,10 +2,10 @@ package com.example.app_clinica_atl.ui.viewmodel
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import com.example.app_clinica_atl.data.local.appointment.AppointmentEntity
+import com.example.app_clinica_atl.data.local.cita.CitaEntity
 import com.example.app_clinica_atl.data.local.storage.UserPreferences
-import com.example.app_clinica_atl.data.local.user.UserEntity
-import com.example.app_clinica_atl.data.repository.AppointmentRepository
+import com.example.app_clinica_atl.data.local.usuario.UsuarioEntity
+import com.example.app_clinica_atl.data.repository.CitasRepository
 import com.example.app_clinica_atl.data.repository.DoctorRepository
 // NO MÁS HILT
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -24,7 +24,7 @@ data class BookAppointmentUiState(
         "Pediatría",
         "Psicología"
     ),
-    val doctors: List<UserEntity> = emptyList(), // <-- CAMBIO: UserEntity real
+    val doctors: List<UsuarioEntity> = emptyList(), // <-- CAMBIO: UsuarioEntity real
     val availableTimes: List<String> = emptyList(),
     val selectedSpecialty: String = "",
     val selectedDoctorId: Long? = null,
@@ -41,7 +41,7 @@ data class BookAppointmentUiState(
 // NO MÁS @HiltViewModel
 class BookAppointmentViewModel( // <-- Constructor normal
     private val doctorRepository: DoctorRepository,
-    private val appointmentRepository: AppointmentRepository,
+    private val appointmentRepository: CitasRepository,
     private val userPreferences: UserPreferences
 ) : ViewModel() {
 
@@ -71,7 +71,7 @@ class BookAppointmentViewModel( // <-- Constructor normal
         loadDoctorsBySpecialty(specialty)
     }
 
-    fun onDoctorChange(doctor: UserEntity) { // <-- CAMBIO: Recibe UserEntity
+    fun onDoctorChange(doctor: UsuarioEntity) { // <-- CAMBIO: Recibe UsuarioEntity
         _uiState.update {
             it.copy(
                 selectedDoctorId = doctor.id,
@@ -175,7 +175,7 @@ class BookAppointmentViewModel( // <-- Constructor normal
                 return@launch
             }
 
-            val newAppointment = AppointmentEntity(
+            val newAppointment = CitaEntity(
                 patientId = patientId, // <-- ID Real del paciente
                 doctorId = s.selectedDoctorId,
                 date = s.selectedDate,

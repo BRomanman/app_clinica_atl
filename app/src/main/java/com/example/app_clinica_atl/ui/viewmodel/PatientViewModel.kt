@@ -2,14 +2,14 @@ package com.example.app_clinica_atl.ui.viewmodel
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import com.example.app_clinica_atl.data.local.appointment.AppointmentDetails
-import com.example.app_clinica_atl.data.local.insurance.InsuranceEntity
-import com.example.app_clinica_atl.data.local.insurance.UserInsuranceEntity
+import com.example.app_clinica_atl.data.local.cita.CitaDetalle
+import com.example.app_clinica_atl.data.local.seguro.SeguroEntity
+import com.example.app_clinica_atl.data.local.seguro.UsuarioSeguroEntity
 import com.example.app_clinica_atl.data.local.storage.UserPreferences
-import com.example.app_clinica_atl.data.local.user.UserEntity
-import com.example.app_clinica_atl.data.repository.AppointmentRepository
-import com.example.app_clinica_atl.data.repository.InsuranceRepository
-import com.example.app_clinica_atl.data.repository.UserRepository
+import com.example.app_clinica_atl.data.local.usuario.UsuarioEntity
+import com.example.app_clinica_atl.data.repository.CitasRepository
+import com.example.app_clinica_atl.data.repository.SegurosRepository
+import com.example.app_clinica_atl.data.repository.UsuariosRepository
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
@@ -25,19 +25,19 @@ import kotlinx.coroutines.launch
 
 data class PatientProfileUiState(
     val isLoading: Boolean = true,
-    val patient: UserEntity? = null,
-    val activeInsuranceDetails: InsuranceEntity? = null,
-    val activeSubscription: UserInsuranceEntity? = null,
-    val activeAppointments: List<AppointmentDetails> = emptyList(),
+    val patient: UsuarioEntity? = null,
+    val activeInsuranceDetails: SeguroEntity? = null,
+    val activeSubscription: UsuarioSeguroEntity? = null,
+    val activeAppointments: List<CitaDetalle> = emptyList(),
     val errorMsg: String? = null,
     val successMsg: String? = null
 )
 
 class PatientViewModel(
-    private val userRepository: UserRepository,
+    private val userRepository: UsuariosRepository,
     private val userPreferences: UserPreferences,
-    private val insuranceRepository: InsuranceRepository,
-    private val appointmentRepository: AppointmentRepository
+    private val insuranceRepository: SegurosRepository,
+    private val appointmentRepository: CitasRepository
 ) : ViewModel() {
 
     private val _uiState = MutableStateFlow(PatientProfileUiState())

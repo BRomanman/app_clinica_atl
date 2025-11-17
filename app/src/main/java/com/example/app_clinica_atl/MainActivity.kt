@@ -36,24 +36,24 @@ class MainActivity : ComponentActivity() {
     // --- Dependencias (sin cambios) ---
     private val database by lazy { AppDatabase.getInstance(this) }
     private val userPreferences by lazy { UserPreferences(this) }
-    private val userRepository by lazy { UserRepository(database.userDao()) }
+    private val usuariosRepository by lazy { UsuariosRepository(database.userDao()) }
     private val doctorRepository: DoctorRepository by lazy { DoctorRepositoryImpl(database.userDao()) }
-    private val appointmentRepository: AppointmentRepository by lazy { AppointmentRepositoryImpl(database.appointmentDao()) }
+    private val citasRepository: CitasRepository by lazy { CitasRepositoryImpl(database.appointmentDao()) }
     private val specialtyRepository: SpecialtyRepository by lazy { SpecialtyRepositoryImpl(database.specialtyDao()) }
-    private val insuranceRepository: InsuranceRepository by lazy { InsuranceRepositoryImpl(database.insuranceDao()) }
+    private val segurosRepository: SegurosRepository by lazy { SegurosRepositoryImpl(database.insuranceDao()) }
 
     // --- ViewModels (sin cambios) ---
-    private val authViewModel: AuthViewModel by viewModels { AuthViewModelFactory(userRepository, userPreferences) }
-    private val homeViewModel: HomeViewModel by viewModels { HomeViewModelFactory(userRepository, userPreferences) }
-    private val patientViewModel: PatientViewModel by viewModels { PatientViewModelFactory(userRepository, userPreferences, insuranceRepository, appointmentRepository) }
+    private val authViewModel: AuthViewModel by viewModels { AuthViewModelFactory(usuariosRepository, userPreferences) }
+    private val homeViewModel: HomeViewModel by viewModels { HomeViewModelFactory(usuariosRepository, userPreferences) }
+    private val patientViewModel: PatientViewModel by viewModels { PatientViewModelFactory(usuariosRepository, userPreferences, segurosRepository, citasRepository) }
     private val doctorSearchViewModel: DoctorSearchViewModel by viewModels { DoctorSearchViewModelFactory(doctorRepository) }
     private val doctorProfileViewModel: DoctorProfileViewModel by viewModels { DoctorProfileViewModelFactory(doctorRepository) }
-    private val bookAppointmentViewModel: BookAppointmentViewModel by viewModels { BookAppointmentViewModelFactory(doctorRepository, appointmentRepository, userPreferences) }
-    private val insuranceViewModel: InsuranceViewModel by viewModels { InsuranceViewModelFactory(insuranceRepository, userPreferences) }
-    private val doctorSearchPatientViewModel: DoctorSearchPatientViewModel by viewModels { DoctorSearchPatientViewModelFactory(userRepository) }
+    private val bookAppointmentViewModel: BookAppointmentViewModel by viewModels { BookAppointmentViewModelFactory(doctorRepository, citasRepository, userPreferences) }
+    private val insuranceViewModel: InsuranceViewModel by viewModels { InsuranceViewModelFactory(segurosRepository, userPreferences) }
+    private val doctorSearchPatientViewModel: DoctorSearchPatientViewModel by viewModels { DoctorSearchPatientViewModelFactory(usuariosRepository) }
     private val adminManageSpecialtiesViewModel: AdminManageSpecialtiesViewModel by viewModels { AdminManageSpecialtiesViewModelFactory(specialtyRepository) }
-    private val adminAddDoctorViewModel: AdminAddDoctorViewModel by viewModels { AdminAddDoctorViewModelFactory(userRepository, specialtyRepository) }
-    private val adminViewDoctorsViewModel: AdminViewDoctorsViewModel by viewModels { AdminViewDoctorsViewModelFactory(userRepository) }
+    private val adminAddDoctorViewModel: AdminAddDoctorViewModel by viewModels { AdminAddDoctorViewModelFactory(usuariosRepository, specialtyRepository) }
+    private val adminViewDoctorsViewModel: AdminViewDoctorsViewModel by viewModels { AdminViewDoctorsViewModelFactory(usuariosRepository) }
     private val themeViewModel: ThemeViewModel by viewModels { ThemeViewModelFactory(userPreferences) }
 
 

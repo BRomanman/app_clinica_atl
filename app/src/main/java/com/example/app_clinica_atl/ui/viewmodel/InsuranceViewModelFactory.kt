@@ -3,10 +3,10 @@ package com.example.app_clinica_atl.ui.viewmodel
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.ViewModelProvider
 import com.example.app_clinica_atl.data.local.storage.UserPreferences
-import com.example.app_clinica_atl.data.repository.InsuranceRepository
+import com.example.app_clinica_atl.data.repository.SegurosRepository
 
 class InsuranceViewModelFactory(
-    private val insuranceRepository: InsuranceRepository,
+    private val insuranceRepository: SegurosRepository,
     private val userPreferences: UserPreferences
 ) : ViewModelProvider.Factory {
 

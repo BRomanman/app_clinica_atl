@@ -10,7 +10,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
-import com.example.app_clinica_atl.data.local.user.UserEntity
+import com.example.app_clinica_atl.data.local.usuario.UsuarioEntity
 import com.example.app_clinica_atl.ui.viewmodel.BookAppointmentViewModel
 
 /**

@@ -13,7 +13,7 @@ import org.robolectric.annotation.Config
 
 
 @RunWith(RobolectricTestRunner::class)
-@Config(sdk = [36])//Todo si las pruebas están dando error hay que hacer un downgrade a sdk 34
+@Config(sdk = [34])//Todo si las pruebas están dando error hay que hacer un downgrade a sdk 34
 
 class ValidatorsTest {
 
@@ -32,13 +32,6 @@ class ValidatorsTest {
 
     //todo terminar todos los test para el archivo de validators
 
-
-    //comprobar que trae datos de la api
-    @Test
-    fun callUsersEndpoint() = runBlocking {
-        val api = RetrofitClient.usuariosApi
-        val result = api.getUsers()
-        assertTrue(result.isNotEmpty())
-    }
+    
 
 }

@@ -35,7 +35,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import com.example.app_clinica_atl.R
-import com.example.app_clinica_atl.data.local.user.UserEntity
+import com.example.app_clinica_atl.data.local.usuario.UsuarioEntity
 import com.example.app_clinica_atl.ui.viewmodel.DoctorProfileViewModel
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -96,7 +96,7 @@ fun DoctorProfileScreen(
 }
 
 @Composable
-private fun DoctorProfileContent(doctor: UserEntity) {
+private fun DoctorProfileContent(doctor: UsuarioEntity) {
     Column(
         modifier = Modifier
             .fillMaxSize()

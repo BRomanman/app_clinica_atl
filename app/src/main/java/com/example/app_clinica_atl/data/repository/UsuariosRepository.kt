@@ -1,16 +1,19 @@
 package com.example.app_clinica_atl.data.repository
 
-import com.example.app_clinica_atl.data.local.user.UserDao
-import com.example.app_clinica_atl.data.local.user.UserEntity
+import com.example.app_clinica_atl.data.local.usuario.UsuarioDao
+import com.example.app_clinica_atl.data.local.usuario.UsuarioEntity
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.withContext
 
-class UserRepository(
-    private val userDao: UserDao
+/**
+ * Repositorio alineado con la API de Usuarios.
+ */
+class UsuariosRepository(
+    private val userDao: UsuarioDao
 ) {
 
-    suspend fun login(email: String, pass: String): Result<UserEntity> {
+    suspend fun login(email: String, pass: String): Result<UsuarioEntity> {
         // ... (código de login sin cambios)
         return withContext(Dispatchers.IO) {
             try {
@@ -26,7 +29,7 @@ class UserRepository(
         }
     }
 
-    suspend fun register(newUser: UserEntity): Result<UserEntity> {
+    suspend fun register(newUser: UsuarioEntity): Result<UsuarioEntity> {
         // ... (código de register sin cambios)
         return withContext(Dispatchers.IO) {
             try {
@@ -45,7 +48,7 @@ class UserRepository(
         }
     }
 
-    suspend fun getUserById(id: Long): Result<UserEntity> {
+    suspend fun getUserById(id: Long): Result<UsuarioEntity> {
         // ... (código de getUserById sin cambios)
         return withContext(Dispatchers.IO) {
             try {
@@ -65,12 +68,12 @@ class UserRepository(
     /**
      * Obtiene un usuario por su ID como un Flow (observable).
      */
-    fun getUserByIdAsFlow(id: Long): Flow<UserEntity?> {
+    fun getUserByIdAsFlow(id: Long): Flow<UsuarioEntity?> {
         return userDao.getByIdAsFlow(id)
     }
     // --- FIN ---
 
-    suspend fun searchPatients(query: String): Result<List<UserEntity>> {
+    suspend fun searchPatients(query: String): Result<List<UsuarioEntity>> {
         // ... (código de searchPatients sin cambios)
         return withContext(Dispatchers.IO) {
             try {
@@ -82,7 +85,7 @@ class UserRepository(
         }
     }
 
-    fun getAllDoctors(): Flow<List<UserEntity>> {
+    fun getAllDoctors(): Flow<List<UsuarioEntity>> {
         // ... (código de getAllDoctors sin cambios)
         return userDao.getAllDoctors()
     }

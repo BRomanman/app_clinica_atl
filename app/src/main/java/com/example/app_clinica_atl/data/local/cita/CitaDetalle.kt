@@ -1,4 +1,4 @@
-package com.example.app_clinica_atl.data.local.appointment
+package com.example.app_clinica_atl.data.local.cita
 
 /**
  * Esta es una clase de datos (DTO - Data Transfer Object).
@@ -6,7 +6,7 @@ package com.example.app_clinica_atl.data.local.appointment
  * La usamos para guardar el resultado de una consulta JOIN,
  * combinando los datos de la cita con los del doctor.
  */
-data class AppointmentDetails(
+data class CitaDetalle(
     val appointmentId: Long,
     val doctorName: String,
     val doctorSpecialty: String,

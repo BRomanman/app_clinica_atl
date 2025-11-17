@@ -3,7 +3,7 @@ package com.example.app_clinica_atl.ui.viewmodel
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.example.app_clinica_atl.data.local.storage.UserPreferences
-import com.example.app_clinica_atl.data.repository.UserRepository
+import com.example.app_clinica_atl.data.repository.UsuariosRepository
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
@@ -20,7 +20,7 @@ data class HomeUiState(
 )
 
 class HomeViewModel(
-    private val userRepository: UserRepository,
+    private val userRepository: UsuariosRepository,
     private val userPreferences: UserPreferences
 ) : ViewModel() {
 
