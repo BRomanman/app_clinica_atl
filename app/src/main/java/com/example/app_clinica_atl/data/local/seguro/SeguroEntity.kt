@@ -1,4 +1,4 @@
-package com.example.app_clinica_atl.data.local.insurance
+package com.example.app_clinica_atl.data.local.seguro
 
 import androidx.room.Entity
 import androidx.room.Index
@@ -12,7 +12,7 @@ import androidx.room.PrimaryKey
     tableName = "insurance_table",
     indices = [Index(value = ["name"], unique = true)]
 )
-data class InsuranceEntity(
+data class SeguroEntity(
     @PrimaryKey(autoGenerate = true)
     val id: Long = 0,
     val name: String,

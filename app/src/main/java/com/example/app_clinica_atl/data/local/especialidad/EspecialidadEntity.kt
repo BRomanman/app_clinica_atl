@@ -1,4 +1,4 @@
-package com.example.app_clinica_atl.data.local.specialty
+package com.example.app_clinica_atl.data.local.especialidad
 
 import androidx.room.Entity
 import androidx.room.Index
@@ -13,7 +13,7 @@ import androidx.room.PrimaryKey
     // Creamos un "índice único" para que no se puedan repetir nombres de especialidades
     indices = [Index(value = ["name"], unique = true)]
 )
-data class SpecialtyEntity(
+data class EspecialidadEntity(
     @PrimaryKey(autoGenerate = true)
     val id: Long = 0,
     val name: String,

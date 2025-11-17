@@ -2,7 +2,7 @@ package com.example.app_clinica_atl.ui.viewmodel
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import com.example.app_clinica_atl.data.local.user.UserEntity
+import com.example.app_clinica_atl.data.local.usuario.UsuarioEntity
 import com.example.app_clinica_atl.data.repository.DoctorRepository
 // NO MÁS IMPORTS DE HILT
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -13,11 +13,11 @@ import kotlinx.coroutines.launch
 
 /**
  * Estado de UI para la pantalla de perfil del doctor.
- * Ahora contiene un 'UserEntity' (que puede ser nulo) en lugar de 'DoctorInfo'.
+ * Ahora contiene un 'UsuarioEntity' (que puede ser nulo) en lugar de 'DoctorInfo'.
  */
 data class DoctorProfileUiState(
     val isLoading: Boolean = true,
-    val doctor: UserEntity? = null,
+    val doctor: UsuarioEntity? = null,
     val errorMsg: String? = null
 )
 
@@ -44,7 +44,7 @@ class DoctorProfileViewModel( // <-- Constructor normal
                 if (result.isSuccess) {
                     it.copy(
                         isLoading = false,
-                        doctor = result.getOrNull() // <-- Guardamos el UserEntity real
+                        doctor = result.getOrNull() // <-- Guardamos el UsuarioEntity real
                     )
                 } else {
                     it.copy(

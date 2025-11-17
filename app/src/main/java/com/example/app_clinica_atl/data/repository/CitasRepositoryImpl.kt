@@ -1,19 +1,19 @@
 package com.example.app_clinica_atl.data.repository
 
-import com.example.app_clinica_atl.data.local.appointment.AppointmentDao
-import com.example.app_clinica_atl.data.local.appointment.AppointmentDetails
-import com.example.app_clinica_atl.data.local.appointment.AppointmentEntity
+import com.example.app_clinica_atl.data.local.cita.CitaDao
+import com.example.app_clinica_atl.data.local.cita.CitaDetalle
+import com.example.app_clinica_atl.data.local.cita.CitaEntity
 import kotlinx.coroutines.flow.Flow
 import java.io.IOException
 
 /**
- * Implementación del repositorio de Citas.
+ * Implementación del repositorio de Citas (CitasApi).
  */
-class AppointmentRepositoryImpl(
-    private val appointmentDao: AppointmentDao
-) : AppointmentRepository {
+class CitasRepositoryImpl(
+    private val appointmentDao: CitaDao
+) : CitasRepository {
 
-    override suspend fun bookAppointment(appointment: AppointmentEntity): Result<Long> {
+    override suspend fun bookAppointment(appointment: CitaEntity): Result<Long> {
         return try {
             val existingAppointment = appointmentDao.getAppointmentByDoctorDateTime(
                 appointment.doctorId,
@@ -39,11 +39,7 @@ class AppointmentRepositoryImpl(
         }
     }
 
-    // --- ¡¡FUNCIONES AÑADIDAS!! ---
-
-    override fun getAppointmentsForPatient(patientId: Long): Flow<List<AppointmentDetails>> {
-        // Simplemente pasa la llamada al DAO.
-        // El 'catch' de errores se hará en el ViewModel que colecciona este Flow.
+    override fun getAppointmentsForPatient(patientId: Long): Flow<List<CitaDetalle>> {
         return appointmentDao.getActiveAppointmentsForPatient(patientId)
     }
 

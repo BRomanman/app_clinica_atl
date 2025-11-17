@@ -3,9 +3,9 @@ package com.example.app_clinica_atl.ui.viewmodel
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.example.app_clinica_atl.data.local.storage.UserPreferences
-import com.example.app_clinica_atl.data.local.user.UserEntity
-import com.example.app_clinica_atl.data.repository.UserRepository
-import com.example.app_clinica_atl.domain.validation.validateChileanPhoneNumber
+import com.example.app_clinica_atl.data.local.usuario.UsuarioEntity
+import com.example.app_clinica_atl.data.repository.UsuariosRepository
+import com.example.app_clinica_atl.domain.validation.validateChileanPhoneNumber // <-- ¡IMPORT AÑADIDO!
 import com.example.app_clinica_atl.domain.validation.validateEmail
 import com.example.app_clinica_atl.domain.validation.validateLoginPassword
 import com.example.app_clinica_atl.domain.validation.validateRegisterPassword
@@ -48,7 +48,7 @@ data class RegisterUiState(
 )
 
 class AuthViewModel(
-    private val userRepository: UserRepository,
+    private val userRepository: UsuariosRepository,
     private val userPreferences: UserPreferences
 ) : ViewModel() {
 
@@ -153,7 +153,8 @@ class AuthViewModel(
         }
         _registerUiState.update { it.copy(isLoading = true, registerError = null) }
         viewModelScope.launch {
-            val newUser = UserEntity(
+            // ¡CAMBIO! Combinamos firstName y lastName en el 'name' de la entidad
+            val newUser = UsuarioEntity(
                 name = "${s.firstName} ${s.lastName}",
                 email = s.email, phone = s.phone, password = s.password,
                 role = "paciente", specialty = null, salary = null

@@ -51,9 +51,9 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import com.example.app_clinica_atl.R
-import com.example.app_clinica_atl.data.local.appointment.AppointmentDetails
-import com.example.app_clinica_atl.data.local.insurance.InsuranceEntity
-import com.example.app_clinica_atl.data.local.user.UserEntity
+import com.example.app_clinica_atl.data.local.cita.CitaDetalle
+import com.example.app_clinica_atl.data.local.seguro.SeguroEntity
+import com.example.app_clinica_atl.data.local.usuario.UsuarioEntity
 import com.example.app_clinica_atl.ui.viewmodel.PatientViewModel
 import java.io.File
 import java.text.SimpleDateFormat
@@ -186,9 +186,9 @@ private fun createImageUri(context: Context): Uri {
 
 @Composable
 private fun PatientProfileContent(
-    patient: UserEntity,
-    activeInsurance: InsuranceEntity?,
-    appointments: List<AppointmentDetails>,
+    patient: UsuarioEntity,
+    activeInsurance: SeguroEntity?,
+    appointments: List<CitaDetalle>,
     onCancelInsurance: () -> Unit,
     onCancelAppointment: (Long) -> Unit,
     onGoToSeguros: () -> Unit,
@@ -294,7 +294,7 @@ private fun PatientProfileContent(
 // ... (AppointmentCard, InsuranceInfoCard, InfoRow no cambian) ...
 @Composable
 private fun AppointmentCard(
-    appointment: AppointmentDetails,
+    appointment: CitaDetalle,
     onCancel: () -> Unit
 ) {
     Card(
@@ -337,7 +337,7 @@ private fun AppointmentCard(
 
 @Composable
 private fun InsuranceInfoCard(
-    activeInsurance: InsuranceEntity?,
+    activeInsurance: SeguroEntity?,
     onCancelInsurance: () -> Unit,
     onGoToSeguros: () -> Unit
 ) {

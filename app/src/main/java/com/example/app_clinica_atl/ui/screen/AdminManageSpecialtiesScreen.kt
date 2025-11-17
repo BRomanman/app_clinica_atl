@@ -38,7 +38,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
-import com.example.app_clinica_atl.data.local.specialty.SpecialtyEntity
+import com.example.app_clinica_atl.data.local.especialidad.EspecialidadEntity
 import com.example.app_clinica_atl.ui.viewmodel.AdminManageSpecialtiesViewModel
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -153,7 +153,7 @@ fun AdminManageSpecialtiesScreen(
 
 @Composable
 private fun SpecialtyItem(
-    specialty: SpecialtyEntity,
+    specialty: EspecialidadEntity,
     onDelete: () -> Unit
 ) {
     Card(

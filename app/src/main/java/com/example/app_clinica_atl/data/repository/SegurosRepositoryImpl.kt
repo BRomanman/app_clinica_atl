@@ -1,30 +1,28 @@
 package com.example.app_clinica_atl.data.repository
 
-import com.example.app_clinica_atl.data.local.insurance.InsuranceDao
-import com.example.app_clinica_atl.data.local.insurance.InsuranceEntity
-import com.example.app_clinica_atl.data.local.insurance.UserInsuranceEntity
+import com.example.app_clinica_atl.data.local.seguro.SeguroDao
+import com.example.app_clinica_atl.data.local.seguro.SeguroEntity
+import com.example.app_clinica_atl.data.local.seguro.UsuarioSeguroEntity
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.firstOrNull
 import java.io.IOException
 
 /**
- * Implementación del repositorio de Seguros.
+ * Implementación del repositorio de Seguros (SegurosApi).
  */
-class InsuranceRepositoryImpl(
-    private val insuranceDao: InsuranceDao
-) : InsuranceRepository {
+class SegurosRepositoryImpl(
+    private val insuranceDao: SeguroDao
+) : SegurosRepository {
 
-    override fun getAvailableInsurances(): Flow<List<InsuranceEntity>> {
+    override fun getAvailableInsurances(): Flow<List<SeguroEntity>> {
         return insuranceDao.getAllAvailableInsurances()
     }
 
-    // --- ¡¡NUEVA FUNCIÓN IMPLEMENTADA!! ---
-    override fun getActiveSubscription(patientId: Long): Flow<UserInsuranceEntity?> {
+    override fun getActiveSubscription(patientId: Long): Flow<UsuarioSeguroEntity?> {
         return insuranceDao.getActiveSubscription(patientId)
     }
 
-    // --- ¡¡NUEVA FUNCIÓN IMPLEMENTADA!! ---
-    override fun getActiveSubscriptionDetails(patientId: Long): Flow<InsuranceEntity?> {
+    override fun getActiveSubscriptionDetails(patientId: Long): Flow<SeguroEntity?> {
         return insuranceDao.getActiveSubscriptionDetails(patientId)
     }
 
@@ -35,7 +33,7 @@ class InsuranceRepositoryImpl(
                 throw IllegalStateException("Ya tienes un seguro activo. Cáncelalo antes de contratar uno nuevo.")
             }
 
-            val newSubscription = UserInsuranceEntity(
+            val newSubscription = UsuarioSeguroEntity(
                 patientId = patientId,
                 insuranceId = insuranceId,
                 status = "activo"

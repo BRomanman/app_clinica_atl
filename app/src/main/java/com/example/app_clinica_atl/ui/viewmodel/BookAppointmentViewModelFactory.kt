@@ -3,7 +3,7 @@ package com.example.app_clinica_atl.ui.viewmodel
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.ViewModelProvider
 import com.example.app_clinica_atl.data.local.storage.UserPreferences
-import com.example.app_clinica_atl.data.repository.AppointmentRepository
+import com.example.app_clinica_atl.data.repository.CitasRepository
 import com.example.app_clinica_atl.data.repository.DoctorRepository
 
 /**
@@ -12,7 +12,7 @@ import com.example.app_clinica_atl.data.repository.DoctorRepository
  */
 class BookAppointmentViewModelFactory(
     private val doctorRepository: DoctorRepository,
-    private val appointmentRepository: AppointmentRepository,
+    private val appointmentRepository: CitasRepository,
     private val userPreferences: UserPreferences // <-- Dependencia añadida
 ) : ViewModelProvider.Factory {
 

@@ -86,6 +86,27 @@ dependencies {
     //Data Store Preferencia
     implementation("androidx.datastore:datastore-preferences:1.1.1")
 
-    
+    // ==== AGREGADOS PARA REST ====
+    // Retrofit base
+    implementation("com.squareup.retrofit2:retrofit:2.11.0") // <-- NUEVO
+    // Convertidor JSON con Gson
+    implementation("com.squareup.retrofit2:converter-gson:2.11.0") // <-- NUEVO
+    // OkHttp y logging interceptor
+    implementation("com.squareup.okhttp3:okhttp:4.12.0") // <-- NUEVO
+    implementation("com.squareup.okhttp3:logging-interceptor:4.12.0") // <-- NUEVO
+
+    //librerias para test locales (funcionalidades)
+    testImplementation(libs.junit)
+    testImplementation("io.mockk:mockk:1.13.12")
+    testImplementation("org.robolectric:robolectric:4.13")
+
+    //test de implementacion de UI (AndroidTest)
+    androidTestImplementation(libs.androidx.junit)
+    androidTestImplementation(libs.androidx.espresso.core)
+    androidTestImplementation(libs.androidx.compose.ui.test.junit4)
+    debugImplementation(libs.androidx.compose.ui.test.manifest)
+
+    androidTestImplementation("androidx.test:core-ktx:1.5.0")
+    androidTestImplementation("androidx.test:rules:1.5.0")
 
 }

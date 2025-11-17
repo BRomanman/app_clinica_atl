@@ -1,21 +1,21 @@
 package com.example.app_clinica_atl.data.repository
 
-import com.example.app_clinica_atl.data.local.user.UserDao
-import com.example.app_clinica_atl.data.local.user.UserEntity
+import com.example.app_clinica_atl.data.local.usuario.UsuarioDao
+import com.example.app_clinica_atl.data.local.usuario.UsuarioEntity
 import java.util.NoSuchElementException
 
 /**
  * Implementación del repositorio de Doctores.
- * NO usa Hilt. Recibe sus dependencias (UserDao) manualmente.
+ * NO usa Hilt. Recibe sus dependencias (UsuarioDao) manualmente.
  */
 class DoctorRepositoryImpl(
-    private val userDao: UserDao // <-- Recibe el DAO
+    private val userDao: UsuarioDao // <-- Recibe el DAO
 ) : DoctorRepository {
 
     /**
      * Obtiene doctores reales de la base de datos usando el DAO.
      */
-    override suspend fun getDoctorsBySpecialty(specialty: String): Result<List<UserEntity>> {
+    override suspend fun getDoctorsBySpecialty(specialty: String): Result<List<UsuarioEntity>> {
         return try {
             val doctors = userDao.getDoctorsBySpecialty(specialty)
             Result.success(doctors)
@@ -27,7 +27,7 @@ class DoctorRepositoryImpl(
     /**
      * Obtiene un doctor real por su ID.
      */
-    override suspend fun getDoctorById(id: Long): Result<UserEntity> {
+    override suspend fun getDoctorById(id: Long): Result<UsuarioEntity> {
         return try {
             val doctor = userDao.getById(id)
             if (doctor != null) {

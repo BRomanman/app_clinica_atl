@@ -3,19 +3,19 @@ package com.example.app_clinica_atl.ui.viewmodel
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.ViewModelProvider
 import com.example.app_clinica_atl.data.local.storage.UserPreferences
-import com.example.app_clinica_atl.data.repository.AppointmentRepository
-import com.example.app_clinica_atl.data.repository.InsuranceRepository
-import com.example.app_clinica_atl.data.repository.UserRepository
+import com.example.app_clinica_atl.data.repository.CitasRepository
+import com.example.app_clinica_atl.data.repository.SegurosRepository
+import com.example.app_clinica_atl.data.repository.UsuariosRepository
 
 /**
  * Factory manual para crear PatientViewModel.
- * ¡CAMBIO! Ahora también inyecta AppointmentRepository.
+ * ¡CAMBIO! Ahora también inyecta CitasRepository.
  */
 class PatientViewModelFactory(
-    private val userRepository: UserRepository,
+    private val userRepository: UsuariosRepository,
     private val userPreferences: UserPreferences,
-    private val insuranceRepository: InsuranceRepository,
-    private val appointmentRepository: AppointmentRepository // <-- ¡AÑADIDO!
+    private val insuranceRepository: SegurosRepository,
+    private val appointmentRepository: CitasRepository // <-- ¡AÑADIDO!
 ) : ViewModelProvider.Factory {
 
     @Suppress("UNCHECKED_CAST")

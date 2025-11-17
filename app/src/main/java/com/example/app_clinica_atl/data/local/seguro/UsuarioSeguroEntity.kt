@@ -1,10 +1,11 @@
-package com.example.app_clinica_atl.data.local.insurance
+package com.example.app_clinica_atl.data.local.seguro
 
 import androidx.room.Entity
 import androidx.room.ForeignKey
 import androidx.room.Index
 import androidx.room.PrimaryKey
-import com.example.app_clinica_atl.data.local.user.UserEntity
+import com.example.app_clinica_atl.data.local.usuario.UsuarioEntity
+import com.example.app_clinica_atl.data.local.seguro.SeguroEntity
 
 /**
  * Define la tabla "user_insurance_table".
@@ -16,20 +17,20 @@ import com.example.app_clinica_atl.data.local.user.UserEntity
     indices = [Index("patientId"), Index("insuranceId")],
     foreignKeys = [
         ForeignKey(
-            entity = UserEntity::class,
+            entity = UsuarioEntity::class,
             parentColumns = ["id"],
             childColumns = ["patientId"],
             onDelete = ForeignKey.CASCADE
         ),
         ForeignKey(
-            entity = InsuranceEntity::class,
+            entity = SeguroEntity::class,
             parentColumns = ["id"],
             childColumns = ["insuranceId"],
             onDelete = ForeignKey.CASCADE
         )
     ]
 )
-data class UserInsuranceEntity(
+data class UsuarioSeguroEntity(
     @PrimaryKey(autoGenerate = true)
     val id: Long = 0,
     val patientId: Long,

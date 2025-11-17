@@ -23,6 +23,7 @@ import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
+import androidx.compose.material3.Divider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
@@ -58,6 +59,8 @@ fun HomeScreen(
         R.drawable.clinica_1,
         R.drawable.clinica_2
     )
+
+
 
     val insuranceDisplayCards = listOf(
         InsuranceCardDisplay(
@@ -116,7 +119,43 @@ fun HomeScreen(
                 )
             }
         }
-        // --- FIN DEL CAMBIO ---
+
+
+        item {
+            Spacer(modifier = Modifier.height(12.dp))
+            Button(
+                onClick = { viewModel.fetchDebugUser(1L) },
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(horizontal = 16.dp),
+                colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.secondary)
+            ) {
+                Text("Probar API (usuario 1)")
+            }
+
+        }
+
+
+
+        // --- Botón principal de Agendar Cita (al final) ---
+        item {
+            Spacer(modifier = Modifier.height(24.dp))
+            Button(
+                onClick = onBookAppointmentClick,
+                modifier = Modifier
+                    .fillMaxWidth(0.8f)
+                    .height(56.dp),
+                shape = RoundedCornerShape(12.dp),
+                colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.primary)
+            ) {
+                Text(
+                    text = "Reserva tu Hora",
+                    fontSize = 18.sp,
+                    fontWeight = FontWeight.Bold
+                )
+            }
+            Spacer(modifier = Modifier.height(32.dp))
+        }
 
         // --- Carrusel de imágenes (sin cambios) ---
         item {

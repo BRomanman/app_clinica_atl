@@ -3,10 +3,10 @@ package com.example.app_clinica_atl.ui.viewmodel
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.ViewModelProvider
 import com.example.app_clinica_atl.data.local.storage.UserPreferences
-import com.example.app_clinica_atl.data.repository.UserRepository
+import com.example.app_clinica_atl.data.repository.UsuariosRepository
 
 class HomeViewModelFactory(
-    private val userRepository: UserRepository,
+    private val userRepository: UsuariosRepository,
     private val userPreferences: UserPreferences
 ) : ViewModelProvider.Factory {
 

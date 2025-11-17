@@ -1,4 +1,4 @@
-package com.example.app_clinica_atl.data.local.user
+package com.example.app_clinica_atl.data.local.usuario
 
 import androidx.room.Entity
 import androidx.room.PrimaryKey
@@ -8,7 +8,7 @@ import androidx.room.PrimaryKey
  * Reemplaza a los modelos falsos 'DoctorInfo' y 'Patient'.
  */
 @Entity(tableName = "user_table")
-data class UserEntity(
+data class UsuarioEntity(
     @PrimaryKey(autoGenerate = true)
     val id: Long = 0,
     val name: String,

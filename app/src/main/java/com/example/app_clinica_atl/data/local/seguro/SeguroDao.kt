@@ -1,26 +1,28 @@
-package com.example.app_clinica_atl.data.local.insurance
+package com.example.app_clinica_atl.data.local.seguro
 
 import androidx.room.Dao
 import androidx.room.Insert
 import androidx.room.OnConflictStrategy
 import androidx.room.Query
 import kotlinx.coroutines.flow.Flow
+import com.example.app_clinica_atl.data.local.seguro.SeguroEntity
+import com.example.app_clinica_atl.data.local.seguro.UsuarioSeguroEntity
 
 @Dao
-interface InsuranceDao {
+interface SeguroDao {
 
-    // --- Funciones para InsuranceEntity (Los tipos de seguro) ---
+    // --- Funciones para SeguroEntity (Los tipos de seguro) ---
 
     @Insert(onConflict = OnConflictStrategy.IGNORE)
-    suspend fun insertInsurance(insurance: InsuranceEntity)
+    suspend fun insertInsurance(insurance: SeguroEntity)
 
     @Query("SELECT * FROM insurance_table ORDER BY price ASC")
-    fun getAllAvailableInsurances(): Flow<List<InsuranceEntity>>
+    fun getAllAvailableInsurances(): Flow<List<SeguroEntity>>
 
-    // --- Funciones para UserInsuranceEntity (Las suscripciones) ---
+    // --- Funciones para UsuarioSeguroEntity (Las suscripciones) ---
 
     @Insert(onConflict = OnConflictStrategy.ABORT)
-    suspend fun subscribePatientToInsurance(subscription: UserInsuranceEntity)
+    suspend fun subscribePatientToInsurance(subscription: UsuarioSeguroEntity)
 
     @Query("UPDATE user_insurance_table SET status = :newStatus WHERE id = :subscriptionId")
     suspend fun updateSubscriptionStatus(subscriptionId: Long, newStatus: String)
@@ -31,7 +33,7 @@ interface InsuranceDao {
      * Obtiene la *suscripción* activa de un paciente (para saber el ID de la suscripción).
      */
     @Query("SELECT * FROM user_insurance_table WHERE patientId = :patientId AND status = 'activo' LIMIT 1")
-    fun getActiveSubscription(patientId: Long): Flow<UserInsuranceEntity?>
+    fun getActiveSubscription(patientId: Long): Flow<UsuarioSeguroEntity?>
 
     /**
      * Obtiene los *detalles del seguro* (nombre, precio) de la suscripción activa.
@@ -43,5 +45,5 @@ interface InsuranceDao {
         WHERE sub.patientId = :patientId AND sub.status = 'activo'
         LIMIT 1
     """)
-    fun getActiveSubscriptionDetails(patientId: Long): Flow<InsuranceEntity?>
+    fun getActiveSubscriptionDetails(patientId: Long): Flow<SeguroEntity?>
 }
