@@ -15,13 +15,8 @@ interface UsuarioDao {
     @Query("SELECT * FROM user_table WHERE id = :id LIMIT 1")
     suspend fun getById(id: Long): UsuarioEntity?
 
-    // --- ¡¡FUNCIÓN AÑADIDA!! ---
-    /**
-     * Obtiene un usuario por ID como un Flow (observable).
-     */
     @Query("SELECT * FROM user_table WHERE id = :id LIMIT 1")
-    fun getByIdAsFlow(id: Long): Flow<UsuarioEntity?>
-    // --- FIN ---
+    fun getByIdAsFlow(id: Long): Flow<UserEntity?>
 
     @Insert(onConflict = OnConflictStrategy.REPLACE)
     suspend fun insert(user: UsuarioEntity): Long
@@ -42,5 +37,12 @@ interface UsuarioDao {
     suspend fun searchPatientsByName(query: String): List<UsuarioEntity>
 
     @Query("SELECT * FROM user_table WHERE role = 'doctor' ORDER BY name ASC")
-    fun getAllDoctors(): Flow<List<UsuarioEntity>>
+    fun getAllDoctors(): Flow<List<UserEntity>>
+
+    // --- ¡¡FUNCIÓN AÑADIDA PARA LA CÁMARA!! ---
+    /**
+     * Actualiza únicamente la URL de la imagen de perfil de un usuario.
+     */
+    @Query("UPDATE user_table SET profileImageUrl = :imageUrl WHERE id = :userId")
+    suspend fun updateProfileImageUrl(userId: Long, imageUrl: String)
 }

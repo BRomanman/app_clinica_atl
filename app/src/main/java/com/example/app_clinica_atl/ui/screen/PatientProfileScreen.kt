@@ -1,5 +1,14 @@
 package com.example.app_clinica_atl.ui.screen
 
+import android.Manifest
+import android.content.Context
+import android.net.Uri
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.contract.ActivityResultContracts
+import androidx.compose.foundation.clickable
+import androidx.compose.ui.platform.LocalContext
+import androidx.core.content.FileProvider
+import coil.compose.AsyncImage
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -30,7 +39,9 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -44,16 +55,51 @@ import com.example.app_clinica_atl.data.local.cita.CitaDetalle
 import com.example.app_clinica_atl.data.local.seguro.SeguroEntity
 import com.example.app_clinica_atl.data.local.usuario.UsuarioEntity
 import com.example.app_clinica_atl.ui.viewmodel.PatientViewModel
+import java.io.File
+import java.text.SimpleDateFormat
+import java.util.Date
+import java.util.Locale
+import java.util.Objects
 
 @Composable
 fun PatientProfileScreen(
     onGoToSeguros: () -> Unit,
-    onLogout: () -> Unit, // <-- ¡¡PARÁMETRO AÑADIDO!!
+    onLogout: () -> Unit,
     viewModel: PatientViewModel,
     modifier: Modifier = Modifier
 ) {
     val uiState by viewModel.uiState.collectAsState()
     val snackbarHostState = remember { SnackbarHostState() }
+
+    // --- Lógica de Cámara (Launchers) ---
+    val context = LocalContext.current
+    var tempImageUri by remember { mutableStateOf<Uri?>(null) }
+
+    val cameraLauncher = rememberLauncherForActivityResult(
+        contract = ActivityResultContracts.TakePicture()
+    ) { success ->
+        if (success) {
+            tempImageUri?.let {
+                viewModel.updateProfileImage(it)
+            }
+        }
+    }
+
+    val permissionLauncher = rememberLauncherForActivityResult(
+        contract = ActivityResultContracts.RequestPermission()
+    ) { isGranted ->
+        if (isGranted) {
+            // Permiso concedido, crea la URI y lanza la cámara
+            val uri = createImageUri(context) // Llama a la función corregida
+            tempImageUri = uri
+            cameraLauncher.launch(uri)
+        } else {
+            // Permiso denegado, (podríamos mostrar un snackbar)
+            viewModel.clearMessages()
+        }
+    }
+    // --- Fin Lógica de Cámara ---
+
 
     LaunchedEffect(uiState.errorMsg, uiState.successMsg) {
         uiState.errorMsg?.let {
@@ -79,10 +125,12 @@ fun PatientProfileScreen(
             contentAlignment = Alignment.Center
         ) {
             when {
-                uiState.isLoading && uiState.patient == null -> {
+                // (El estado isLoading ahora viene del flow reactivo)
+                uiState.isLoading -> {
                     CircularProgressIndicator()
                 }
                 uiState.errorMsg != null && uiState.patient == null -> {
+                    // Muestra error si el perfil no se pudo cargar
                     Text(
                         text = uiState.errorMsg ?: "No se pudo cargar el perfil.",
                         color = MaterialTheme.colorScheme.error,
@@ -97,12 +145,43 @@ fun PatientProfileScreen(
                         onCancelInsurance = viewModel::cancelSubscription,
                         onCancelAppointment = viewModel::cancelAppointment,
                         onGoToSeguros = onGoToSeguros,
-                        onLogout = onLogout // <-- ¡¡ACCIÓN PASADA!!
+                        onLogout = onLogout,
+                        onProfileImageClick = {
+                            // Pide permiso de cámara al hacer clic
+                            permissionLauncher.launch(Manifest.permission.CAMERA)
+                        }
                     )
                 }
             }
         }
     }
+}
+
+/**
+ * ¡¡FUNCIÓN CORREGIDA!!
+ * Ahora usa 'context.cacheDir' y la subcarpeta 'images'
+ * para que coincida con el '<cache-path ... path="images/" />'
+ * de tu 'file_paths.xml'.
+ */
+private fun createImageUri(context: Context): Uri {
+    // 1. Define la subcarpeta "images" (debe coincidir con path="images/" en file_paths.xml)
+    val imageCacheFolder = File(context.cacheDir, "images")
+    if (!imageCacheFolder.exists()) {
+        imageCacheFolder.mkdirs() // Crea la carpeta si no existe
+    }
+
+    // 2. Crea el archivo temporal DENTRO de esa subcarpeta
+    val timeStamp = SimpleDateFormat("yyyyMMdd_HHmmss", Locale.getDefault()).format(Date())
+    val imageFile = File(imageCacheFolder, "JPEG_${timeStamp}_.jpg")
+
+    // 3. Construye la autoridad (debe coincidir con .fileprovider en AndroidManifest.xml)
+    val authority = "${context.packageName}.fileprovider"
+
+    return FileProvider.getUriForFile(
+        Objects.requireNonNull(context),
+        authority,
+        imageFile
+    )
 }
 
 @Composable
@@ -113,21 +192,25 @@ private fun PatientProfileContent(
     onCancelInsurance: () -> Unit,
     onCancelAppointment: (Long) -> Unit,
     onGoToSeguros: () -> Unit,
-    onLogout: () -> Unit // <-- ¡¡ACCIÓN RECIBIDA!!
+    onLogout: () -> Unit,
+    onProfileImageClick: () -> Unit
 ) {
     LazyColumn(
         modifier = Modifier.fillMaxSize(),
         horizontalAlignment = Alignment.CenterHorizontally
     ) {
-        // --- Item 1: El Perfil ---
+        // --- Item 1: Imagen de Perfil ---
         item {
-            Image(
-                painter = painterResource(id = R.drawable.goku_perfil),
+            AsyncImage(
+                model = patient.profileImageUrl, // Carga la URL de la BD (String o Uri)
                 contentDescription = "Foto de ${patient.name}",
+                placeholder = painterResource(id = R.drawable.goku_perfil), // Tu placeholder
+                error = painterResource(id = R.drawable.goku_perfil), // Tu placeholder si falla
                 contentScale = ContentScale.Crop,
                 modifier = Modifier
                     .size(150.dp)
                     .clip(CircleShape)
+                    .clickable { onProfileImageClick() } // <-- ¡Acción de cámara!
             )
             Spacer(modifier = Modifier.height(16.dp))
             Text(
@@ -148,7 +231,7 @@ private fun PatientProfileContent(
             Spacer(modifier = Modifier.height(16.dp))
         }
 
-        // --- Item 2: El Seguro ---
+        // --- Item 2: El Seguro (sin cambios) ---
         item {
             InsuranceInfoCard(
                 activeInsurance = activeInsurance,
@@ -160,7 +243,7 @@ private fun PatientProfileContent(
             Spacer(modifier = Modifier.height(16.dp))
         }
 
-        // --- Item 3: Título de Citas ---
+        // --- Item 3: Título de Citas (sin cambios) ---
         item {
             Text(
                 text = "Mis Próximas Citas",
@@ -171,7 +254,7 @@ private fun PatientProfileContent(
             Spacer(modifier = Modifier.height(16.dp))
         }
 
-        // --- Item 4: Lista de Citas ---
+        // --- Item 4: Lista de Citas (sin cambios) ---
         if (appointments.isEmpty()) {
             item {
                 Text(
@@ -189,7 +272,7 @@ private fun PatientProfileContent(
             }
         }
 
-        // --- ¡¡ITEM 5: BOTÓN DE LOGOUT AÑADIDO!! ---
+        // --- Item 5: Botón de Logout (sin cambios) ---
         item {
             Spacer(modifier = Modifier.height(24.dp))
             Button(
@@ -208,7 +291,7 @@ private fun PatientProfileContent(
     }
 }
 
-// ... (El resto de composables: AppointmentCard, InsuranceInfoCard, InfoRow no cambian)
+// ... (AppointmentCard, InsuranceInfoCard, InfoRow no cambian) ...
 @Composable
 private fun AppointmentCard(
     appointment: CitaDetalle,

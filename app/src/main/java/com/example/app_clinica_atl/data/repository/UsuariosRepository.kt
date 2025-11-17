@@ -71,7 +71,6 @@ class UsuariosRepository(
     fun getUserByIdAsFlow(id: Long): Flow<UsuarioEntity?> {
         return userDao.getByIdAsFlow(id)
     }
-    // --- FIN ---
 
     suspend fun searchPatients(query: String): Result<List<UsuarioEntity>> {
         // ... (código de searchPatients sin cambios)

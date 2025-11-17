@@ -7,12 +7,12 @@ sealed class Route(val path: String) {
     object PatientProfile : Route("patient_profile")
     object Seguros : Route("seguros")
     object BookAppointment : Route("book_appointment")
+    object LogoutConfirmation : Route("logout_confirmation")
 
     // Rutas de Doctor
     object DoctorMenu : Route("doctor_menu")
     object DoctorSchedule : Route("doctor_schedule")
     object DoctorSearchPatient : Route("doctor_search_patient")
-
     object DoctorProfile : Route("doctor_profile/{doctorId}") {
         fun createRoute(doctorId: Long) = "doctor_profile/$doctorId"
     }
@@ -21,5 +21,8 @@ sealed class Route(val path: String) {
     object AdminMenu : Route("admin_menu")
     object AdminAddSpecialty : Route("admin_add_specialty")
     object AdminAddDoctor : Route("admin_add_doctor")
-    object AdminViewDoctors : Route("admin_view_doctors") // <-- ¡¡RUTA AÑADIDA!!
+    object AdminViewDoctors : Route("admin_view_doctors")
+
+    // --- ¡¡RUTA AÑADIDA PARA LA SOLUCIÓN NUCLEAR!! ---
+    object Restart : Route("restart_app")
 }

@@ -1,6 +1,5 @@
 package com.example.app_clinica_atl.ui.screen
 
-// --- ¡¡INICIO DE CORRECCIÓN: IMPORTS AÑADIDOS!! ---
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
@@ -34,15 +33,14 @@ import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.painter.Painter
-import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.layout.ContentScale // <-- ¡IMPORT AÑADIDO!
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-// --- FIN DE CORRECCIÓN ---
+import coil.compose.AsyncImage // <-- ¡¡IMPORT DE COIL AÑADIDO!!
 import com.example.app_clinica_atl.R
 import com.example.app_clinica_atl.ui.viewmodel.HomeViewModel
 
@@ -50,19 +48,16 @@ import com.example.app_clinica_atl.ui.viewmodel.HomeViewModel
 fun HomeScreen(
     viewModel: HomeViewModel,
     onBookAppointmentClick: () -> Unit,
-    // onMyDatesClick se eliminó
     onInsuranceClick: () -> Unit,
     onProfileClick: () -> Unit,
     modifier: Modifier = Modifier
 ) {
     val uiState by viewModel.uiState.collectAsState()
 
-    // --- ¡CORRECCIÓN DE IMÁGENES! ---
-    // Usamos los nombres de archivo reales de tu proyecto
     val bannerImages = listOf(
-        R.drawable.familia_feliz1, // Tu foto de "Reserva tu Hora"
-        R.drawable.clinica_1,       // Placeholder de la clínica
-        R.drawable.clinica_2        // Placeholder de la clínica
+        R.drawable.familia_feliz1,
+        R.drawable.clinica_1,
+        R.drawable.clinica_2
     )
 
 
@@ -70,7 +65,7 @@ fun HomeScreen(
     val insuranceDisplayCards = listOf(
         InsuranceCardDisplay(
             title = "Seguro de accidente vehicular",
-            imageRes = R.drawable.seguro_salud_1 // Tu foto del auto
+            imageRes = R.drawable.seguro_salud_1
         ),
         InsuranceCardDisplay(
             title = "Seguro de vida familiar",
@@ -78,10 +73,9 @@ fun HomeScreen(
         ),
         InsuranceCardDisplay(
             title = "Seguro de hospitalización",
-            imageRes = R.drawable.seguro_empresarial1 // (Asumiendo que esta es la correcta)
+            imageRes = R.drawable.seguro_empresarial1
         )
     )
-    // --- FIN DE CORRECCIÓN ---
 
     LazyColumn(
         modifier = modifier
@@ -89,7 +83,7 @@ fun HomeScreen(
             .background(MaterialTheme.colorScheme.surfaceVariant),
         horizontalAlignment = Alignment.CenterHorizontally
     ) {
-        // --- Encabezado de bienvenida ---
+        // --- ¡¡ENCABEZADO DE BIENVENIDA ACTUALIZADO!! ---
         item {
             Row(
                 modifier = Modifier
@@ -111,9 +105,13 @@ fun HomeScreen(
                         color = MaterialTheme.colorScheme.onSurface
                     )
                 }
-                Image(
-                    painter = painterResource(id = R.drawable.goku_perfil),
+                // ¡CAMBIO! Usamos AsyncImage para cargar la foto de perfil
+                AsyncImage(
+                    model = uiState.profileImageUrl, // <-- Carga la URL de la BD
                     contentDescription = "Foto de perfil",
+                    placeholder = painterResource(id = R.drawable.goku_perfil), // Tu placeholder
+                    error = painterResource(id = R.drawable.goku_perfil), // Tu placeholder si falla
+                    contentScale = ContentScale.Crop, // Escala la imagen
                     modifier = Modifier
                         .size(50.dp)
                         .clip(CircleShape)
@@ -159,7 +157,7 @@ fun HomeScreen(
             Spacer(modifier = Modifier.height(32.dp))
         }
 
-        // --- Carrusel de imágenes ---
+        // --- Carrusel de imágenes (sin cambios) ---
         item {
             LazyRow(
                 modifier = Modifier
@@ -182,7 +180,7 @@ fun HomeScreen(
             }
         }
 
-        // --- Título para "Nuestros Seguros" ---
+        // --- Título para "Nuestros Seguros" (sin cambios) ---
         item {
             Text(
                 text = "Nuestros Seguros",
@@ -195,7 +193,7 @@ fun HomeScreen(
             )
         }
 
-        // --- Lista de tarjetas de Seguros ---
+        // --- Lista de tarjetas de Seguros (sin cambios) ---
         items(insuranceDisplayCards) { card ->
             InsuranceCardItem(
                 title = card.title,
@@ -205,11 +203,29 @@ fun HomeScreen(
             Spacer(modifier = Modifier.height(12.dp))
         }
 
-
+        // --- Botón principal de Agendar Cita (sin cambios) ---
+        item {
+            Spacer(modifier = Modifier.height(24.dp))
+            Button(
+                onClick = onBookAppointmentClick,
+                modifier = Modifier
+                    .fillMaxWidth(0.8f)
+                    .height(56.dp),
+                shape = RoundedCornerShape(12.dp),
+                colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.primary)
+            ) {
+                Text(
+                    text = "Reserva tu Hora",
+                    fontSize = 18.sp,
+                    fontWeight = FontWeight.Bold
+                )
+            }
+            Spacer(modifier = Modifier.height(32.dp))
+        }
     }
 }
 
-// Composable para las tarjetas de seguros en la Home
+// ... (El resto del archivo: InsuranceCardItem, InsuranceCardDisplay)
 @Composable
 private fun InsuranceCardItem(
     title: String,
@@ -237,7 +253,7 @@ private fun InsuranceCardItem(
             )
             Text(
                 text = title,
-                color = Color.White, // Asumimos texto blanco para las fotos
+                color = MaterialTheme.colorScheme.onPrimary, // Ajusta el color si es necesario
                 fontSize = 20.sp,
                 fontWeight = FontWeight.Bold,
                 modifier = Modifier
@@ -248,7 +264,6 @@ private fun InsuranceCardItem(
     }
 }
 
-// Data class auxiliar para las tarjetas de seguros en Home
 data class InsuranceCardDisplay(
     val title: String,
     val imageRes: Int

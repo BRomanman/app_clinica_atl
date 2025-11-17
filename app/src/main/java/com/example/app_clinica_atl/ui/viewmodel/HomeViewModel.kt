@@ -14,9 +14,11 @@ import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
 
+// --- ¡¡ESTADO DE UI ACTUALIZADO!! ---
 data class HomeUiState(
     val userName: String = "",
     val debugInfo: String? = null
+    val profileImageUrl: String? = null // <-- ¡¡CAMPO AÑADIDO!!
 )
 
 class HomeViewModel(
@@ -33,23 +35,21 @@ class HomeViewModel(
     // 'uiState' ahora es un Flow que reacciona a los cambios en 'userIdFlow'.
     val uiState: StateFlow<HomeUiState> = userPreferences.userIdFlow
         .flatMapLatest { userId ->
-            // flatMapLatest cancela la corutina anterior si el userId cambia (ej. al hacer login/logout)
             if (userId == null) {
                 // Si no hay ID (logout), devuelve un estado por defecto
-                flowOf(HomeUiState(userName = "Usuario"))
+                flowOf(HomeUiState(userName = "Usuario", profileImageUrl = null))
             } else {
-                // Si hay ID, busca el nombre de ese usuario
-                // y lo transforma en un HomeUiState
-                userRepository.getUserByIdAsFlow(userId) // (Crearemos esta función en el sig. paso)
+                // Si hay ID, busca el usuario
+                userRepository.getUserByIdAsFlow(userId)
                     .map { user ->
                         HomeUiState(
                             userName = user?.name ?: "Usuario",
-                            debugInfo = _debugUserInfo.value
+                            debugInfo = _debugUserInfo.value,
+                            profileImageUrl = user?.profileImageUrl
                         )
                     }
             }
         }.stateIn(
-            // Convierte el Flow en un StateFlow
             scope = viewModelScope,
             started = SharingStarted.WhileSubscribed(5000),
             initialValue = HomeUiState(userName = "Cargando...")
