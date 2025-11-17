@@ -7,5 +7,5 @@ data class CitaDto(
     val date: String, // "YYYY-MM-DD"
     val time: String, // "HH:mm"
     val specialty: String,
-    val status: String // e.g., "confirmed", "cancelled"
+    val status: String // "confirmado", "cancelado"
 )

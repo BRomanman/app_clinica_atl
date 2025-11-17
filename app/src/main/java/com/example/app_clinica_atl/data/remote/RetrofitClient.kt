@@ -6,7 +6,7 @@ import retrofit2.converter.gson.GsonConverterFactory
 object RetrofitClient {
 
     // TODO: Reemplazar con la URL base de la API real
-    private const val BASE_URL = "https://api.clinic-atl.com/"
+    private const val BASE_URL = "http://localhost/phpmyadmin/index.php?route=/database/structure&db=atl_bd"
 
     val instance: Retrofit by lazy {
         Retrofit.Builder()

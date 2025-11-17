@@ -64,6 +64,9 @@ fun HomeScreen(
         R.drawable.clinica_2        // Placeholder de la clínica
     )
 
+    val debugInfo by viewModel.debugUserInfo.collectAsState()
+
+
     val insuranceDisplayCards = listOf(
         InsuranceCardDisplay(
             title = "Seguro de accidente vehicular",
@@ -118,6 +121,39 @@ fun HomeScreen(
                 )
             }
         }
+
+
+        item {
+            Spacer(modifier = Modifier.height(12.dp))
+            Button(
+                onClick = { viewModel.fetchDebugUser(1L) },
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(horizontal = 16.dp),
+                colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.secondary)
+            ) {
+                Text("Probar API (usuario 1)")
+            }
+            debugInfo?.let {
+                Spacer(modifier = Modifier.height(8.dp))
+                Card(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(horizontal = 16.dp),
+                    colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface)
+                ) {
+                    Text(
+                        text = it,
+                        modifier = Modifier.padding(12.dp),
+                        style = MaterialTheme.typography.bodyMedium
+                    )
+                }
+                Divider(modifier = Modifier.padding(vertical = 8.dp))
+            }
+        }
+
+
+
         // --- Botón principal de Agendar Cita (al final) ---
         item {
             Spacer(modifier = Modifier.height(24.dp))
