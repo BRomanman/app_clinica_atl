@@ -1,8 +1,11 @@
 package com.example.app_clinica_atl.domain.validationTest.validation
 
+import com.example.app_clinica_atl.data.remote.RetrofitClient
 import com.example.app_clinica_atl.domain.validation.validateEmail
+import kotlinx.coroutines.runBlocking
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertNull
+import org.junit.Assert.assertTrue
 import org.junit.Test
 import org.junit.runner.RunWith
 import org.robolectric.RobolectricTestRunner
@@ -28,10 +31,14 @@ class ValidatorsTest {
     }
 
     //todo terminar todos los test para el archivo de validators
+
+
+    //comprobar que trae datos de la api
     @Test
-    fun (){
-
-
+    fun callUsersEndpoint() = runBlocking {
+        val api = RetrofitClient.usuariosApi
+        val result = api.getUsers()
+        assertTrue(result.isNotEmpty())
     }
 
 }

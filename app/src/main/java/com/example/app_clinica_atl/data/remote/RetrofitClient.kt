@@ -5,8 +5,9 @@ import retrofit2.converter.gson.GsonConverterFactory
 
 object RetrofitClient {
 
-    // TODO: Reemplazar con la URL base de la API real
-    private const val BASE_URL = "http://localhost/phpmyadmin/index.php?route=/database/structure&db=atl_bd"
+    // TODO: Reemplazar con la URL base del backend REST que expone estas tablas
+    // Para emulador Android, usa 10.0.2.2 apuntando al host local.
+    private const val BASE_URL = "http://10.0.2.2:8080/api/"
 
     val instance: Retrofit by lazy {
         Retrofit.Builder()

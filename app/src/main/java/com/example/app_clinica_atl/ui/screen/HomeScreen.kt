@@ -24,6 +24,7 @@ import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
+import androidx.compose.material3.Divider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
@@ -64,7 +65,6 @@ fun HomeScreen(
         R.drawable.clinica_2        // Placeholder de la clínica
     )
 
-    val debugInfo by viewModel.debugUserInfo.collectAsState()
 
 
     val insuranceDisplayCards = listOf(
@@ -134,22 +134,7 @@ fun HomeScreen(
             ) {
                 Text("Probar API (usuario 1)")
             }
-            debugInfo?.let {
-                Spacer(modifier = Modifier.height(8.dp))
-                Card(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(horizontal = 16.dp),
-                    colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface)
-                ) {
-                    Text(
-                        text = it,
-                        modifier = Modifier.padding(12.dp),
-                        style = MaterialTheme.typography.bodyMedium
-                    )
-                }
-                Divider(modifier = Modifier.padding(vertical = 8.dp))
-            }
+
         }
 
 

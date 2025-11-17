@@ -4,21 +4,29 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.example.app_clinica_atl.data.local.storage.UserPreferences
 import com.example.app_clinica_atl.data.repository.UserRepository
+import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.flatMapLatest
 import kotlinx.coroutines.flow.flowOf
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.stateIn
+import kotlinx.coroutines.launch
 
 data class HomeUiState(
-    val userName: String = ""
+    val userName: String = "",
+    val debugInfo: String? = null
 )
 
 class HomeViewModel(
     private val userRepository: UserRepository,
     private val userPreferences: UserPreferences
 ) : ViewModel() {
+
+    // Estado auxiliar para depurar un llamado manual a datos de usuario (botón "Probar API")
+    private val _debugUserInfo = MutableStateFlow<String?>(null)
+    val debugUserInfo: StateFlow<String?> = _debugUserInfo.asStateFlow()
 
     // --- ¡¡LÓGICA ACTUALIZADA!! ---
     // Ya no usamos 'init'.
@@ -34,7 +42,10 @@ class HomeViewModel(
                 // y lo transforma en un HomeUiState
                 userRepository.getUserByIdAsFlow(userId) // (Crearemos esta función en el sig. paso)
                     .map { user ->
-                        HomeUiState(userName = user?.name ?: "Usuario")
+                        HomeUiState(
+                            userName = user?.name ?: "Usuario",
+                            debugInfo = _debugUserInfo.value
+                        )
                     }
             }
         }.stateIn(
@@ -43,4 +54,28 @@ class HomeViewModel(
             started = SharingStarted.WhileSubscribed(5000),
             initialValue = HomeUiState(userName = "Cargando...")
         )
+
+    /**
+     * Carga información de un usuario (local) y la formatea para mostrar en el panel de depuración.
+     * Si más adelante se conecta a Retrofit, reemplaza el acceso por la llamada remota.
+     */
+    fun fetchDebugUser(userId: Long) {
+        viewModelScope.launch {
+            val result = userRepository.getUserById(userId)
+            _debugUserInfo.value = result.fold(
+                onSuccess = { user ->
+                    """
+                        ID: ${user.id}
+                        Nombre: ${user.name}
+                        Correo: ${user.email}
+                        Rol: ${user.role}
+                    """.trimIndent()
+                },
+                onFailure = { error -> "Error: ${error.message ?: "desconocido"}" }
+            )
+            // Refresca el uiState para reflejar el valor de debug actual
+            // (stateIn reemitirá el último valor cuando cambie el flow base).
+            // No se hace nada más porque uiState lee _debugUserInfo.value en el map.
+        }
+    }
 }
