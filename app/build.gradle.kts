@@ -86,6 +86,10 @@ dependencies {
     //Data Store Preferencia
     implementation("androidx.datastore:datastore-preferences:1.1.1")
 
+
+
+
+
     // ==== AGREGADOS PARA REST ====
     // Retrofit base
     implementation("com.squareup.retrofit2:retrofit:2.11.0") // <-- NUEVO
@@ -94,6 +98,13 @@ dependencies {
     // OkHttp y logging interceptor
     implementation("com.squareup.okhttp3:okhttp:4.12.0") // <-- NUEVO
     implementation("com.squareup.okhttp3:logging-interceptor:4.12.0") // <-- NUEVO
+
+
+
+
+
+
+
 
     //librerias para test locales (funcionalidades)
     testImplementation(libs.junit)
@@ -108,5 +119,10 @@ dependencies {
 
     androidTestImplementation("androidx.test:core-ktx:1.5.0")
     androidTestImplementation("androidx.test:rules:1.5.0")
+
+
+
+
+    //todo splashscreen
 
 }

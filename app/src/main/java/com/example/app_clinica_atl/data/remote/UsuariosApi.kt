@@ -1,6 +1,9 @@
 package com.example.app_clinica_atl.data.remote
 
+import com.example.app_clinica_atl.data.remote.dto.LoginRequestDto
+import com.example.app_clinica_atl.data.remote.dto.LoginResponseDto
 import com.example.app_clinica_atl.data.remote.dto.UserDto
+import com.example.app_clinica_atl.data.remote.dto.DoctorDto
 import retrofit2.Response
 import retrofit2.http.Body
 import retrofit2.http.DELETE
@@ -11,21 +14,58 @@ import retrofit2.http.Path
 
 interface UsuariosApi {
 
-    @GET("users")
+    //AuthController
+    @POST("auth/login")
+    suspend fun login(@Body credentials: LoginRequestDto): LoginResponseDto
+
+
+
+
+    //UsuarioController
+    @GET("usuarios")
     suspend fun getUsers(): List<UserDto>
 
-    @GET("users/{id}")
+    @GET("usuarios/{id}")
     suspend fun getUserById(@Path("id") id: Long): UserDto
 
-    @POST("users")
+    @POST("usuarios")
     suspend fun createUser(@Body user: UserDto): UserDto
 
-    @PUT("users/{id}")
+    @PUT("usuarios/{id}")
     suspend fun updateUser(
         @Path("id") id: Long,
         @Body user: UserDto
     ): UserDto
 
-    @DELETE("users/{id}")
+    @DELETE("usuarios/{id}")
     suspend fun deleteUser(@Path("id") id: Long): Response<Unit>
+
+
+
+
+
+
+    //DoctorController
+    @GET("doctores")
+    suspend fun getDoc(): List<DoctorDto>
+
+    @GET("doctores/{id}")
+    suspend fun getDocById(@Path("id") id: Long): DoctorDto
+
+    @POST("doctores")
+    suspend fun createDoc(@Body doc: DoctorDto): DoctorDto
+
+    @PUT("doctores/{id}")
+    suspend fun updateDoc(
+        @Path("id") id: Long,
+        @Body doc: DoctorDto
+    ): DoctorDto
+
+    @DELETE("doctores/{id}")
+    suspend fun deleteDoc(@Path("id") id: Long): Response<Unit>
+
+
+
+
+
 }

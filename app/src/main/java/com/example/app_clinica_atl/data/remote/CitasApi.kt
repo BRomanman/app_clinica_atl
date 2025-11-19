@@ -11,21 +11,21 @@ import retrofit2.http.Path
 
 interface CitasApi {
 
-    @GET("appointments")
+    @GET("citas")
     suspend fun getAppointments(): List<CitaDto>
 
-    @GET("appointments/{id}")
+    @GET("citas/{id}")
     suspend fun getAppointmentById(@Path("id") id: Long): CitaDto
 
-    @POST("appointments")
+    @POST("citas")
     suspend fun createAppointment(@Body cita: CitaDto): CitaDto
 
-    @PUT("appointments/{id}")
+    @PUT("citas/{id}")
     suspend fun updateAppointment(
         @Path("id") id: Long,
         @Body cita: CitaDto
     ): CitaDto
 
-    @DELETE("appointments/{id}")
+    @DELETE("citas/{id}")
     suspend fun deleteAppointment(@Path("id") id: Long): Response<Unit>
 }

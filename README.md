@@ -163,14 +163,6 @@ app_clinica_atl/
 ./gradlew clean
 ```
 
-## Credenciales de prueba
-Los usuarios iniciales se generan automáticamente al crear la base de datos. Se almacenan en `AppDatabase` y permiten cubrir todos los flujos:
-
-| Rol           | Correo               | Contraseña | Notas |
-|---------------|----------------------|------------|-------|
-| Administrador | `admin@duoc.cl`      | `Admin123!`| Acceso completo al panel administrativo. |
-| Doctor        | `victor@duoc.cl`     | `123456`   | Vínculo con el perfil del doctor Víctor Rosendo. |
-| Paciente      | `csainz@duoc.cl`     | `123456`   | Perfil de paciente para probar reservas y seguros. |
 
 > Las nuevas cuentas creadas desde el flujo de registro quedan con rol Paciente (id\_rol = 1).
 

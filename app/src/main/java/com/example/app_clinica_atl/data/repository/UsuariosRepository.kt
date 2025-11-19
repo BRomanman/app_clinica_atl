@@ -4,10 +4,12 @@ import com.example.app_clinica_atl.data.local.usuario.UsuarioDao
 import com.example.app_clinica_atl.data.local.usuario.UsuarioEntity
 import com.example.app_clinica_atl.data.remote.RetrofitClient
 import com.example.app_clinica_atl.data.remote.UsuariosApi
-import com.example.app_clinica_atl.data.remote.dto.toUsuarioEntity
+import com.example.app_clinica_atl.data.remote.dto.LoginRequestDto
+import com.example.app_clinica_atl.data.remote.dto.toUsuarioEntityFromLogin
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.withContext
+import retrofit2.HttpException
 
 /**
  * Repositorio alineado con la API de Usuarios.
@@ -94,18 +96,20 @@ class UsuariosRepository(
     }
 
     /**
-     * Login contra la API de usuarios (microservicio).
-     * Filtra por correo/contraseña y mapea el rol numérico al string usado por la app.
+     * Login contra la API `auth/login` enviando únicamente correo/contraseña
+     * y traduciendo la respuesta (rol incluido) al modelo local.
      */
     suspend fun loginViaApi(email: String, pass: String): Result<UsuarioEntity> = withContext(Dispatchers.IO) {
         try {
-            val users = usuariosApi.getUsers()
-            val match = users.firstOrNull { it.correo.equals(email, ignoreCase = true) && it.contrasena == pass }
-            if (match != null) {
-                Result.success(match.toUsuarioEntity())
-            } else {
-                Result.failure(Exception("Credenciales inválidas."))
+            val loginRequest = LoginRequestDto(correo = email, contrasena = pass)
+            val loggedUser = usuariosApi.login(loginRequest)
+            Result.success(loggedUser.toUsuarioEntityFromLogin(pass))
+        } catch (e: HttpException) {
+            val message = when (e.code()) {
+                401 -> "Credenciales inválidas."
+                else -> e.message()
             }
+            Result.failure(Exception(message ?: "Error HTTP ${e.code()}", e))
         } catch (e: Exception) {
             Result.failure(e)
         }

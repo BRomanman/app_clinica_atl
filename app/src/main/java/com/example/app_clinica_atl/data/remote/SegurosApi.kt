@@ -11,21 +11,21 @@ import retrofit2.http.Path
 
 interface SegurosApi {
 
-    @GET("insurances")
+    @GET("seguros")
     suspend fun getSeguros(): List<SeguroDto>
 
-    @GET("insurances/{id}")
+    @GET("seguros/{id}")
     suspend fun getSeguroById(@Path("id") id: Long): SeguroDto
 
-    @POST("insurances")
+    @POST("seguros")
     suspend fun createSeguro(@Body seguro: SeguroDto): SeguroDto
 
-    @PUT("insurances/{id}")
+    @PUT("seguros/{id}")
     suspend fun updateSeguro(
         @Path("id") id: Long,
         @Body seguro: SeguroDto
     ): SeguroDto
 
-    @DELETE("insurances/{id}")
+    @DELETE("seguros/{id}")
     suspend fun deleteSeguro(@Path("id") id: Long): Response<Unit>
 }

@@ -120,23 +120,6 @@ fun HomeScreen(
             }
         }
 
-
-        item {
-            Spacer(modifier = Modifier.height(12.dp))
-            Button(
-                onClick = { viewModel.fetchDebugUser(1L) },
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(horizontal = 16.dp),
-                colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.secondary)
-            ) {
-                Text("Probar API (usuario 1)")
-            }
-
-        }
-
-
-
         // --- Botón principal de Agendar Cita (al final) ---
         item {
             Spacer(modifier = Modifier.height(24.dp))
