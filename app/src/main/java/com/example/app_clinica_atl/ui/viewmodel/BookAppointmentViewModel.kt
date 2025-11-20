@@ -2,9 +2,9 @@ package com.example.app_clinica_atl.ui.viewmodel
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import com.example.app_clinica_atl.data.local.cita.CitaEntity
 import com.example.app_clinica_atl.data.local.storage.UserPreferences
-import com.example.app_clinica_atl.data.local.usuario.UsuarioEntity
+import com.example.app_clinica_atl.data.remote.dto.CitaDto
+import com.example.app_clinica_atl.data.remote.dto.UsuarioDto
 import com.example.app_clinica_atl.data.repository.CitasRepository
 import com.example.app_clinica_atl.data.repository.DoctorRepository
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -19,7 +19,7 @@ data class BookAppointmentUiState(
     val specialties: List<String> = listOf(
         "Cardiología", "Dermatología", "Medicina General", "Pediatría", "Psicología"
     ),
-    val doctors: List<UsuarioEntity> = emptyList(), // <-- CAMBIO: UsuarioEntity real
+    val doctors: List<UsuarioDto> = emptyList(),
     val availableTimes: List<String> = emptyList(),
 
     // Estado de los campos
@@ -77,7 +77,7 @@ class BookAppointmentViewModel(
         loadDoctorsBySpecialty(specialty)
     }
 
-    fun onDoctorChange(doctor: UsuarioEntity) { // <-- CAMBIO: Recibe UsuarioEntity
+    fun onDoctorChange(doctor: UsuarioDto) {
         _uiState.update {
             it.copy(
                 selectedDoctorId = doctor.id,
@@ -213,8 +213,8 @@ class BookAppointmentViewModel(
                 return@launch
             }
 
-            val newAppointment = CitaEntity(
-                patientId = patientId, // <-- ID Real del paciente
+            val newAppointment = CitaDto(
+                patientId = patientId,
                 doctorId = s.selectedDoctorId,
                 date = s.selectedDate,
                 time = s.selectedTime,

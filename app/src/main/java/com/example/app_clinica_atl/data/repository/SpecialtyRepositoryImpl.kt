@@ -1,45 +1,41 @@
 package com.example.app_clinica_atl.data.repository
 
-import com.example.app_clinica_atl.data.local.especialidad.EspecialidadDao
-import com.example.app_clinica_atl.data.local.especialidad.EspecialidadEntity
+import com.example.app_clinica_atl.data.remote.dto.EspecialidadDto
 import kotlinx.coroutines.flow.Flow
-import java.io.IOException
+import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.asStateFlow
 
 /**
- * Implementación del repositorio de Especialidades.
- * Recibe el DAO manualmente.
+ * Implementación temporal basada en memoria para Especialidades.
+ * TODO: Reemplazar por llamadas reales a la API cuando estén disponibles.
  */
-class SpecialtyRepositoryImpl(
-    private val specialtyDao: EspecialidadDao
-) : SpecialtyRepository {
+class SpecialtyRepositoryImpl : SpecialtyRepository {
 
-    override fun getAllSpecialties(): Flow<List<EspecialidadEntity>> {
-        return specialtyDao.getAllSpecialties()
-    }
+    private val specialties = MutableStateFlow<List<EspecialidadDto>>(emptyList())
 
-    override suspend fun addSpecialty(specialty: EspecialidadEntity): Result<Unit> {
+    override fun getAllSpecialties(): Flow<List<EspecialidadDto>> = specialties.asStateFlow()
+
+    override suspend fun addSpecialty(specialty: EspecialidadDto): Result<Unit> {
         return try {
-            // Validaciones de lógica de negocio
             if (specialty.name.isBlank()) {
                 throw IllegalArgumentException("El nombre no puede estar vacío.")
             }
             if (specialty.price <= 0) {
                 throw IllegalArgumentException("El precio debe ser mayor a 0.")
             }
-
-            specialtyDao.insert(specialty)
+            val updated = specialties.value + specialty
+            specialties.value = updated
             Result.success(Unit)
         } catch (e: Exception) {
-            // Captura errores, incluyendo el de "Nombre duplicado"
             Result.failure(e)
         }
     }
 
-    override suspend fun deleteSpecialty(specialty: EspecialidadEntity): Result<Unit> {
+    override suspend fun deleteSpecialty(specialty: EspecialidadDto): Result<Unit> {
         return try {
-            specialtyDao.delete(specialty)
+            specialties.value = specialties.value.filterNot { it.id == specialty.id }
             Result.success(Unit)
-        } catch (e: IOException) {
+        } catch (e: Exception) {
             Result.failure(e)
         }
     }

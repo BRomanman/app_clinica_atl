@@ -2,8 +2,8 @@ package com.example.app_clinica_atl.ui.viewmodel
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import com.example.app_clinica_atl.data.local.seguro.SeguroEntity
 import com.example.app_clinica_atl.data.local.storage.UserPreferences
+import com.example.app_clinica_atl.data.remote.dto.SeguroDto
 import com.example.app_clinica_atl.data.repository.SegurosRepository
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -17,7 +17,7 @@ import kotlinx.coroutines.launch
  * Estado de la UI para la pantalla de Seguros.
  */
 data class InsuranceUiState(
-    val availableInsurances: List<SeguroEntity> = emptyList(),
+    val availableInsurances: List<SeguroDto> = emptyList(),
     val isLoading: Boolean = true,
     val errorMsg: String? = null,
     val successMsg: String? = null

@@ -3,7 +3,7 @@ package com.example.app_clinica_atl.ui.viewmodel
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.example.app_clinica_atl.data.local.storage.UserPreferences
-import com.example.app_clinica_atl.data.local.usuario.UsuarioEntity
+import com.example.app_clinica_atl.data.remote.dto.UsuarioDto
 import com.example.app_clinica_atl.data.repository.UsuariosRepository
 import com.example.app_clinica_atl.domain.validation.validateChileanPhoneNumber // <-- ¡IMPORT AÑADIDO!
 import com.example.app_clinica_atl.domain.validation.validateEmail
@@ -121,10 +121,7 @@ class AuthViewModel(
         }
         _loginUiState.update { it.copy(isLoading = true, loginError = null) }
         viewModelScope.launch {
-            // 1) Intentamos contra la API remota
-            val apiResult = userRepository.loginViaApi(_loginUiState.value.email, _loginUiState.value.password)
-            // 2) Fallback a Room local si falla la llamada o credenciales
-            val result = if (apiResult.isSuccess) apiResult else userRepository.login(_loginUiState.value.email, _loginUiState.value.password)
+            val result = userRepository.login(_loginUiState.value.email, _loginUiState.value.password)
             if (result.isSuccess) {
                 val user = result.getOrNull()!!
                 userPreferences.saveUserSession(user.id, user.role)
@@ -157,10 +154,14 @@ class AuthViewModel(
         _registerUiState.update { it.copy(isLoading = true, registerError = null) }
         viewModelScope.launch {
             // ¡CAMBIO! Combinamos firstName y lastName en el 'name' de la entidad
-            val newUser = UsuarioEntity(
+            val newUser = UsuarioDto(
                 name = "${s.firstName} ${s.lastName}",
-                email = s.email, phone = s.phone, password = s.password,
-                role = "paciente", specialty = null, salary = null
+                email = s.email,
+                phone = s.phone,
+                password = s.password,
+                role = "paciente",
+                specialty = null,
+                salary = null
             )
             val result = userRepository.register(newUser)
             if (result.isSuccess) {

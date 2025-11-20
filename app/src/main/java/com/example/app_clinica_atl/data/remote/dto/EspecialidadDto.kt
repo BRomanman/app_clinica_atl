@@ -3,10 +3,10 @@ package com.example.app_clinica_atl.data.remote.dto
 import com.google.gson.annotations.SerializedName
 
 /**
- * Representa la tabla `Especialidad`.
+ * DTO que reemplaza a la antigua `EspecialidadEntity`.
  */
 data class EspecialidadDto(
-    @SerializedName("id_especialidad") val id: Long?,
-    @SerializedName("nombre") val nombre: String,
-    @SerializedName("id_doctor") val idDoctor: Long
+    @SerializedName("id") val id: Long = 0,
+    @SerializedName("nombre") val name: String,
+    @SerializedName("precio") val price: Double
 )

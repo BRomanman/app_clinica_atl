@@ -1,39 +1,44 @@
 package com.example.app_clinica_atl.data.repository
 
-import com.example.app_clinica_atl.data.local.usuario.UsuarioDao
-import com.example.app_clinica_atl.data.local.usuario.UsuarioEntity
+import com.example.app_clinica_atl.data.remote.RetrofitClient
+import com.example.app_clinica_atl.data.remote.UsuariosApi
+import com.example.app_clinica_atl.data.remote.dto.UsuarioDto
+import com.example.app_clinica_atl.data.remote.dto.toUsuarioDto
 import java.util.NoSuchElementException
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.withContext
 
 /**
- * Implementación del repositorio de Doctores.
- * NO usa Hilt. Recibe sus dependencias (UsuarioDao) manualmente.
+ * Implementación del repositorio de Doctores basada en DTOs remotos.
  */
 class DoctorRepositoryImpl(
-    private val userDao: UsuarioDao // <-- Recibe el DAO
+    private val usuariosApi: UsuariosApi = RetrofitClient.usuariosApi
 ) : DoctorRepository {
 
-    /**
-     * Obtiene doctores reales de la base de datos usando el DAO.
-     */
-    override suspend fun getDoctorsBySpecialty(specialty: String): Result<List<UsuarioEntity>> {
-        return try {
-            val doctors = userDao.getDoctorsBySpecialty(specialty)
-            Result.success(doctors)
+    override suspend fun getDoctorsBySpecialty(specialty: String): Result<List<UsuarioDto>> = withContext(Dispatchers.IO) {
+        try {
+            val doctors = usuariosApi.getUsers()
+                .map { it.toUsuarioDto() }
+                .filter { it.role.equals("doctor", true) }
+
+            // TODO: Reemplazar por filtro real cuando la API exponga la especialidad del doctor.
+            val filtered = if (specialty.isBlank()) doctors else doctors.filter {
+                it.specialty?.contains(specialty, true) == true
+            }
+
+            Result.success(filtered.ifEmpty { doctors })
         } catch (e: Exception) {
             Result.failure(e)
         }
     }
 
-    /**
-     * Obtiene un doctor real por su ID.
-     */
-    override suspend fun getDoctorById(id: Long): Result<UsuarioEntity> {
-        return try {
-            val doctor = userDao.getById(id)
-            if (doctor != null) {
+    override suspend fun getDoctorById(id: Long): Result<UsuarioDto> = withContext(Dispatchers.IO) {
+        try {
+            val doctor = usuariosApi.getUserById(id).toUsuarioDto()
+            if (doctor.role.equals("doctor", true)) {
                 Result.success(doctor)
             } else {
-                throw NoSuchElementException("Doctor no encontrado con ID $id")
+                Result.failure(NoSuchElementException("El usuario $id no es un doctor."))
             }
         } catch (e: Exception) {
             Result.failure(e)

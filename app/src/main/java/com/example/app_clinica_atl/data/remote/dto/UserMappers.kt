@@ -1,27 +1,25 @@
 package com.example.app_clinica_atl.data.remote.dto
 
-import com.example.app_clinica_atl.data.local.usuario.UsuarioEntity
-
 /**
- * Mapea el DTO remoto al modelo interno que usa la app.
+ * Funciones de ayuda para convertir las respuestas crudas de la API
+ * (`UsuarioResponseDto`, `LoginResponseDto`, etc.) al modelo que utiliza
+ * la aplicación (`UsuarioDto`).
  */
-fun UserDto.toUsuarioEntity(): UsuarioEntity {
-    val roleString = when (idRol) {
-        1L -> "admin"
-        2L -> "doctor"
-        3L -> "paciente"
-        else -> "paciente"
-    }
 
-    return UsuarioEntity(
-        id = id ?: 0L,
-        name = listOfNotNull(nombre, apellido).joinToString(" ").trim(),
-        email = correo,
-        phone = telefono ?: "",
-        password = contrasena,
+fun UsuarioResponseDto.toUsuarioDto(): UsuarioDto {
+    val displayName = listOfNotNull(nombre, apellido).joinToString(" ").trim()
+    val normalizedRole = rol?.lowercase() ?: "paciente"
+    return UsuarioDto(
+        id = id,
+        name = if (displayName.isBlank()) correo.orEmpty() else displayName,
+        email = correo.orEmpty(),
+        phone = telefono.orEmpty(),
+        password = "",
         profileImageUrl = null,
-        role = roleString,
+        role = normalizedRole,
         specialty = null,
-        salary = null
+        salary = doctor?.sueldo?.toDouble()
     )
 }
+
+fun List<UsuarioResponseDto>.toUsuarioDtoList(): List<UsuarioDto> = map { it.toUsuarioDto() }

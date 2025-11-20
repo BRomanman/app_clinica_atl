@@ -2,8 +2,9 @@ package com.example.app_clinica_atl.data.remote
 
 import com.example.app_clinica_atl.data.remote.dto.LoginRequestDto
 import com.example.app_clinica_atl.data.remote.dto.LoginResponseDto
-import com.example.app_clinica_atl.data.remote.dto.UserDto
 import com.example.app_clinica_atl.data.remote.dto.DoctorDto
+import com.example.app_clinica_atl.data.remote.dto.UsuarioResponseDto
+import com.example.app_clinica_atl.data.remote.dto.UsuarioUpdateRequestDto
 import retrofit2.Response
 import retrofit2.http.Body
 import retrofit2.http.DELETE
@@ -23,19 +24,19 @@ interface UsuariosApi {
 
     //UsuarioController
     @GET("usuarios")
-    suspend fun getUsers(): List<UserDto>
+    suspend fun getUsers(): List<UsuarioResponseDto>
 
     @GET("usuarios/{id}")
-    suspend fun getUserById(@Path("id") id: Long): UserDto
+    suspend fun getUserById(@Path("id") id: Long): UsuarioResponseDto
 
     @POST("usuarios")
-    suspend fun createUser(@Body user: UserDto): UserDto
+    suspend fun createUser(@Body user: UsuarioUpdateRequestDto): UsuarioResponseDto
 
     @PUT("usuarios/{id}")
     suspend fun updateUser(
         @Path("id") id: Long,
-        @Body user: UserDto
-    ): UserDto
+        @Body user: UsuarioUpdateRequestDto
+    ): UsuarioResponseDto
 
     @DELETE("usuarios/{id}")
     suspend fun deleteUser(@Path("id") id: Long): Response<Unit>

@@ -1,54 +1,68 @@
 package com.example.app_clinica_atl.data.repository
 
-import com.example.app_clinica_atl.data.local.cita.CitaDao
-import com.example.app_clinica_atl.data.local.cita.CitaDetalle
-import com.example.app_clinica_atl.data.local.cita.CitaEntity
+import com.example.app_clinica_atl.data.remote.CitasApi
+import com.example.app_clinica_atl.data.remote.RetrofitClient
+import com.example.app_clinica_atl.data.remote.dto.CitaDetalleDto
+import com.example.app_clinica_atl.data.remote.dto.CitaDto
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.Flow
-import java.io.IOException
+import kotlinx.coroutines.flow.flow
+import kotlinx.coroutines.withContext
 
 /**
- * Implementación del repositorio de Citas (CitasApi).
+ * Implementación del repositorio de Citas basada en Retrofit.
  */
 class CitasRepositoryImpl(
-    private val appointmentDao: CitaDao
+    private val citasApi: CitasApi = RetrofitClient.citasApi
 ) : CitasRepository {
 
-    override suspend fun bookAppointment(appointment: CitaEntity): Result<Long> {
-        return try {
-            val existingAppointment = appointmentDao.getAppointmentByDoctorDateTime(
-                appointment.doctorId,
-                appointment.date,
-                appointment.time
-            )
-            if (existingAppointment != null) {
-                throw IllegalStateException("La hora seleccionada ya no está disponible.")
-            }
-            val newId = appointmentDao.insert(appointment)
-            Result.success(newId)
+    override suspend fun bookAppointment(appointment: CitaDto): Result<CitaDto> = withContext(Dispatchers.IO) {
+        return@withContext try {
+            val created = citasApi.createAppointment(appointment)
+            Result.success(created)
         } catch (e: Exception) {
             Result.failure(e)
         }
     }
 
-    override suspend fun getBookedTimes(doctorId: Long, date: String): Result<List<String>> {
-        return try {
-            val bookedTimes = appointmentDao.getBookedTimesForDoctorOnDate(doctorId, date)
+    override suspend fun getBookedTimes(doctorId: Long, date: String): Result<List<String>> = withContext(Dispatchers.IO) {
+        return@withContext try {
+            val bookedTimes = citasApi.getAppointments()
+                .filter { it.doctorId == doctorId && it.date == date }
+                .map { it.time }
             Result.success(bookedTimes)
         } catch (e: Exception) {
             Result.failure(e)
         }
     }
 
-    override fun getAppointmentsForPatient(patientId: Long): Flow<List<CitaDetalle>> {
-        return appointmentDao.getActiveAppointmentsForPatient(patientId)
+    override fun getAppointmentsForPatient(patientId: Long): Flow<List<CitaDetalleDto>> = flow {
+        val appointments = withContext(Dispatchers.IO) {
+            citasApi.getAppointments()
+                .filter { it.patientId == patientId }
+                .map { it.toDetalleDto() }
+        }
+        emit(appointments)
     }
 
-    override suspend fun cancelAppointment(appointmentId: Long): Result<Unit> {
-        return try {
-            appointmentDao.cancelAppointment(appointmentId)
+    override suspend fun cancelAppointment(appointmentId: Long): Result<Unit> = withContext(Dispatchers.IO) {
+        return@withContext try {
+            citasApi.deleteAppointment(appointmentId)
             Result.success(Unit)
-        } catch (e: IOException) {
+        } catch (e: Exception) {
             Result.failure(e)
         }
     }
+}
+
+private fun CitaDto.toDetalleDto(): CitaDetalleDto {
+    // TODO: Enriquecer con datos reales del doctor cuando el backend exponga ese join.
+    return CitaDetalleDto(
+        appointmentId = id,
+        doctorName = "Doctor #$doctorId",
+        doctorSpecialty = "",
+        date = date,
+        time = time,
+        status = status
+    )
 }

@@ -2,7 +2,7 @@ package com.example.app_clinica_atl.ui.viewmodel
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import com.example.app_clinica_atl.data.local.especialidad.EspecialidadEntity
+import com.example.app_clinica_atl.data.remote.dto.EspecialidadDto
 import com.example.app_clinica_atl.data.repository.SpecialtyRepository
 import com.example.app_clinica_atl.domain.validation.validateRequired // <-- ¡IMPORT AÑADIDO!
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -17,7 +17,7 @@ import kotlinx.coroutines.launch
  * Ahora guarda los campos del formulario y sus errores.
  */
 data class AdminSpecialtiesUiState(
-    val specialties: List<EspecialidadEntity> = emptyList(),
+    val specialties: List<EspecialidadDto> = emptyList(),
     val isLoading: Boolean = true,
     val errorMsg: String? = null,
     // --- Campos del formulario ---
@@ -95,7 +95,7 @@ class AdminManageSpecialtiesViewModel(
         }
 
         viewModelScope.launch {
-            val newSpecialty = EspecialidadEntity(name = s.newSpecialtyName, price = price!!)
+            val newSpecialty = EspecialidadDto(name = s.newSpecialtyName, price = price!!)
             val result = specialtyRepository.addSpecialty(newSpecialty)
 
             if (result.isFailure) {
@@ -118,7 +118,7 @@ class AdminManageSpecialtiesViewModel(
     /**
      * Elimina una especialidad. (Sin cambios)
      */
-    fun deleteSpecialty(specialty: EspecialidadEntity) {
+    fun deleteSpecialty(specialty: EspecialidadDto) {
         viewModelScope.launch {
             val result = specialtyRepository.deleteSpecialty(specialty)
             if (result.isFailure) {

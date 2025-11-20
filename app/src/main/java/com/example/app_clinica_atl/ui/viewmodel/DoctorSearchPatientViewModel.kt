@@ -2,7 +2,7 @@ package com.example.app_clinica_atl.ui.viewmodel
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import com.example.app_clinica_atl.data.local.usuario.UsuarioEntity
+import com.example.app_clinica_atl.data.remote.dto.UsuarioDto
 import com.example.app_clinica_atl.data.repository.UsuariosRepository
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -15,7 +15,7 @@ import kotlinx.coroutines.launch
  */
 data class DoctorSearchPatientUiState(
     val query: String = "",
-    val patients: List<UsuarioEntity> = emptyList(),
+    val patients: List<UsuarioDto> = emptyList(),
     val isLoading: Boolean = false,
     val errorMsg: String? = null
 )

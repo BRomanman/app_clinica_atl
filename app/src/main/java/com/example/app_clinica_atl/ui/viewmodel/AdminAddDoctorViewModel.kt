@@ -2,8 +2,8 @@ package com.example.app_clinica_atl.ui.viewmodel
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import com.example.app_clinica_atl.data.local.especialidad.EspecialidadEntity
-import com.example.app_clinica_atl.data.local.usuario.UsuarioEntity
+import com.example.app_clinica_atl.data.remote.dto.EspecialidadDto
+import com.example.app_clinica_atl.data.remote.dto.UsuarioDto
 import com.example.app_clinica_atl.data.repository.SpecialtyRepository
 import com.example.app_clinica_atl.data.repository.UsuariosRepository
 import com.example.app_clinica_atl.domain.validation.validateChileanPhoneNumber // <-- ¡IMPORT AÑADIDO!
@@ -28,10 +28,10 @@ data class AdminAddDoctorUiState(
     val email: String = "",
     val phone: String = "",
     val salary: String = "",
-    val selectedSpecialty: EspecialidadEntity? = null,
+    val selectedSpecialty: EspecialidadDto? = null,
 
     // Lista para el combo box
-    val specialties: List<EspecialidadEntity> = emptyList(),
+    val specialties: List<EspecialidadDto> = emptyList(),
 
     // Errores de validación
     val firstNameError: String? = null, // <-- CAMBIO
@@ -96,7 +96,7 @@ class AdminAddDoctorViewModel(
         val error = if (salary.toDoubleOrNull() == null) "Debe ser un número" else null
         _uiState.update { it.copy(salary = salary, salaryError = error) }
     }
-    fun onSpecialtyChange(specialty: EspecialidadEntity) {
+    fun onSpecialtyChange(specialty: EspecialidadDto) {
         _uiState.update { it.copy(selectedSpecialty = specialty, specialtyError = null) }
     }
     fun clearSuccess() { _uiState.update { it.copy(registrationSuccess = false) } }
@@ -144,7 +144,7 @@ class AdminAddDoctorViewModel(
         // --- FIN LÓGICA ---
 
         viewModelScope.launch {
-            val newDoctor = UsuarioEntity(
+            val newDoctor = UsuarioDto(
                 name = "${s.firstName} ${s.lastName}", // Combinamos los nombres
                 email = s.email,
                 phone = s.phone,

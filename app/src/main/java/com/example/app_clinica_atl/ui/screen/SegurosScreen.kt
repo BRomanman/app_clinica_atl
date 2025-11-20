@@ -34,7 +34,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.example.app_clinica_atl.R
-import com.example.app_clinica_atl.data.local.seguro.SeguroEntity
+import com.example.app_clinica_atl.data.remote.dto.SeguroDto
 import com.example.app_clinica_atl.ui.viewmodel.InsuranceViewModel
 
 /**
@@ -91,7 +91,7 @@ fun SegurosScreen(
 
 @Composable
 private fun InsuranceCard(
-    insurance: SeguroEntity,
+    insurance: SeguroDto,
     onSubscribe: () -> Unit
 ) {
     Card(

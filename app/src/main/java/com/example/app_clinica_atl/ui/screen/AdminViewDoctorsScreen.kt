@@ -32,7 +32,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
-import com.example.app_clinica_atl.data.local.usuario.UsuarioEntity
+import com.example.app_clinica_atl.data.remote.dto.UsuarioDto
 import com.example.app_clinica_atl.ui.viewmodel.AdminViewDoctorsViewModel
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -100,7 +100,7 @@ fun AdminViewDoctorsScreen(
  * Tarjeta que muestra TODOS los datos del doctor.
  */
 @Composable
-private fun DoctorDetailCard(doctor: UsuarioEntity) {
+private fun DoctorDetailCard(doctor: UsuarioDto) {
     Card(
         modifier = Modifier.fillMaxWidth(),
         elevation = CardDefaults.cardElevation(2.dp),

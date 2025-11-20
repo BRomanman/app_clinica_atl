@@ -3,13 +3,11 @@ package com.example.app_clinica_atl.data.remote.dto
 import com.google.gson.annotations.SerializedName
 
 /**
- * DTO que reemplaza a la antigua entidad Room de citas.
+ * DTO que reemplaza a la tabla de unión `UsuarioSeguroEntity`.
  */
-data class CitaDto(
+data class UsuarioSeguroDto(
     @SerializedName("id") val id: Long = 0,
     @SerializedName("pacienteId") val patientId: Long,
-    @SerializedName("doctorId") val doctorId: Long,
-    @SerializedName("fecha") val date: String,
-    @SerializedName("hora") val time: String,
+    @SerializedName("seguroId") val insuranceId: Long,
     @SerializedName("estado") val status: String
 )

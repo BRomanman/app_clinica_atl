@@ -1,52 +1,112 @@
 package com.example.app_clinica_atl.ui.screen
 
-import androidx.compose.foundation.Image
+import android.Manifest
+import android.content.Context
+import android.net.Uri
+import android.os.Build
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.contract.ActivityResultContracts
+import androidx.annotation.RequiresApi
+import androidx.compose.foundation.clickable
+import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.PaddingValues
+import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.shape.CircleShape
-import androidx.compose.foundation.verticalScroll
+import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ArrowBack
+import androidx.compose.material3.Button
+import androidx.compose.material3.Card
+import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Scaffold
+import androidx.compose.material3.SnackbarHost
+import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
 import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.input.KeyboardType
+import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
+import coil.compose.AsyncImage
 import com.example.app_clinica_atl.R
-import com.example.app_clinica_atl.data.local.usuario.UsuarioEntity
+import com.example.app_clinica_atl.data.remote.dto.DoctorMonthlyStatDto
+import com.example.app_clinica_atl.ui.viewmodel.DoctorProfileInfo
+import com.example.app_clinica_atl.ui.viewmodel.DoctorProfileUiState
 import com.example.app_clinica_atl.ui.viewmodel.DoctorProfileViewModel
+import java.io.File
+import java.text.SimpleDateFormat
+import java.time.YearMonth
+import java.time.format.DateTimeFormatter
+import java.util.Date
+import java.util.Locale
+import java.util.Objects
 
+private val monthFormatter = DateTimeFormatter.ofPattern("MMM yyyy", Locale("es", "CL"))
+
+@RequiresApi(Build.VERSION_CODES.O)
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun DoctorProfileScreen(
     doctorId: Long?,
     onBackClick: () -> Unit,
     viewModel: DoctorProfileViewModel,
-    modifier: Modifier = Modifier // <-- ¡¡PARÁMETRO AÑADIDO!!
+    modifier: Modifier = Modifier
 ) {
     val uiState by viewModel.uiState.collectAsState()
+    val snackbarHostState = remember { SnackbarHostState() }
+    val context = LocalContext.current
+
+    var tempImageUri by remember { mutableStateOf<Uri?>(null) }
+    val cameraLauncher = rememberLauncherForActivityResult(
+        contract = ActivityResultContracts.TakePicture()
+    ) { success ->
+        if (success) {
+            tempImageUri?.let { viewModel.updateProfileImage(it) }
+        }
+    }
+    val permissionLauncher = rememberLauncherForActivityResult(
+        contract = ActivityResultContracts.RequestPermission()
+    ) { granted ->
+        if (granted) {
+            val uri = createImageUri(context)
+            tempImageUri = uri
+            cameraLauncher.launch(uri)
+        } else {
+            viewModel.clearMessages()
+        }
+    }
 
     LaunchedEffect(doctorId) {
         if (doctorId != null) {
@@ -54,10 +114,20 @@ fun DoctorProfileScreen(
         }
     }
 
+    LaunchedEffect(uiState.transientError, uiState.successMsg) {
+        uiState.transientError?.let {
+            snackbarHostState.showSnackbar(it)
+            viewModel.clearMessages()
+        }
+        uiState.successMsg?.let {
+            snackbarHostState.showSnackbar(it)
+            viewModel.clearMessages()
+        }
+    }
+
     Scaffold(
-        // ¡¡MODIFIER APLICADO!!
-        // Esto permite que el NavGraph le quite el padding
         modifier = modifier.fillMaxSize(),
+        snackbarHost = { SnackbarHost(snackbarHostState) },
         topBar = {
             TopAppBar(
                 title = { Text(uiState.doctor?.name ?: "Perfil de Doctor") },
@@ -69,26 +139,245 @@ fun DoctorProfileScreen(
             )
         }
     ) { paddingValues ->
-        Box(
-            modifier = Modifier
-                .fillMaxSize()
-                .padding(paddingValues)
-                .padding(16.dp),
-            contentAlignment = Alignment.Center
-        ) {
-            when {
-                uiState.isLoading -> {
-                    CircularProgressIndicator()
-                }
-                uiState.errorMsg != null || uiState.doctor == null -> {
-                    Text(
-                        text = uiState.errorMsg ?: "No se pudo encontrar al doctor.",
-                        color = MaterialTheme.colorScheme.error,
-                        textAlign = TextAlign.Center
-                    )
-                }
-                else -> {
-                    DoctorProfileContent(doctor = uiState.doctor!!)
+        DoctorProfileContentHost(
+            doctorId = doctorId,
+            uiState = uiState,
+            paddingValues = paddingValues,
+            onRequestCamera = { permissionLauncher.launch(Manifest.permission.CAMERA) },
+            onPhoneChange = viewModel::onPhoneChange,
+            onSavePhone = viewModel::savePhone,
+            onPasswordChange = viewModel::onPasswordChange,
+            onConfirmPasswordChange = viewModel::onConfirmPasswordChange,
+            onSavePassword = viewModel::savePassword
+        )
+    }
+}
+
+@RequiresApi(Build.VERSION_CODES.O)
+@Composable
+private fun DoctorProfileContentHost(
+    doctorId: Long?,
+    uiState: DoctorProfileUiState,
+    paddingValues: PaddingValues,
+    onRequestCamera: () -> Unit,
+    onPhoneChange: (String) -> Unit,
+    onSavePhone: () -> Unit,
+    onPasswordChange: (String) -> Unit,
+    onConfirmPasswordChange: (String) -> Unit,
+    onSavePassword: () -> Unit
+) {
+    Box(
+        modifier = Modifier
+            .fillMaxSize()
+            .padding(paddingValues)
+            .padding(16.dp),
+        contentAlignment = Alignment.Center
+    ) {
+        when {
+            doctorId == null -> {
+                Text(
+                    text = "No se pudo abrir el perfil del doctor.",
+                    color = MaterialTheme.colorScheme.error,
+                    textAlign = TextAlign.Center
+                )
+            }
+            uiState.isLoading -> {
+                CircularProgressIndicator()
+            }
+            uiState.errorMsg != null && uiState.doctor == null -> {
+                Text(
+                    text = uiState.errorMsg,
+                    color = MaterialTheme.colorScheme.error,
+                    textAlign = TextAlign.Center
+                )
+            }
+            uiState.doctor != null -> {
+                DoctorProfileContent(
+                    doctor = uiState.doctor,
+                    phoneInput = uiState.phoneInput,
+                    phoneError = uiState.phoneError,
+                    isSavingPhone = uiState.isSavingPhone,
+                    passwordInput = uiState.passwordInput,
+                    confirmPasswordInput = uiState.confirmPasswordInput,
+                    passwordError = uiState.passwordError,
+                    confirmPasswordError = uiState.confirmPasswordError,
+                    isSavingPassword = uiState.isSavingPassword,
+                    stats = uiState.stats,
+                    totalAppointments = uiState.totalAppointments,
+                    bonusAmount = uiState.bonusAmount,
+                    isUploadingPhoto = uiState.isUploadingPhoto,
+                    onPhoneChange = onPhoneChange,
+                    onSavePhone = onSavePhone,
+                    onPasswordChange = onPasswordChange,
+                    onConfirmPasswordChange = onConfirmPasswordChange,
+                    onSavePassword = onSavePassword,
+                    onProfileImageClick = onRequestCamera
+                )
+            }
+        }
+    }
+}
+
+@RequiresApi(Build.VERSION_CODES.O)
+@Composable
+private fun DoctorProfileContent(
+    doctor: DoctorProfileInfo,
+    phoneInput: String,
+    phoneError: String?,
+    isSavingPhone: Boolean,
+    passwordInput: String,
+    confirmPasswordInput: String,
+    passwordError: String?,
+    confirmPasswordError: String?,
+    isSavingPassword: Boolean,
+    stats: List<DoctorMonthlyStatDto>,
+    totalAppointments: Int,
+    bonusAmount: Double,
+    isUploadingPhoto: Boolean,
+    onPhoneChange: (String) -> Unit,
+    onSavePhone: () -> Unit,
+    onPasswordChange: (String) -> Unit,
+    onConfirmPasswordChange: (String) -> Unit,
+    onSavePassword: () -> Unit,
+    onProfileImageClick: () -> Unit
+) {
+    LazyColumn(
+        modifier = Modifier.fillMaxSize(),
+        verticalArrangement = Arrangement.spacedBy(20.dp),
+        horizontalAlignment = Alignment.CenterHorizontally
+    ) {
+        item {
+            DoctorProfileHeader(
+                doctor = doctor,
+                isUploadingPhoto = isUploadingPhoto,
+                onProfileImageClick = onProfileImageClick
+            )
+        }
+        item {
+            InfoCard(label = "Nombre", value = doctor.name)
+        }
+        item {
+            InfoCard(label = "Correo", value = doctor.email)
+        }
+        item {
+            InfoCard(label = "Especialidad", value = doctor.specialty ?: "Sin especialidad")
+        }
+        item {
+            PhoneEditorCard(
+                phoneInput = phoneInput,
+                phoneError = phoneError,
+                isSaving = isSavingPhone,
+                onPhoneChange = onPhoneChange,
+                onSavePhone = onSavePhone
+            )
+        }
+        item {
+            PasswordEditorCard(
+                passwordInput = passwordInput,
+                confirmPasswordInput = confirmPasswordInput,
+                passwordError = passwordError,
+                confirmPasswordError = confirmPasswordError,
+                isSaving = isSavingPassword,
+                onPasswordChange = onPasswordChange,
+                onConfirmPasswordChange = onConfirmPasswordChange,
+                onSavePassword = onSavePassword
+            )
+        }
+        item {
+            DoctorStatsCard(
+                stats = stats,
+                totalAppointments = totalAppointments,
+                bonusAmount = bonusAmount
+            )
+        }
+    }
+}
+
+@Composable
+private fun DoctorProfileHeader(
+    doctor: DoctorProfileInfo,
+    isUploadingPhoto: Boolean,
+    onProfileImageClick: () -> Unit
+) {
+    Column(horizontalAlignment = Alignment.CenterHorizontally) {
+        Box(contentAlignment = Alignment.Center) {
+            AsyncImage(
+                model = doctor.profileImageUrl ?: R.drawable.logo_clean,
+                placeholder = painterResource(id = R.drawable.logo_clean),
+                contentDescription = "Foto de ${doctor.name}",
+                modifier = Modifier
+                    .size(140.dp)
+                    .clip(CircleShape)
+                    .clickable(onClick = onProfileImageClick),
+                contentScale = ContentScale.Crop
+            )
+            if (isUploadingPhoto) {
+                CircularProgressIndicator(modifier = Modifier.size(48.dp))
+            }
+        }
+        TextButton(onClick = onProfileImageClick) {
+            Text("Cambiar foto")
+        }
+    }
+}
+
+@Composable
+private fun InfoCard(label: String, value: String) {
+    Card(
+        modifier = Modifier.fillMaxWidth(),
+        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant)
+    ) {
+        Column(modifier = Modifier.padding(16.dp)) {
+            Text(
+                text = label,
+                style = MaterialTheme.typography.labelMedium,
+                color = MaterialTheme.colorScheme.onSurfaceVariant
+            )
+            Spacer(modifier = Modifier.height(4.dp))
+            Text(
+                text = value,
+                style = MaterialTheme.typography.titleMedium,
+                maxLines = 2,
+                overflow = TextOverflow.Ellipsis
+            )
+        }
+    }
+}
+
+@Composable
+private fun PhoneEditorCard(
+    phoneInput: String,
+    phoneError: String?,
+    isSaving: Boolean,
+    onPhoneChange: (String) -> Unit,
+    onSavePhone: () -> Unit
+) {
+    Card(
+        modifier = Modifier.fillMaxWidth(),
+        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface)
+    ) {
+        Column(modifier = Modifier.padding(16.dp)) {
+            Text("Datos de contacto", style = MaterialTheme.typography.titleMedium)
+            Spacer(modifier = Modifier.height(12.dp))
+            OutlinedTextField(
+                value = phoneInput,
+                onValueChange = onPhoneChange,
+                label = { Text("Teléfono") },
+                isError = phoneError != null,
+                keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Phone),
+                supportingText = { phoneError?.let { Text(it, color = MaterialTheme.colorScheme.error) } },
+                modifier = Modifier.fillMaxWidth()
+            )
+            Spacer(modifier = Modifier.height(12.dp))
+            Button(
+                onClick = onSavePhone,
+                enabled = !isSaving,
+                modifier = Modifier.fillMaxWidth()
+            ) {
+                if (isSaving) {
+                    CircularProgressIndicator(modifier = Modifier.size(18.dp), strokeWidth = 2.dp)
+                } else {
+                    Text("Guardar teléfono")
                 }
             }
         }
@@ -96,65 +385,143 @@ fun DoctorProfileScreen(
 }
 
 @Composable
-private fun DoctorProfileContent(doctor: UsuarioEntity) {
-    Column(
-        modifier = Modifier
-            .fillMaxSize()
-            .verticalScroll(rememberScrollState()),
-        horizontalAlignment = Alignment.CenterHorizontally
+private fun PasswordEditorCard(
+    passwordInput: String,
+    confirmPasswordInput: String,
+    passwordError: String?,
+    confirmPasswordError: String?,
+    isSaving: Boolean,
+    onPasswordChange: (String) -> Unit,
+    onConfirmPasswordChange: (String) -> Unit,
+    onSavePassword: () -> Unit
+) {
+    Card(
+        modifier = Modifier.fillMaxWidth(),
+        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface)
     ) {
-        Image(
-            painter = painterResource(id = getDoctorImageResource(doctor.specialty)),
-            contentDescription = "Foto de ${doctor.name}",
-            contentScale = ContentScale.Crop,
+        Column(modifier = Modifier.padding(16.dp)) {
+            Text("Seguridad", style = MaterialTheme.typography.titleMedium)
+            Spacer(modifier = Modifier.height(12.dp))
+            OutlinedTextField(
+                value = passwordInput,
+                onValueChange = onPasswordChange,
+                label = { Text("Nueva contraseña") },
+                isError = passwordError != null,
+                keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Password),
+                visualTransformation = PasswordVisualTransformation(),
+                supportingText = { passwordError?.let { Text(it, color = MaterialTheme.colorScheme.error) } },
+                modifier = Modifier.fillMaxWidth()
+            )
+            Spacer(modifier = Modifier.height(12.dp))
+            OutlinedTextField(
+                value = confirmPasswordInput,
+                onValueChange = onConfirmPasswordChange,
+                label = { Text("Confirmar contraseña") },
+                isError = confirmPasswordError != null,
+                keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Password),
+                visualTransformation = PasswordVisualTransformation(),
+                supportingText = { confirmPasswordError?.let { Text(it, color = MaterialTheme.colorScheme.error) } },
+                modifier = Modifier.fillMaxWidth()
+            )
+            Spacer(modifier = Modifier.height(12.dp))
+            Button(
+                onClick = onSavePassword,
+                enabled = !isSaving,
+                modifier = Modifier.fillMaxWidth()
+            ) {
+                if (isSaving) {
+                    CircularProgressIndicator(modifier = Modifier.size(18.dp), strokeWidth = 2.dp)
+                } else {
+                    Text("Actualizar contraseña")
+                }
+            }
+        }
+    }
+}
+
+@RequiresApi(Build.VERSION_CODES.O)
+@Composable
+private fun DoctorStatsCard(
+    stats: List<DoctorMonthlyStatDto>,
+    totalAppointments: Int,
+    bonusAmount: Double
+) {
+    Card(
+        modifier = Modifier.fillMaxWidth(),
+        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant)
+    ) {
+        Column(modifier = Modifier.padding(16.dp)) {
+            Text("Estadísticas mensuales", style = MaterialTheme.typography.titleMedium)
+            Spacer(modifier = Modifier.height(8.dp))
+            Text(
+                text = "Total citas: $totalAppointments",
+                style = MaterialTheme.typography.bodyLarge,
+                fontWeight = FontWeight.Bold
+            )
+            Text(
+                text = "Bono estimado (10%): ${"%.1f".format(Locale.getDefault(), bonusAmount)}",
+                style = MaterialTheme.typography.bodyMedium,
+                color = MaterialTheme.colorScheme.primary
+            )
+            Spacer(modifier = Modifier.height(12.dp))
+            if (stats.isEmpty()) {
+                Text(
+                    text = "Aún no hay citas registradas este año.",
+                    style = MaterialTheme.typography.bodyMedium
+                )
+            } else {
+                Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                    stats.sortedBy { it.month }.forEach { stat ->
+                        StatRow(
+                            label = formatMonthLabel(stat.month),
+                            value = "${stat.totalAppointments} citas"
+                        )
+                    }
+                }
+            }
+        }
+    }
+}
+
+@Composable
+private fun StatRow(label: String, value: String) {
+    Card(
+        modifier = Modifier.fillMaxWidth(),
+        shape = RoundedCornerShape(8.dp),
+        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface)
+    ) {
+        Row(
             modifier = Modifier
-                .size(150.dp)
-                .clip(CircleShape)
-        )
-        Spacer(modifier = Modifier.height(16.dp))
-        Text(
-            text = doctor.name,
-            style = MaterialTheme.typography.headlineSmall,
-            fontWeight = FontWeight.Bold
-        )
-        Text(
-            text = doctor.specialty ?: "Especialidad no definida",
-            style = MaterialTheme.typography.titleMedium,
-            color = MaterialTheme.colorScheme.primary
-        )
-        Spacer(modifier = Modifier.height(24.dp))
-        InfoRow(label = "Email", value = doctor.email)
-        InfoRow(label = "Teléfono", value = doctor.phone)
+                .fillMaxWidth()
+                .padding(horizontal = 16.dp, vertical = 12.dp),
+            horizontalArrangement = Arrangement.SpaceBetween,
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            Text(label, style = MaterialTheme.typography.bodyMedium)
+            Text(value, style = MaterialTheme.typography.bodyMedium, fontWeight = FontWeight.SemiBold)
+        }
     }
 }
 
-@Composable
-private fun InfoRow(label: String, value: String) {
-    Column(
-        modifier = Modifier
-            .fillMaxWidth()
-            .padding(vertical = 8.dp)
-    ) {
-        Text(
-            text = label,
-            style = MaterialTheme.typography.labelSmall,
-            color = MaterialTheme.colorScheme.onSurfaceVariant
-        )
-        Text(
-            text = value,
-            style = MaterialTheme.typography.bodyLarge
-        )
+private fun formatMonthLabel(rawMonth: String): String {
+    return try {
+        YearMonth.parse(rawMonth).format(monthFormatter).replaceFirstChar { it.titlecase(Locale("es", "CL")) }
+    } catch (e: Exception) {
+        rawMonth
     }
 }
 
-@Composable
-private fun getDoctorImageResource(specialty: String?): Int {
-    return when (specialty) {
-        "Cardiología" -> R.drawable.doctor_cardio_1
-        "Dermatología" -> R.drawable.doctor_derma_1
-        "Medicina General" -> R.drawable.doctor_medgen_1
-        "Pediatría" -> R.drawable.doctor_pedi_1
-        "Psicología" -> R.drawable.doctor_psico_1
-        else -> R.drawable.logo_clean
+private fun createImageUri(context: Context): Uri {
+    val imageCacheFolder = File(context.cacheDir, "images")
+    if (!imageCacheFolder.exists()) {
+        imageCacheFolder.mkdirs()
     }
+    val timeStamp = SimpleDateFormat("yyyyMMdd_HHmmss", Locale.getDefault()).format(Date())
+    val imageFile = File(imageCacheFolder, "JPEG_${timeStamp}_.jpg")
+    val authority = "${context.packageName}.fileprovider"
+    return androidx.core.content.FileProvider.getUriForFile(
+        Objects.requireNonNull(context),
+        authority,
+        imageFile
+    )
 }

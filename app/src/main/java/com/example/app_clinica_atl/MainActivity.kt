@@ -22,7 +22,6 @@ import androidx.compose.ui.Modifier
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.rememberNavController
-import com.example.app_clinica_atl.data.local.database.AppDatabase
 import com.example.app_clinica_atl.data.local.storage.UserPreferences
 import com.example.app_clinica_atl.data.repository.*
 import com.example.app_clinica_atl.navigation.AppNavGraph
@@ -37,20 +36,22 @@ import java.lang.Runtime // <-- ¡¡IMPORT AÑADIDO!!
 class MainActivity : ComponentActivity() {
 
     // --- Dependencias (sin cambios) ---
-    private val database by lazy { AppDatabase.getInstance(this) }
     private val userPreferences by lazy { UserPreferences(this) }
-    private val usuariosRepository by lazy { UsuariosRepository(database.userDao()) }
-    private val doctorRepository: DoctorRepository by lazy { DoctorRepositoryImpl(database.userDao()) }
-    private val citasRepository: CitasRepository by lazy { CitasRepositoryImpl(database.appointmentDao()) }
-    private val specialtyRepository: SpecialtyRepository by lazy { SpecialtyRepositoryImpl(database.specialtyDao()) }
-    private val segurosRepository: SegurosRepository by lazy { SegurosRepositoryImpl(database.insuranceDao()) }
+    private val usuariosRepository by lazy { UsuariosRepository() }
+    private val doctorRepository: DoctorRepository by lazy { DoctorRepositoryImpl() }
+    private val doctorProfileRepository by lazy { DoctorProfileRepository() }
+    private val citasRepository: CitasRepository by lazy { CitasRepositoryImpl() }
+    private val specialtyRepository: SpecialtyRepository by lazy { SpecialtyRepositoryImpl() }
+    private val segurosRepository: SegurosRepository by lazy { SegurosRepositoryImpl() }
 
     // --- ViewModels (sin cambios) ---
     private val authViewModel: AuthViewModel by viewModels { AuthViewModelFactory(usuariosRepository, userPreferences) }
     private val homeViewModel: HomeViewModel by viewModels { HomeViewModelFactory(usuariosRepository, userPreferences) }
     private val patientViewModel: PatientViewModel by viewModels { PatientViewModelFactory(usuariosRepository, userPreferences, segurosRepository, citasRepository) }
     private val doctorSearchViewModel: DoctorSearchViewModel by viewModels { DoctorSearchViewModelFactory(doctorRepository) }
-    private val doctorProfileViewModel: DoctorProfileViewModel by viewModels { DoctorProfileViewModelFactory(doctorRepository) }
+    private val doctorProfileViewModel: DoctorProfileViewModel by viewModels {
+        DoctorProfileViewModelFactory(doctorProfileRepository, usuariosRepository)
+    }
     private val bookAppointmentViewModel: BookAppointmentViewModel by viewModels { BookAppointmentViewModelFactory(doctorRepository, citasRepository, userPreferences) }
     private val insuranceViewModel: InsuranceViewModel by viewModels { InsuranceViewModelFactory(segurosRepository, userPreferences) }
     private val doctorSearchPatientViewModel: DoctorSearchPatientViewModel by viewModels { DoctorSearchPatientViewModelFactory(usuariosRepository) }
@@ -82,6 +83,7 @@ class MainActivity : ComponentActivity() {
                     val navBackStackEntry by navController.currentBackStackEntryAsState()
                     val currentRoute = navBackStackEntry?.destination?.route
                     val userRole by authViewModel.userRoleFlow.collectAsStateWithLifecycle(initialValue = null)
+                    val userId by userPreferences.userIdFlow.collectAsStateWithLifecycle(initialValue = null)
 
                     // --- ¡¡LÓGICA DE REINICIO (SOLUCIÓN NUCLEAR)!! ---
                     LaunchedEffect(currentRoute) {
@@ -119,7 +121,12 @@ class MainActivity : ComponentActivity() {
                             AppDrawerVm(
                                 vm = authViewModel, currentRoute = currentRoute,
                                 onGoToPatientProfile = { navController.navigate(Route.PatientProfile.path); scope.launch { drawerState.close() } },
-                                onGoToDoctorProfile = { /* no-op */ },
+                                onGoToDoctorProfile = {
+                                    userId?.let {
+                                        navController.navigate(Route.DoctorProfile.createRoute(it))
+                                        scope.launch { drawerState.close() }
+                                    }
+                                },
                                 onHome = { navController.navigate(Route.Home.path); scope.launch { drawerState.close() } },
                                 onInsurance = { navController.navigate(Route.Seguros.path); scope.launch { drawerState.close() } },
                                 onBookAppointment = { navController.navigate(Route.BookAppointment.path); scope.launch { drawerState.close() } }
@@ -149,7 +156,8 @@ class MainActivity : ComponentActivity() {
                                 adminAddDoctorViewModel = adminAddDoctorViewModel,
                                 insuranceViewModel = insuranceViewModel,
                                 doctorSearchPatientViewModel = doctorSearchPatientViewModel,
-                                adminViewDoctorsViewModel = adminViewDoctorsViewModel
+                                adminViewDoctorsViewModel = adminViewDoctorsViewModel,
+                                currentDoctorId = userId
                             )
                         }
                     }

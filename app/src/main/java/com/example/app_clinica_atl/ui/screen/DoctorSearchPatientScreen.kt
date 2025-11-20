@@ -40,7 +40,7 @@ import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import com.example.app_clinica_atl.R
-import com.example.app_clinica_atl.data.local.usuario.UsuarioEntity
+import com.example.app_clinica_atl.data.remote.dto.UsuarioDto
 import com.example.app_clinica_atl.ui.viewmodel.DoctorSearchPatientViewModel
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -118,7 +118,7 @@ fun DoctorSearchPatientScreen(
 
 @Composable
 private fun PatientCard(
-    patient: UsuarioEntity,
+    patient: UsuarioDto,
     onClick: () -> Unit
 ) {
     Card(

@@ -3,11 +3,11 @@ package com.example.app_clinica_atl.ui.viewmodel
 import android.net.Uri
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import com.example.app_clinica_atl.data.local.cita.CitaDetalle
-import com.example.app_clinica_atl.data.local.seguro.SeguroEntity
-import com.example.app_clinica_atl.data.local.seguro.UsuarioSeguroEntity
 import com.example.app_clinica_atl.data.local.storage.UserPreferences
-import com.example.app_clinica_atl.data.local.usuario.UsuarioEntity
+import com.example.app_clinica_atl.data.remote.dto.CitaDetalleDto
+import com.example.app_clinica_atl.data.remote.dto.SeguroDto
+import com.example.app_clinica_atl.data.remote.dto.UsuarioDto
+import com.example.app_clinica_atl.data.remote.dto.UsuarioSeguroDto
 import com.example.app_clinica_atl.data.repository.CitasRepository
 import com.example.app_clinica_atl.data.repository.SegurosRepository
 import com.example.app_clinica_atl.data.repository.UsuariosRepository
@@ -26,10 +26,10 @@ import kotlinx.coroutines.launch
 
 data class PatientProfileUiState(
     val isLoading: Boolean = true,
-    val patient: UsuarioEntity? = null,
-    val activeInsuranceDetails: SeguroEntity? = null,
-    val activeSubscription: UsuarioSeguroEntity? = null,
-    val activeAppointments: List<CitaDetalle> = emptyList(),
+    val patient: UsuarioDto? = null,
+    val activeInsuranceDetails: SeguroDto? = null,
+    val activeSubscription: UsuarioSeguroDto? = null,
+    val activeAppointments: List<CitaDetalleDto> = emptyList(),
     val errorMsg: String? = null,
     val successMsg: String? = null
 )

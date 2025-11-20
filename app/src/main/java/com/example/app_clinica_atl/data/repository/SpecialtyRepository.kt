@@ -1,6 +1,6 @@
 package com.example.app_clinica_atl.data.repository
 
-import com.example.app_clinica_atl.data.local.especialidad.EspecialidadEntity
+import com.example.app_clinica_atl.data.remote.dto.EspecialidadDto
 import kotlinx.coroutines.flow.Flow
 
 /**
@@ -10,15 +10,15 @@ interface SpecialtyRepository {
     /**
      * Obtiene un Flow con la lista de todas las especialidades.
      */
-    fun getAllSpecialties(): Flow<List<EspecialidadEntity>>
+    fun getAllSpecialties(): Flow<List<EspecialidadDto>>
 
     /**
-     * Añade una nueva especialidad a la base de datos.
+     * Añade una nueva especialidad.
      */
-    suspend fun addSpecialty(specialty: EspecialidadEntity): Result<Unit>
+    suspend fun addSpecialty(specialty: EspecialidadDto): Result<Unit>
 
     /**
-     * Elimina una especialidad de la base de datos.
+     * Elimina una especialidad.
      */
-    suspend fun deleteSpecialty(specialty: EspecialidadEntity): Result<Unit>
+    suspend fun deleteSpecialty(specialty: EspecialidadDto): Result<Unit>
 }

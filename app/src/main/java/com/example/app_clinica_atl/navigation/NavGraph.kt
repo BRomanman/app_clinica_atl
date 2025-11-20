@@ -35,7 +35,8 @@ fun AppNavGraph(
     adminAddDoctorViewModel: AdminAddDoctorViewModel,
     insuranceViewModel: InsuranceViewModel,
     doctorSearchPatientViewModel: DoctorSearchPatientViewModel,
-    adminViewDoctorsViewModel: AdminViewDoctorsViewModel
+    adminViewDoctorsViewModel: AdminViewDoctorsViewModel,
+    currentDoctorId: Long?
 ) {
     val scope = rememberCoroutineScope()
 
@@ -105,7 +106,11 @@ fun AppNavGraph(
         // --- Rutas de Doctor ---
         composable(Route.DoctorMenu.path) {
             DoctorMenuScreen(
-                onProfileClick = { /* TODO */ },
+                onProfileClick = {
+                    currentDoctorId?.let { doctorId ->
+                        navController.navigate(Route.DoctorProfile.createRoute(doctorId))
+                    }
+                },
                 onScheduleClick = { navController.navigate(Route.DoctorSchedule.path) },
                 onSearchPatient = { navController.navigate(Route.DoctorSearchPatient.path) },
                 onLogout = { navController.navigate(Route.LogoutConfirmation.path) }

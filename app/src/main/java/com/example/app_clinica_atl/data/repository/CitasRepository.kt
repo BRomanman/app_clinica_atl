@@ -1,7 +1,7 @@
 package com.example.app_clinica_atl.data.repository
 
-import com.example.app_clinica_atl.data.local.cita.CitaDetalle
-import com.example.app_clinica_atl.data.local.cita.CitaEntity
+import com.example.app_clinica_atl.data.remote.dto.CitaDetalleDto
+import com.example.app_clinica_atl.data.remote.dto.CitaDto
 import kotlinx.coroutines.flow.Flow
 
 /**
@@ -10,9 +10,9 @@ import kotlinx.coroutines.flow.Flow
 interface CitasRepository {
 
     /**
-     * Intenta agendar una nueva cita en la base de datos.
+     * Intenta agendar una nueva cita vía API.
      */
-    suspend fun bookAppointment(appointment: CitaEntity): Result<Long>
+    suspend fun bookAppointment(appointment: CitaDto): Result<CitaDto>
 
     /**
      * Obtiene una lista de las horas (Strings) que YA están reservadas
@@ -23,7 +23,7 @@ interface CitasRepository {
     /**
      * Obtiene un Flow con todas las citas activas de un paciente.
      */
-    fun getAppointmentsForPatient(patientId: Long): Flow<List<CitaDetalle>>
+    fun getAppointmentsForPatient(patientId: Long): Flow<List<CitaDetalleDto>>
 
     /**
      * Cancela una cita.

@@ -1,6 +1,5 @@
 package com.example.app_clinica_atl.data.remote.dto
 
-import com.example.app_clinica_atl.data.local.usuario.UsuarioEntity
 import com.google.gson.annotations.SerializedName
 
 data class LoginRequestDto(
@@ -18,10 +17,10 @@ data class LoginResponseDto(
 )
 
 /**
- * Convierte la respuesta del login remoto en la entidad que usa la app.
- * Guardamos la contraseña ingresada para mantener coherencia con el modelo local.
+ * Convierte la respuesta del login remoto en el DTO que usa la app.
+ * Guardamos la contraseña ingresada para mantener coherencia del modelo.
  */
-fun LoginResponseDto.toUsuarioEntityFromLogin(plainPassword: String): UsuarioEntity {
+fun LoginResponseDto.toUsuarioDtoFromLogin(plainPassword: String): UsuarioDto {
     val normalizedRole = when (role?.lowercase()) {
         "administrador" -> "admin"
         "doctor" -> "doctor"
@@ -33,7 +32,7 @@ fun LoginResponseDto.toUsuarioEntityFromLogin(plainPassword: String): UsuarioEnt
         .joinToString(" ")
         .ifBlank { correo.orEmpty() }
 
-    return UsuarioEntity(
+    return UsuarioDto(
         id = userId ?: 0L,
         name = fullName,
         email = correo.orEmpty(),

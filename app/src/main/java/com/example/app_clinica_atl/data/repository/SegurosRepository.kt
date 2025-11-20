@@ -1,7 +1,7 @@
 package com.example.app_clinica_atl.data.repository
 
-import com.example.app_clinica_atl.data.local.seguro.SeguroEntity
-import com.example.app_clinica_atl.data.local.seguro.UsuarioSeguroEntity
+import com.example.app_clinica_atl.data.remote.dto.SeguroDto
+import com.example.app_clinica_atl.data.remote.dto.UsuarioSeguroDto
 import kotlinx.coroutines.flow.Flow
 
 /**
@@ -12,17 +12,17 @@ interface SegurosRepository {
     /**
      * Obtiene un Flow con la lista de todos los seguros disponibles.
      */
-    fun getAvailableInsurances(): Flow<List<SeguroEntity>>
+    fun getAvailableInsurances(): Flow<List<SeguroDto>>
 
     /**
      * Obtiene la suscripción activa del paciente (para ID).
      */
-    fun getActiveSubscription(patientId: Long): Flow<UsuarioSeguroEntity?>
+    fun getActiveSubscription(patientId: Long): Flow<UsuarioSeguroDto?>
 
     /**
      * Obtiene los detalles del seguro activo del paciente (para UI).
      */
-    fun getActiveSubscriptionDetails(patientId: Long): Flow<SeguroEntity?>
+    fun getActiveSubscriptionDetails(patientId: Long): Flow<SeguroDto?>
 
     /**
      * Suscribe a un paciente a un nuevo seguro.
