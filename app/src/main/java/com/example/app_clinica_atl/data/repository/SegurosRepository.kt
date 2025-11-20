@@ -25,6 +25,11 @@ interface SegurosRepository {
     fun getActiveSubscriptionDetails(patientId: Long): Flow<SeguroDto?>
 
     /**
+     * Obtiene los seguros asociados a un paciente desde la API.
+     */
+    suspend fun getInsurancesForPatient(patientId: Long): Result<List<SeguroDto>>
+
+    /**
      * Suscribe a un paciente a un nuevo seguro.
      */
     suspend fun subscribeToInsurance(patientId: Long, insuranceId: Long): Result<Unit>

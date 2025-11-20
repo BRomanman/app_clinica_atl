@@ -35,6 +35,7 @@ fun AppNavGraph(
     adminAddDoctorViewModel: AdminAddDoctorViewModel,
     insuranceViewModel: InsuranceViewModel,
     doctorSearchPatientViewModel: DoctorSearchPatientViewModel,
+    doctorPatientProfileViewModel: DoctorPatientProfileViewModel,
     adminViewDoctorsViewModel: AdminViewDoctorsViewModel,
     currentDoctorId: Long?
 ) {
@@ -123,7 +124,20 @@ fun AppNavGraph(
             DoctorSearchPatientScreen(
                 viewModel = doctorSearchPatientViewModel,
                 onBackClick = { navController.popBackStack() },
-                onPatientClick = { /* TODO */ }
+                onPatientClick = { patientId ->
+                    navController.navigate(Route.DoctorPatientProfile.createRoute(patientId))
+                }
+            )
+        }
+        composable(
+            route = Route.DoctorPatientProfile.path,
+            arguments = listOf(navArgument("patientId") { type = NavType.LongType })
+        ) { backStackEntry ->
+            val patientId = backStackEntry.arguments?.getLong("patientId") ?: return@composable
+            DoctorPatientProfileScreen(
+                patientId = patientId,
+                onBackClick = { navController.popBackStack() },
+                viewModel = doctorPatientProfileViewModel
             )
         }
 

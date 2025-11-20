@@ -19,7 +19,7 @@ import androidx.compose.ui.Modifier
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun DoctorScheduleScreen(
-    onBackClick: () -> Unit // <-- ¡¡AQUÍ ESTÁ LA SOLUCIÓN!!
+    onBackClick: () -> Unit
 ) {
     Scaffold(
         topBar = {

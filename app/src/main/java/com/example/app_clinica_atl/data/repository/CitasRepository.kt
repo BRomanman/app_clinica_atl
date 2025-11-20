@@ -26,6 +26,11 @@ interface CitasRepository {
     fun getAppointmentsForPatient(patientId: Long): Flow<List<CitaDetalleDto>>
 
     /**
+     * Obtiene las citas de un paciente en una sola consulta.
+     */
+    suspend fun getAppointmentsForPatientOnce(patientId: Long): Result<List<CitaDto>>
+
+    /**
      * Cancela una cita.
      */
     suspend fun cancelAppointment(appointmentId: Long): Result<Unit>

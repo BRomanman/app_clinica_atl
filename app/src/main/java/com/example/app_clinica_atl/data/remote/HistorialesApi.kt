@@ -11,21 +11,10 @@ import retrofit2.http.Path
 
 interface HistorialesApi {
 
-    @GET("historial")
-    suspend fun getHistoriales(): List<HistorialDto>
+    @GET("historial/{historialId}")
+    suspend fun getHistorialById(@Path("historialId") id: Long): HistorialDto
 
-    @GET("historial/{id}")
-    suspend fun getHistorialById(@Path("id") id: Long): HistorialDto
+    @GET("historial/usuario/{usuarioId}")
+    suspend fun getHistorialByUserId(@Path("usuarioId") userId: Long): List<HistorialDto>
 
-    @POST("historial")
-    suspend fun createHistorial(@Body historial: HistorialDto): HistorialDto
-
-    @PUT("historial/{id}")
-    suspend fun updateHistorial(
-        @Path("id") id: Long,
-        @Body historial: HistorialDto
-    ): HistorialDto
-
-    @DELETE("historial/{id}")
-    suspend fun deleteHistorial(@Path("id") id: Long): Response<Unit>
 }

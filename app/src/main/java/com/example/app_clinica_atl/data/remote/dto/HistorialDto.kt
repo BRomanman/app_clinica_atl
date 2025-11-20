@@ -6,9 +6,9 @@ import com.google.gson.annotations.SerializedName
  * Representa la tabla `Historial`.
  */
 data class HistorialDto(
-    @SerializedName("id_historial") val id: Long?,
-    @SerializedName("id_usuario") val idUsuario: Long,
-    @SerializedName("fecha_consulta") val fechaConsulta: String, // DATETIME
-    @SerializedName("diagnostico") val diagnostico: String,
-    @SerializedName("observaciones") val observaciones: String
+    @SerializedName(value = "id_historial", alternate = ["id"]) val id: Long?,
+    @SerializedName(value = "id_usuario", alternate = ["usuarioId"]) val idUsuario: Long,
+    @SerializedName(value = "fecha_consulta", alternate = ["fechaConsulta", "fecha"]) val fechaConsulta: String, // DATETIME
+    @SerializedName(value = "diagnostico", alternate = ["diagnosis"]) val diagnostico: String,
+    @SerializedName(value = "observaciones", alternate = ["observacion", "notes"]) val observaciones: String
 )

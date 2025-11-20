@@ -52,7 +52,7 @@ fun DoctorMenuScreen(
             }
             Spacer(modifier = Modifier.height(16.dp))
             Button(onClick = onSearchPatient, modifier = Modifier.fillMaxWidth()) {
-                Text("Buscar Pacientes")
+                Text("Buscar Pacientes por ID")
             }
 
             // --- ¡¡BOTÓN DE LOGOUT AÑADIDO!! ---

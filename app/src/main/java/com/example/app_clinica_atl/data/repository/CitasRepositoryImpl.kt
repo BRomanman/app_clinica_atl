@@ -45,6 +45,15 @@ class CitasRepositoryImpl(
         emit(appointments)
     }
 
+    override suspend fun getAppointmentsForPatientOnce(patientId: Long): Result<List<CitaDto>> = withContext(Dispatchers.IO) {
+        return@withContext try {
+            val appointments = citasApi.getAppointments().filter { it.patientId == patientId }
+            Result.success(appointments)
+        } catch (e: Exception) {
+            Result.failure(e)
+        }
+    }
+
     override suspend fun cancelAppointment(appointmentId: Long): Result<Unit> = withContext(Dispatchers.IO) {
         return@withContext try {
             citasApi.deleteAppointment(appointmentId)

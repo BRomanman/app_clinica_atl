@@ -100,10 +100,8 @@ class UsuariosRepository(
         }
     }
 
-    /**
-     * TODO: Implementar subida real de imágenes cuando exista endpoint.
-     * Por ahora devolvemos éxito inmediato para no bloquear la UI.
-     */
+
+
     suspend fun updateProfileImageUrl(userId: Long, imageUrl: String): Result<Unit> = Result.success(Unit)
 
     suspend fun updatePhoneNumber(userId: Long, phone: String): Result<Unit> = withContext(Dispatchers.IO) {

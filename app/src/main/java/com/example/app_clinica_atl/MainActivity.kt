@@ -22,6 +22,7 @@ import androidx.compose.ui.Modifier
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.rememberNavController
+import androidx.core.splashscreen.SplashScreen.Companion.installSplashScreen
 import com.example.app_clinica_atl.data.local.storage.UserPreferences
 import com.example.app_clinica_atl.data.repository.*
 import com.example.app_clinica_atl.navigation.AppNavGraph
@@ -43,6 +44,7 @@ class MainActivity : ComponentActivity() {
     private val citasRepository: CitasRepository by lazy { CitasRepositoryImpl() }
     private val specialtyRepository: SpecialtyRepository by lazy { SpecialtyRepositoryImpl() }
     private val segurosRepository: SegurosRepository by lazy { SegurosRepositoryImpl() }
+    private val historialRepository: HistorialRepository by lazy { HistorialRepository() }
 
     // --- ViewModels (sin cambios) ---
     private val authViewModel: AuthViewModel by viewModels { AuthViewModelFactory(usuariosRepository, userPreferences) }
@@ -58,11 +60,15 @@ class MainActivity : ComponentActivity() {
     private val adminManageSpecialtiesViewModel: AdminManageSpecialtiesViewModel by viewModels { AdminManageSpecialtiesViewModelFactory(specialtyRepository) }
     private val adminAddDoctorViewModel: AdminAddDoctorViewModel by viewModels { AdminAddDoctorViewModelFactory(usuariosRepository, specialtyRepository) }
     private val adminViewDoctorsViewModel: AdminViewDoctorsViewModel by viewModels { AdminViewDoctorsViewModelFactory(usuariosRepository) }
+    private val doctorPatientProfileViewModel: DoctorPatientProfileViewModel by viewModels {
+        DoctorPatientProfileViewModelFactory(usuariosRepository, citasRepository, segurosRepository, historialRepository)
+    }
     private val themeViewModel: ThemeViewModel by viewModels { ThemeViewModelFactory(userPreferences) }
 
 
     @RequiresApi(Build.VERSION_CODES.O)
     override fun onCreate(savedInstanceState: Bundle?) {
+        installSplashScreen()
         super.onCreate(savedInstanceState)
         setContent {
             val themePreference by themeViewModel.themeFlow.collectAsStateWithLifecycle(initialValue = "SYSTEM")
@@ -104,13 +110,16 @@ class MainActivity : ComponentActivity() {
                     val isPatient = userRole == "paciente"
                     val drawerState = rememberDrawerState(initialValue = DrawerValue.Closed, confirmStateChange = { isPatient })
 
-                    val topBarVisible = when (currentRoute) {
-                        Route.Login.path, Route.Register.path -> false
-                        Route.AdminMenu.path, Route.AdminAddSpecialty.path, Route.AdminAddDoctor.path, Route.AdminViewDoctors.path -> false
-                        Route.DoctorMenu.path, Route.DoctorSchedule.path, Route.DoctorSearchPatient.path, Route.DoctorProfile.path -> false
-                        Route.LogoutConfirmation.path -> false
-                        Route.Restart.path -> false // Oculta en la ruta de reinicio
-                        null -> false
+                    val topBarVisible = when {
+                        currentRoute == Route.Login.path || currentRoute == Route.Register.path -> false
+                        currentRoute == Route.AdminMenu.path || currentRoute == Route.AdminAddSpecialty.path ||
+                                currentRoute == Route.AdminAddDoctor.path || currentRoute == Route.AdminViewDoctors.path -> false
+                        currentRoute == Route.DoctorMenu.path || currentRoute == Route.DoctorSchedule.path ||
+                                currentRoute == Route.DoctorSearchPatient.path || currentRoute == Route.DoctorProfile.path ||
+                                currentRoute?.startsWith("doctor_patient_profile") == true -> false
+                        currentRoute == Route.LogoutConfirmation.path -> false
+                        currentRoute == Route.Restart.path -> false // Oculta en la ruta de reinicio
+                        currentRoute == null -> false
                         else -> true
                     }
 
@@ -156,6 +165,7 @@ class MainActivity : ComponentActivity() {
                                 adminAddDoctorViewModel = adminAddDoctorViewModel,
                                 insuranceViewModel = insuranceViewModel,
                                 doctorSearchPatientViewModel = doctorSearchPatientViewModel,
+                                doctorPatientProfileViewModel = doctorPatientProfileViewModel,
                                 adminViewDoctorsViewModel = adminViewDoctorsViewModel,
                                 currentDoctorId = userId
                             )

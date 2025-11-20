@@ -31,7 +31,7 @@ class DoctorSearchPatientViewModel(
      * Llamado cada vez que el doctor escribe en la barra de búsqueda.
      */
     fun onQueryChange(newQuery: String) {
-        _uiState.update { it.copy(query = newQuery) }
+        _uiState.update { it.copy(query = newQuery, errorMsg = null) }
         searchPatients(newQuery)
     }
 
@@ -39,27 +39,35 @@ class DoctorSearchPatientViewModel(
      * Ejecuta la búsqueda en el repositorio.
      */
     private fun searchPatients(query: String) {
-        // Si la búsqueda está vacía, no mostramos resultados.
         if (query.isBlank()) {
             _uiState.update { it.copy(isLoading = false, patients = emptyList(), errorMsg = null) }
             return
         }
 
-        viewModelScope.launch {
-            _uiState.update { it.copy(isLoading = true, errorMsg = null) }
+        val patientId = query.toLongOrNull()
+        if (patientId == null) {
+            _uiState.update { it.copy(isLoading = false, patients = emptyList(), errorMsg = "Ingrese un ID válido") }
+            return
+        }
 
-            val result = userRepository.searchPatients(query)
+        viewModelScope.launch {
+            _uiState.update { it.copy(isLoading = true, errorMsg = null, patients = emptyList()) }
+
+            val result = userRepository.getUserById(patientId)
 
             _uiState.update {
                 if (result.isSuccess) {
+                    val patient = result.getOrNull()
                     it.copy(
                         isLoading = false,
-                        patients = result.getOrNull() ?: emptyList()
+                        patients = patient?.let { listOf(it) } ?: emptyList(),
+                        errorMsg = null
                     )
                 } else {
                     it.copy(
                         isLoading = false,
-                        errorMsg = result.exceptionOrNull()?.message ?: "Error en la búsqueda"
+                        patients = emptyList(),
+                        errorMsg = result.exceptionOrNull()?.message ?: "Error en la búsqueda por ID"
                     )
                 }
             }

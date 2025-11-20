@@ -16,10 +16,9 @@ data class LoginResponseDto(
     @SerializedName("correo") val correo: String?
 )
 
-/**
- * Convierte la respuesta del login remoto en el DTO que usa la app.
- * Guardamos la contraseña ingresada para mantener coherencia del modelo.
- */
+
+
+
 fun LoginResponseDto.toUsuarioDtoFromLogin(plainPassword: String): UsuarioDto {
     val normalizedRole = when (role?.lowercase()) {
         "administrador" -> "admin"

@@ -16,6 +16,9 @@ sealed class Route(val path: String) {
     object DoctorProfile : Route("doctor_profile/{doctorId}") {
         fun createRoute(doctorId: Long) = "doctor_profile/$doctorId"
     }
+    object DoctorPatientProfile : Route("doctor_patient_profile/{patientId}") {
+        fun createRoute(patientId: Long) = "doctor_patient_profile/$patientId"
+    }
 
     // --- Rutas de Admin ---
     object AdminMenu : Route("admin_menu")

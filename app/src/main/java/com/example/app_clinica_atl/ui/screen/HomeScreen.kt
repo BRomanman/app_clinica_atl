@@ -185,30 +185,10 @@ fun HomeScreen(
             )
             Spacer(modifier = Modifier.height(12.dp))
         }
-
-        // --- Botón principal de Agendar Cita (sin cambios) ---
-        item {
-            Spacer(modifier = Modifier.height(24.dp))
-            Button(
-                onClick = onBookAppointmentClick,
-                modifier = Modifier
-                    .fillMaxWidth(0.8f)
-                    .height(56.dp),
-                shape = RoundedCornerShape(12.dp),
-                colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.primary)
-            ) {
-                Text(
-                    text = "Reserva tu Hora",
-                    fontSize = 18.sp,
-                    fontWeight = FontWeight.Bold
-                )
-            }
-            Spacer(modifier = Modifier.height(32.dp))
-        }
     }
 }
 
-// ... (El resto del archivo: InsuranceCardItem, InsuranceCardDisplay)
+
 @Composable
 private fun InsuranceCardItem(
     title: String,

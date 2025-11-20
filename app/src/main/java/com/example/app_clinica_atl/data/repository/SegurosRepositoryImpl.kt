@@ -31,6 +31,11 @@ class SegurosRepositoryImpl(
         emit(null)
     }
 
+    override suspend fun getInsurancesForPatient(patientId: Long): Result<List<SeguroDto>> {
+        // TODO: Consumir endpoint real cuando exista; por ahora devolvemos vacío para no bloquear la UI.
+        return Result.success(emptyList())
+    }
+
     override suspend fun subscribeToInsurance(patientId: Long, insuranceId: Long): Result<Unit> {
         // TODO: Consumir endpoint real (POST) cuando esté disponible
         return Result.failure(NotImplementedError("Suscripción remota pendiente de implementar"))

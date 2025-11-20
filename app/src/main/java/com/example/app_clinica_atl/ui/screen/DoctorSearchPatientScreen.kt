@@ -10,26 +10,24 @@ import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ArrowBack
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.CircularProgressIndicator
-import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
-import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
-import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
@@ -38,79 +36,75 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
 import com.example.app_clinica_atl.R
 import com.example.app_clinica_atl.data.remote.dto.UsuarioDto
 import com.example.app_clinica_atl.ui.viewmodel.DoctorSearchPatientViewModel
 
-@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun DoctorSearchPatientScreen(
     viewModel: DoctorSearchPatientViewModel,
-    onBackClick: () -> Unit, // <-- ¡¡AQUÍ ESTÁ LA SOLUCIÓN!!
+    onBackClick: () -> Unit,
     onPatientClick: (Long) -> Unit
 ) {
     val uiState by viewModel.uiState.collectAsState()
 
-    Scaffold(
-        topBar = {
-            TopAppBar(
-                title = { Text("Buscar Paciente") },
-                navigationIcon = {
-                    IconButton(onClick = onBackClick) { // <-- Ahora se usa el parámetro
-                        Icon(Icons.Default.ArrowBack, contentDescription = "Volver")
-                    }
-                }
+    Column(
+        modifier = Modifier
+            .fillMaxSize()
+            .padding(horizontal = 16.dp, vertical = 32.dp),
+        horizontalAlignment = Alignment.CenterHorizontally,
+        verticalArrangement = Arrangement.spacedBy(20.dp)
+    ) {
+        Row(
+            verticalAlignment = Alignment.CenterVertically,
+            modifier = Modifier.fillMaxWidth()
+        ) {
+            IconButton(onClick = onBackClick) {
+                Icon(Icons.Default.ArrowBack, contentDescription = "Volver")
+            }
+            Text(
+                text = "Buscar paciente",
+                style = MaterialTheme.typography.titleLarge,
+                fontWeight = FontWeight.Bold,
+                modifier = Modifier.padding(start = 4.dp)
             )
         }
-    ) { paddingValues ->
-        Column(
+
+
+
+
+
+        OutlinedTextField(
+            value = uiState.query,
+            onValueChange = viewModel::onQueryChange,
+            label = { Text("Buscar por ID de paciente...") },
             modifier = Modifier
-                .fillMaxSize()
-                .padding(paddingValues)
-                .padding(16.dp)
+                .fillMaxWidth(0.85f)
+                .heightIn(min = 72.dp),
+            singleLine = true,
+            keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number)
+        )
+
+        if (uiState.isLoading) {
+            CircularProgressIndicator()
+        }
+        uiState.errorMsg?.let { Text(it, color = MaterialTheme.colorScheme.error) }
+        if (uiState.patients.isEmpty() && !uiState.isLoading && uiState.query.isNotBlank()) {
+            Text("No se encontraron pacientes.")
+        }
+        LazyColumn(
+            contentPadding = PaddingValues(vertical = 8.dp),
+            verticalArrangement = Arrangement.spacedBy(12.dp),
+            horizontalAlignment = Alignment.CenterHorizontally,
+            modifier = Modifier.fillMaxWidth()
         ) {
-            OutlinedTextField(
-                value = uiState.query,
-                onValueChange = viewModel::onQueryChange,
-                label = { Text("Buscar por nombre...") },
-                modifier = Modifier.fillMaxWidth(),
-                singleLine = true
-            )
-
-            Spacer(modifier = Modifier.height(16.dp))
-
-            Box(modifier = Modifier.fillMaxSize()) {
-                if (uiState.isLoading) {
-                    CircularProgressIndicator(modifier = Modifier.align(Alignment.Center))
-                }
-
-                uiState.errorMsg?.let {
-                    Text(
-                        text = it,
-                        color = MaterialTheme.colorScheme.error,
-                        modifier = Modifier.align(Alignment.Center)
-                    )
-                }
-
-                if (uiState.patients.isEmpty() && !uiState.isLoading && uiState.query.isNotBlank()) {
-                    Text(
-                        text = "No se encontraron pacientes.",
-                        modifier = Modifier.align(Alignment.Center)
-                    )
-                }
-
-                LazyColumn(
-                    contentPadding = PaddingValues(vertical = 8.dp),
-                    verticalArrangement = Arrangement.spacedBy(12.dp)
-                ) {
-                    items(uiState.patients) { patient ->
-                        PatientCard(
-                            patient = patient,
-                            onClick = { onPatientClick(patient.id) }
-                        )
-                    }
-                }
+            items(uiState.patients) { patient ->
+                PatientCard(
+                    patient = patient,
+                    onClick = { onPatientClick(patient.id) }
+                )
             }
         }
     }
@@ -125,7 +119,8 @@ private fun PatientCard(
         modifier = Modifier
             .fillMaxWidth()
             .clickable { onClick() },
-        elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
+        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant),
+        elevation = CardDefaults.cardElevation(defaultElevation = 0.dp)
     ) {
         Row(
             modifier = Modifier
@@ -137,11 +132,11 @@ private fun PatientCard(
                 painter = painterResource(id = R.drawable.goku_perfil),
                 contentDescription = "Foto de ${patient.name}",
                 modifier = Modifier
-                    .size(50.dp)
+                    .size(52.dp)
                     .clip(CircleShape)
             )
             Spacer(modifier = Modifier.width(16.dp))
-            Column(modifier = Modifier.weight(1f)) {
+            Column(modifier = Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(4.dp)) {
                 Text(
                     text = patient.name,
                     style = MaterialTheme.typography.titleMedium,
@@ -150,6 +145,11 @@ private fun PatientCard(
                 Text(
                     text = patient.email,
                     style = MaterialTheme.typography.bodyMedium,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                )
+                Text(
+                    text = "Teléfono: ${patient.phone}",
+                    style = MaterialTheme.typography.bodySmall,
                     color = MaterialTheme.colorScheme.onSurfaceVariant
                 )
             }
