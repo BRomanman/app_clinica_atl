@@ -56,11 +56,15 @@ fun LoginScreenVm(
     onGoRegister: () -> Unit
 ) {
     val uiState by authViewModel.loginUiState.collectAsState()
+    val context = LocalContext.current
 
     LaunchedEffect(uiState.loginSuccess, uiState.userRole) {
         if (uiState.loginSuccess && uiState.userRole != null) {
             onLoginSuccessNavigate(uiState.userRole!!)
         }
+    }
+    LaunchedEffect(uiState.weakPasswordWarning) {
+        uiState.weakPasswordWarning?.let { Toast.makeText(context, it, Toast.LENGTH_SHORT).show() }
     }
 
     LoginScreen(

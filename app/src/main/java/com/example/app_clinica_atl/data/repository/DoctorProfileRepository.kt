@@ -31,7 +31,8 @@ class DoctorProfileRepository(
             val appointments = citasApi.getAppointments()
             Result.success(appointments.filter { it.doctorId == doctorId })
         } catch (e: HttpException) {
-            if (e.code() == 204) {
+            // Si el backend responde 204 o 500, devolvemos lista vacía para no romper la UI.
+            if (e.code() == 204 || e.code() == 500) {
                 Result.success(emptyList())
             } else {
                 Result.failure(e)

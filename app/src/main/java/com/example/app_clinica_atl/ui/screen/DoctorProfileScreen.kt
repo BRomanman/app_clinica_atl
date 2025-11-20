@@ -25,11 +25,12 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ArrowBack
+import androidx.compose.material.icons.filled.Visibility
+import androidx.compose.material.icons.filled.VisibilityOff
 import androidx.compose.material3.Button
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.CircularProgressIndicator
-import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
@@ -39,7 +40,6 @@ import androidx.compose.material3.SnackbarHost
 import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
-import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
@@ -56,9 +56,12 @@ import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.input.PasswordVisualTransformation
+import androidx.compose.ui.text.input.VisualTransformation
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
+import android.widget.Toast
+import androidx.compose.runtime.saveable.rememberSaveable
 import coil.compose.AsyncImage
 import com.example.app_clinica_atl.R
 import com.example.app_clinica_atl.data.remote.dto.DoctorMonthlyStatDto
@@ -73,10 +76,10 @@ import java.util.Date
 import java.util.Locale
 import java.util.Objects
 
+@RequiresApi(Build.VERSION_CODES.O)
 private val monthFormatter = DateTimeFormatter.ofPattern("MMM yyyy", Locale("es", "CL"))
 
 @RequiresApi(Build.VERSION_CODES.O)
-@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun DoctorProfileScreen(
     doctorId: Long?,
@@ -120,24 +123,14 @@ fun DoctorProfileScreen(
             viewModel.clearMessages()
         }
         uiState.successMsg?.let {
-            snackbarHostState.showSnackbar(it)
+            Toast.makeText(context, it, Toast.LENGTH_SHORT).show()
             viewModel.clearMessages()
         }
     }
 
     Scaffold(
         modifier = modifier.fillMaxSize(),
-        snackbarHost = { SnackbarHost(snackbarHostState) },
-        topBar = {
-            TopAppBar(
-                title = { Text(uiState.doctor?.name ?: "Perfil de Doctor") },
-                navigationIcon = {
-                    IconButton(onClick = onBackClick) {
-                        Icon(Icons.Default.ArrowBack, contentDescription = "Volver")
-                    }
-                }
-            )
-        }
+        snackbarHost = { SnackbarHost(snackbarHostState) }
     ) { paddingValues ->
         DoctorProfileContentHost(
             doctorId = doctorId,
@@ -148,7 +141,8 @@ fun DoctorProfileScreen(
             onSavePhone = viewModel::savePhone,
             onPasswordChange = viewModel::onPasswordChange,
             onConfirmPasswordChange = viewModel::onConfirmPasswordChange,
-            onSavePassword = viewModel::savePassword
+            onSavePassword = viewModel::savePassword,
+            onBackClick = onBackClick
         )
     }
 }
@@ -164,7 +158,8 @@ private fun DoctorProfileContentHost(
     onSavePhone: () -> Unit,
     onPasswordChange: (String) -> Unit,
     onConfirmPasswordChange: (String) -> Unit,
-    onSavePassword: () -> Unit
+    onSavePassword: () -> Unit,
+    onBackClick: () -> Unit
 ) {
     Box(
         modifier = Modifier
@@ -211,7 +206,8 @@ private fun DoctorProfileContentHost(
                     onPasswordChange = onPasswordChange,
                     onConfirmPasswordChange = onConfirmPasswordChange,
                     onSavePassword = onSavePassword,
-                    onProfileImageClick = onRequestCamera
+                    onProfileImageClick = onRequestCamera,
+                    onBackClick = onBackClick
                 )
             }
         }
@@ -239,13 +235,31 @@ private fun DoctorProfileContent(
     onPasswordChange: (String) -> Unit,
     onConfirmPasswordChange: (String) -> Unit,
     onSavePassword: () -> Unit,
-    onProfileImageClick: () -> Unit
+    onProfileImageClick: () -> Unit,
+    onBackClick: () -> Unit
 ) {
     LazyColumn(
         modifier = Modifier.fillMaxSize(),
         verticalArrangement = Arrangement.spacedBy(20.dp),
         horizontalAlignment = Alignment.CenterHorizontally
     ) {
+        item {
+            Row(
+                verticalAlignment = Alignment.CenterVertically,
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(horizontal = 4.dp)
+            ) {
+                IconButton(onClick = onBackClick) {
+                    Icon(Icons.Default.ArrowBack, contentDescription = "Volver")
+                }
+                Text(
+                    text = "Perfil de doctor",
+                    style = MaterialTheme.typography.titleLarge,
+                    fontWeight = FontWeight.Bold
+                )
+            }
+        }
         item {
             DoctorProfileHeader(
                 doctor = doctor,
@@ -361,7 +375,12 @@ private fun PhoneEditorCard(
             Spacer(modifier = Modifier.height(12.dp))
             OutlinedTextField(
                 value = phoneInput,
-                onValueChange = onPhoneChange,
+                onValueChange = { raw ->
+                    val sanitized = raw.filterIndexed { index, c ->
+                        c.isDigit() || (c == '+' && index == 0)
+                    }
+                    onPhoneChange(sanitized)
+                },
                 label = { Text("Teléfono") },
                 isError = phoneError != null,
                 keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Phone),
@@ -395,6 +414,9 @@ private fun PasswordEditorCard(
     onConfirmPasswordChange: (String) -> Unit,
     onSavePassword: () -> Unit
 ) {
+    var passwordVisible by rememberSaveable { mutableStateOf(false) }
+    var confirmVisible by rememberSaveable { mutableStateOf(false) }
+
     Card(
         modifier = Modifier.fillMaxWidth(),
         colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface)
@@ -408,7 +430,15 @@ private fun PasswordEditorCard(
                 label = { Text("Nueva contraseña") },
                 isError = passwordError != null,
                 keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Password),
-                visualTransformation = PasswordVisualTransformation(),
+                visualTransformation = if (passwordVisible) VisualTransformation.None else PasswordVisualTransformation(),
+                trailingIcon = {
+                    IconButton(onClick = { passwordVisible = !passwordVisible }) {
+                        Icon(
+                            imageVector = if (passwordVisible) Icons.Default.VisibilityOff else Icons.Default.Visibility,
+                            contentDescription = "Mostrar u ocultar contraseña"
+                        )
+                    }
+                },
                 supportingText = { passwordError?.let { Text(it, color = MaterialTheme.colorScheme.error) } },
                 modifier = Modifier.fillMaxWidth()
             )
@@ -419,7 +449,15 @@ private fun PasswordEditorCard(
                 label = { Text("Confirmar contraseña") },
                 isError = confirmPasswordError != null,
                 keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Password),
-                visualTransformation = PasswordVisualTransformation(),
+                visualTransformation = if (confirmVisible) VisualTransformation.None else PasswordVisualTransformation(),
+                trailingIcon = {
+                    IconButton(onClick = { confirmVisible = !confirmVisible }) {
+                        Icon(
+                            imageVector = if (confirmVisible) Icons.Default.VisibilityOff else Icons.Default.Visibility,
+                            contentDescription = "Mostrar u ocultar contraseña"
+                        )
+                    }
+                },
                 supportingText = { confirmPasswordError?.let { Text(it, color = MaterialTheme.colorScheme.error) } },
                 modifier = Modifier.fillMaxWidth()
             )
@@ -503,6 +541,7 @@ private fun StatRow(label: String, value: String) {
     }
 }
 
+@RequiresApi(Build.VERSION_CODES.O)
 private fun formatMonthLabel(rawMonth: String): String {
     return try {
         YearMonth.parse(rawMonth).format(monthFormatter).replaceFirstChar { it.titlecase(Locale("es", "CL")) }

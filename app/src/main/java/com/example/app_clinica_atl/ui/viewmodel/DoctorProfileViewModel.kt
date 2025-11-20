@@ -161,11 +161,31 @@ class DoctorProfileViewModel(
     }
 
     fun onPasswordChange(value: String) {
-        _uiState.update { it.copy(passwordInput = value, passwordError = null) }
+        val confirm = _uiState.value.confirmPasswordInput
+        val validation = validateRegisterPassword(value, confirm)
+        val msg = validation.exceptionOrNull()?.message
+        _uiState.update {
+            it.copy(
+                passwordInput = value,
+                passwordError = msg?.takeIf { text -> text.contains("débil", ignoreCase = true) },
+                confirmPasswordError = msg?.takeIf { text -> text.contains("coinciden", ignoreCase = true) },
+                transientError = null
+            )
+        }
     }
 
     fun onConfirmPasswordChange(value: String) {
-        _uiState.update { it.copy(confirmPasswordInput = value, confirmPasswordError = null) }
+        val current = _uiState.value.passwordInput
+        val validation = validateRegisterPassword(current, value)
+        val msg = validation.exceptionOrNull()?.message
+        _uiState.update {
+            it.copy(
+                confirmPasswordInput = value,
+                passwordError = msg?.takeIf { text -> text.contains("débil", ignoreCase = true) },
+                confirmPasswordError = msg?.takeIf { text -> text.contains("coinciden", ignoreCase = true) },
+                transientError = null
+            )
+        }
     }
 
     fun savePassword() {
@@ -257,12 +277,13 @@ class DoctorProfileViewModel(
 
 private fun UsuarioResponseDto.toDoctorProfileInfo(existingImage: String?): DoctorProfileInfo {
     val displayName = listOfNotNull(nombre, apellido).joinToString(" ").trim().ifBlank { correo.orEmpty() }
+    val specialtyText = "Especialidad no disponible" // TODO: obtenerla cuando el backend la exponga
     return DoctorProfileInfo(
         userId = id,
         doctorId = doctor?.id,
         name = displayName,
         email = correo.orEmpty(),
-        specialty = null,
+        specialty = specialtyText,
         phone = telefono ?: "",
         role = rol,
         bono = doctor?.bono,

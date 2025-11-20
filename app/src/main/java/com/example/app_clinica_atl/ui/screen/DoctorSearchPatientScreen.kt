@@ -128,13 +128,6 @@ private fun PatientCard(
                 .padding(16.dp),
             verticalAlignment = Alignment.CenterVertically
         ) {
-            Image(
-                painter = painterResource(id = R.drawable.goku_perfil),
-                contentDescription = "Foto de ${patient.name}",
-                modifier = Modifier
-                    .size(52.dp)
-                    .clip(CircleShape)
-            )
             Spacer(modifier = Modifier.width(16.dp))
             Column(modifier = Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(4.dp)) {
                 Text(

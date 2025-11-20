@@ -5,10 +5,7 @@ import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
 
-/**
- * Implementación temporal basada en memoria para Especialidades.
- * TODO: Reemplazar por llamadas reales a la API cuando estén disponibles.
- */
+
 class SpecialtyRepositoryImpl : SpecialtyRepository {
 
     private val specialties = MutableStateFlow<List<EspecialidadDto>>(emptyList())

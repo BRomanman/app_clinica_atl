@@ -25,7 +25,8 @@ data class LoginUiState(
     val isLoading: Boolean = false,
     val loginError: String? = null,
     val loginSuccess: Boolean = false,
-    val userRole: String? = null
+    val userRole: String? = null,
+    val weakPasswordWarning: String? = null
 )
 
 // --- Estados de UI para Registro ---
@@ -119,13 +120,21 @@ class AuthViewModel(
             _loginUiState.update { it.copy(emailError = emailError, passwordError = passwordError) }
             return
         }
-        _loginUiState.update { it.copy(isLoading = true, loginError = null) }
+        _loginUiState.update { it.copy(isLoading = true, loginError = null, weakPasswordWarning = null) }
         viewModelScope.launch {
             val result = userRepository.login(_loginUiState.value.email, _loginUiState.value.password)
             if (result.isSuccess) {
                 val user = result.getOrNull()!!
                 userPreferences.saveUserSession(user.id, user.role)
-                _loginUiState.update { it.copy(isLoading = false, loginSuccess = true, userRole = user.role) }
+                val weakPass = isWeakDoctorPassword(user.role, user.name, _loginUiState.value.password)
+                _loginUiState.update {
+                    it.copy(
+                        isLoading = false,
+                        loginSuccess = true,
+                        userRole = user.role,
+                        weakPasswordWarning = if (weakPass) "Tu contraseña es débil (contiene tu nombre y año). Cámbiala cuanto antes." else null
+                    )
+                }
             } else {
                 _loginUiState.update { it.copy(isLoading = false, loginError = result.exceptionOrNull()?.message ?: "Error desconocido") }
             }
@@ -185,5 +194,14 @@ class AuthViewModel(
             _loginUiState.update { LoginUiState() }
             _registerUiState.update { RegisterUiState() }
         }
+    }
+
+    private fun isWeakDoctorPassword(role: String, fullName: String, password: String): Boolean {
+        if (!role.equals("doctor", true)) return false
+        val normalizedPass = password.lowercase()
+        val tokens = fullName.lowercase().split(" ").filter { it.length >= 3 }
+        val hasName = tokens.any { normalizedPass.contains(it) }
+        val hasYear = Regex("\\d{4}").containsMatchIn(password)
+        return hasName && hasYear
     }
 }
