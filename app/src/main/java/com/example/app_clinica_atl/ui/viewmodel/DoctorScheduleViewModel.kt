@@ -39,9 +39,19 @@ class DoctorScheduleViewModel(
     val uiState: StateFlow<DoctorScheduleUiState> = _uiState.asStateFlow()
 
     @RequiresApi(Build.VERSION_CODES.O)
-    fun loadAgenda(doctorId: Long) {
+    fun loadAgenda(userId: Long) {
         viewModelScope.launch {
             _uiState.value = DoctorScheduleUiState(isLoading = true)
+
+            // Aseguramos que la consulta se haga con el id propio del doctor, no el id de usuario.
+            val doctorId = usuariosRepository.getDoctorIdForUser(userId).getOrNull()
+                ?: run {
+                    _uiState.value = DoctorScheduleUiState(
+                        isLoading = false,
+                        errorMsg = "No se encontró un registro de doctor para este usuario."
+                    )
+                    return@launch
+                }
 
             val result = citasRepository.getAppointmentsForDoctorOnce(doctorId)
             if (result.isFailure) {
@@ -52,7 +62,7 @@ class DoctorScheduleViewModel(
                 return@launch
             }
 
-            val upcoming = result.getOrNull().orEmpty().filter { !it.available && isUpcoming(it) }
+            val upcoming = result.getOrNull().orEmpty().filter { (it.patientId != null || !it.available) && isUpcoming(it) }
             val patients = fetchPatientNames(upcoming)
             val mapped = upcoming
                 .sortedWith(compareBy({ it.date }, { it.startTime }))

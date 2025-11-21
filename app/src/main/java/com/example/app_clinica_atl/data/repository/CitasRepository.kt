@@ -31,7 +31,7 @@ interface CitasRepository {
     suspend fun getAppointmentsForPatientOnce(patientId: Long): Result<List<CitaDto>>
 
     /**
-     * Obtiene todas las citas de un doctor en una sola consulta.
+     * Obtiene las próximas citas de un doctor en una sola consulta.
      */
     suspend fun getAppointmentsForDoctorOnce(doctorId: Long): Result<List<CitaDto>>
 

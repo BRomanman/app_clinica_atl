@@ -60,9 +60,8 @@ class CitasRepositoryImpl(
 
     override suspend fun getAppointmentsForDoctorOnce(doctorId: Long): Result<List<CitaDto>> = withContext(Dispatchers.IO) {
         return@withContext try {
-            val appointments = citasApi.getAppointments()
+            val appointments = citasApi.getUpcomingAppointmentsByDoctor(doctorId)
                 .bodyOrEmpty()
-                .filter { it.doctorId == doctorId }
             Result.success(appointments)
         } catch (e: Exception) {
             Result.failure(e)

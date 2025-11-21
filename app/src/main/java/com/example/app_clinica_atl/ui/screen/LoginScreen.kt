@@ -171,11 +171,11 @@ fun LoginScreen(
             passwordError?.let {
                 Text(text = it, color = MaterialTheme.colorScheme.error, style = MaterialTheme.typography.labelSmall)
             }
-            // --- FIN DE CAMBIOS ---
+
 
             Spacer(modifier = Modifier.height(16.dp))
 
-            // Fila de "Olvidaste tu contraseña" (sin el Checkbox)
+
             Row(
                 modifier = Modifier.fillMaxWidth(),
                 verticalAlignment = Alignment.CenterVertically,

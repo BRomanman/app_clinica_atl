@@ -22,6 +22,9 @@ interface CitasApi {
     @GET("citas/usuario/{idUsuario}/proximas")
     suspend fun getUpcomingAppointmentsByUser(@Path("idUsuario") userId: Long): Response<List<CitaDto>>
 
+    @GET("citas/doctor/{idDoctor}/proximas")
+    suspend fun getUpcomingAppointmentsByDoctor(@Path("idDoctor") doctorId: Long): Response<List<CitaDto>>
+
     @GET("citas/doctor/{idDoctor}/fecha/{fecha}")
     suspend fun getAppointmentsByDoctorAndDate(
         @Path("idDoctor") doctorId: Long,

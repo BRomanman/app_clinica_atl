@@ -17,17 +17,16 @@ fun normalizeRole(rawRole: String?): String {
         numericCode == 3L -> "administrador"
         numericCode == 2L -> "doctor"
         numericCode == 1L -> "paciente"
-        cleaned.equals("administrador", true) || cleaned.equals("admin", true) -> "administrador"
+        cleaned.equals("administrador", true) ||
+                cleaned.equals("administrativo", true) ||
+                cleaned.equals("admin", true) -> "administrador"
         cleaned.equals("doctor", true) || cleaned.equals("medico", true) -> "doctor"
         cleaned.equals("paciente", true) || cleaned.equals("usuario", true) -> "paciente"
         else -> "paciente"
     }
 }
 
-/**
- * Convierte el rol normalizado al id esperado por la API:
- * 1 = usuario/paciente, 2 = doctor, 3 = administrador.
- */
+
 fun roleToId(role: String?): Long = when (normalizeRole(role)) {
     "administrador" -> 3L
     "doctor" -> 2L

@@ -83,6 +83,15 @@ class UsuariosRepository(
     }
 
     /**
+     * Obtiene el id de doctor (tabla doctor) asociado a un usuario dado.
+     */
+    suspend fun getDoctorIdForUser(userId: Long): Result<Long?> = withContext(Dispatchers.IO) {
+        runCatching {
+            usuariosApi.getUserById(userId).doctor?.id
+        }
+    }
+
+    /**
      * Login contra la API `auth/login`.
      */
     suspend fun loginViaApi(email: String, pass: String): Result<UsuarioDto> = withContext(Dispatchers.IO) {
