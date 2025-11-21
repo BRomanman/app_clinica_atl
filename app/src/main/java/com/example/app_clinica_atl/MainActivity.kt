@@ -32,6 +32,7 @@ import com.example.app_clinica_atl.ui.components.AppTopBar
 import com.example.app_clinica_atl.ui.theme.App_clinica_atlTheme
 import com.example.app_clinica_atl.ui.viewmodel.*
 import kotlinx.coroutines.launch
+import com.example.app_clinica_atl.data.remote.RetrofitClient
 import java.lang.Runtime // <-- ¡¡IMPORT AÑADIDO!!
 
 class MainActivity : ComponentActivity() {

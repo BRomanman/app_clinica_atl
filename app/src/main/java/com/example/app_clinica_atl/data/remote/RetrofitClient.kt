@@ -7,12 +7,11 @@ import retrofit2.converter.gson.GsonConverterFactory
 
 object RetrofitClient {
 
-    // ÚNICA baseUrl compartida por todos los endpoints REST.
-    // Si mueves el backend, cambia solo esta constante (o léela de BuildConfig).
-    private const val BASE_URL_USUARIO = "https://3zvxm102-8082.brs.devtunnels.ms/api/v1/"
-    private const val BASE_URL_SEGURO = "https://3zvxm102-8084.brs.devtunnels.ms/api/v1/"
-    private const val BASE_URL_CITAS = "https://3zvxm102-8080.brs.devtunnels.ms/api/v1/"
-    private const val BASE_URL_HISTORIAL = "https://3zvxm102-8083.brs.devtunnels.ms/api/v1/"
+    private const val codigo = "3zvxm102"
+    private const val BASE_URL_USUARIO = "https://$codigo-8082.brs.devtunnels.ms/api/v1/"
+    private const val BASE_URL_SEGURO = "https://$codigo-8084.brs.devtunnels.ms/api/v1/"
+    private const val BASE_URL_CITAS = "https://$codigo-8080.brs.devtunnels.ms/api/v1/"
+    private const val BASE_URL_HISTORIAL = "https://$codigo-8083.brs.devtunnels.ms/api/v1/"
 
     private val logging = HttpLoggingInterceptor()
         .setLevel(HttpLoggingInterceptor.Level.BODY)

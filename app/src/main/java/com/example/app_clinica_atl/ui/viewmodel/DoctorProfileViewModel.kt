@@ -14,6 +14,8 @@ import com.example.app_clinica_atl.data.repository.UsuariosRepository
 import com.example.app_clinica_atl.domain.validation.validateChileanPhoneNumber
 import com.example.app_clinica_atl.domain.validation.validateRegisterPassword
 import java.time.LocalDate
+import java.time.LocalDateTime
+import java.time.OffsetDateTime
 import java.time.YearMonth
 import java.time.format.DateTimeFormatter
 import kotlinx.coroutines.Job
@@ -112,27 +114,34 @@ class DoctorProfileViewModel(
     private fun observeStats(doctorId: Long) {
         statsJob?.cancel()
         statsJob = viewModelScope.launch {
-            val result = historialRepository.getHistorialForDoctor(doctorId)
-            if (result.isSuccess) {
-                val histories = result.getOrNull().orEmpty()
-                val stats = calculateMonthlyStats(histories)
-                val latestMonthTotal = stats.firstOrNull()?.totalAppointments ?: 0
-                val tarifa = _uiState.value.doctor?.tarifaConsulta ?: 0
+            val historiesResult = loadDoctorHistoriesOnly(doctorId)
+            if (historiesResult.isFailure) {
                 _uiState.update {
                     it.copy(
-                        stats = stats,
-                        totalAppointments = latestMonthTotal,
-                        bonusAmount = latestMonthTotal * tarifa * 0.1
+                        transientError = historiesResult.exceptionOrNull()?.message
+                            ?: "No se pudieron cargar las estadísticas."
                     )
                 }
-            } else {
-                _uiState.update {
-                    it.copy(
-                        transientError = result.exceptionOrNull()?.message ?: "No se pudieron cargar las estadísticas."
-                    )
-                }
+                return@launch
+            }
+
+            val histories = historiesResult.getOrNull().orEmpty()
+            val stats = calculateMonthlyStats(histories)
+
+            val latestMonthTotal = stats.firstOrNull()?.totalAppointments ?: 0
+            val tarifa = _uiState.value.doctor?.tarifaConsulta ?: 0
+            _uiState.update {
+                it.copy(
+                    stats = stats,
+                    totalAppointments = latestMonthTotal,
+                    bonusAmount = latestMonthTotal * tarifa * 0.1
+                )
             }
         }
+    }
+
+    private suspend fun loadDoctorHistoriesOnly(doctorId: Long): Result<List<HistorialDto>> {
+        return historialRepository.getHistorialForDoctor(doctorId)
     }
 
     private fun observeSpecialties(doctorId: Long) {
@@ -283,32 +292,44 @@ class DoctorProfileViewModel(
 
     @RequiresApi(Build.VERSION_CODES.O)
     private fun calculateMonthlyStats(histories: List<HistorialDto>): List<DoctorMonthlyStatDto> {
-        val formatter = DateTimeFormatter.ISO_DATE
-        val counts = histories
-            .count { hist ->
-                val status = hist.estado?.lowercase()?.trim().orEmpty()
-                if (status.contains("cancel")) return@count false
-                val dateStr = hist.fechaConsulta?.takeIf { it.isNotBlank() } ?: return@count false
-                val date = runCatching { LocalDate.parse(dateStr, formatter) }.getOrNull() ?: return@count false
-                true
-            }
-        val groups = histories
+        return histories
             .asSequence()
-            .filter {
-                val status = it.estado?.lowercase()?.trim().orEmpty()
-                !status.contains("cancel") && !it.fechaConsulta.isNullOrBlank()
+            .filter { hist ->
+                val status = hist.estado?.lowercase()?.trim().orEmpty()
+                !status.contains("cancel")
             }
-            .mapNotNull { hist ->
-                val ym = runCatching { YearMonth.from(LocalDate.parse(hist.fechaConsulta, formatter)) }.getOrNull()
-                ym
-            }
+            .mapNotNull { hist -> parseYearMonth(hist.fechaConsulta) }
             .groupingBy { it }
             .eachCount()
-
-        return groups.entries
+            .entries
             .sortedByDescending { it.key }
             .map { DoctorMonthlyStatDto(month = it.key.toString(), totalAppointments = it.value) }
             .take(6)
+    }
+
+    private fun parseYearMonth(rawDate: String?): YearMonth? {
+        if (rawDate.isNullOrBlank()) return null
+        val trimmed = rawDate.trim()
+
+        // Intentamos primero con formatos de fecha simples.
+        val dateCandidates = listOf(
+            trimmed,
+            trimmed.substringBefore('T', trimmed).substringBefore(' ', trimmed),
+            trimmed.substringBefore('+', trimmed)
+        ).filter { it.isNotBlank() }.distinct()
+
+        for (candidate in dateCandidates) {
+            val parsedLocalDate = runCatching { LocalDate.parse(candidate, DateTimeFormatter.ISO_DATE) }.getOrNull()
+                ?: runCatching { LocalDate.parse(candidate, DateTimeFormatter.ISO_LOCAL_DATE) }.getOrNull()
+            if (parsedLocalDate != null) return YearMonth.from(parsedLocalDate)
+        }
+
+        // Fallback: cadenas ISO con hora y/o zona.
+        val withOffset = runCatching { OffsetDateTime.parse(trimmed) }.getOrNull()
+        if (withOffset != null) return YearMonth.from(withOffset.toLocalDate())
+
+        val withTime = runCatching { LocalDateTime.parse(trimmed, DateTimeFormatter.ISO_LOCAL_DATE_TIME) }.getOrNull()
+        return withTime?.let { YearMonth.from(it.toLocalDate()) }
     }
 }
 

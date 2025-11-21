@@ -8,9 +8,9 @@ data class LoginRequestDto(
 )
 
 data class LoginResponseDto(
-    @SerializedName("userId") val userId: Long?,
-    @SerializedName("role") val role: String?,
-    @SerializedName("doctorId") val doctorId: Long?,
+    @SerializedName(value = "userId", alternate = ["id", "idUsuario"]) val userId: Long?,
+    @SerializedName(value = "role", alternate = ["rol", "idRol"]) val role: String?,
+    @SerializedName(value = "doctorId", alternate = ["idDoctor"]) val doctorId: Long?,
     @SerializedName("nombre") val nombre: String?,
     @SerializedName("apellido") val apellido: String?,
     @SerializedName("correo") val correo: String?
@@ -20,12 +20,7 @@ data class LoginResponseDto(
 
 //todo arreglar flujo admin
 fun LoginResponseDto.toUsuarioDtoFromLogin(plainPassword: String): UsuarioDto {
-    val normalizedRole = when (role?.lowercase()) {
-        "administrador" -> "administrador"
-        "doctor" -> "doctor"
-        "paciente" -> "paciente"
-        else -> role ?: "paciente"
-    }
+    val normalizedRole = normalizeRole(role)
 
     val fullName = listOfNotNull(nombre, apellido)
         .joinToString(" ")

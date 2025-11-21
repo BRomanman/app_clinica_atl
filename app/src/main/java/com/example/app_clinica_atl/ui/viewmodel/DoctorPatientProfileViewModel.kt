@@ -13,7 +13,9 @@ import com.example.app_clinica_atl.data.repository.UsuariosRepository
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.async
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.supervisorScope
 
 data class DoctorPatientProfileUiState(
     val isLoading: Boolean = true,
@@ -52,12 +54,25 @@ class DoctorPatientProfileViewModel(
 
             val patient = userResult.getOrNull()
 
-            val appointmentsResult = citasRepository.getUpcomingAppointmentsForPatient(patientId)
-            val historyResult = historialRepository.getHistorialForUser(patientId)
-            val insurancesResult = try {
-                segurosRepository.getInsurancesForPatient(patientId)
-            } catch (e: Exception) {
-                Result.failure(e)
+            val (appointmentsResult, historyResult, insurancesResult) = supervisorScope {
+                val appointmentsDeferred = async {
+                    runCatching { citasRepository.getUpcomingAppointmentsForPatient(patientId) }
+                        .getOrElse { Result.failure(it) }
+                }
+                val historyDeferred = async {
+                    runCatching { historialRepository.getHistorialForUser(patientId) }
+                        .getOrElse { Result.failure(it) }
+                }
+                val insurancesDeferred = async {
+                    runCatching { segurosRepository.getInsurancesForPatient(patientId) }
+                        .getOrElse { Result.failure(it) }
+                }
+
+                Triple(
+                    appointmentsDeferred.await(),
+                    historyDeferred.await(),
+                    insurancesDeferred.await()
+                )
             }
 
             val loadingErrors = buildList {

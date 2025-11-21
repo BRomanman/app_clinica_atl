@@ -5,6 +5,7 @@ import com.example.app_clinica_atl.data.remote.UsuariosApi
 import com.example.app_clinica_atl.data.remote.dto.LoginRequestDto
 import com.example.app_clinica_atl.data.remote.dto.UsuarioDto
 import com.example.app_clinica_atl.data.remote.dto.UsuarioUpdateRequestDto
+import com.example.app_clinica_atl.data.remote.dto.roleToId
 import com.example.app_clinica_atl.data.remote.dto.toUsuarioDto
 import com.example.app_clinica_atl.data.remote.dto.toUsuarioDtoFromLogin
 import kotlinx.coroutines.Dispatchers
@@ -133,11 +134,7 @@ private fun UsuarioDto.toUpdateRequest(): UsuarioUpdateRequestDto {
     val parts = name.trim().split(" ", limit = 2)
     val nombre = parts.getOrNull(0)
     val apellido = parts.getOrNull(1)
-    val roleId = when (role.lowercase()) {
-        "admin" -> 1L
-        "doctor" -> 2L
-        else -> 3L
-    }
+    val roleId = roleToId(role)
     return UsuarioUpdateRequestDto(
         nombre = nombre,
         apellido = apellido,

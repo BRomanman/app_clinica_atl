@@ -4,6 +4,7 @@ import android.Manifest
 import android.content.Context
 import android.net.Uri
 import android.os.Build
+import android.widget.Toast
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.annotation.RequiresApi
@@ -31,6 +32,7 @@ import androidx.compose.material3.Button
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.CircularProgressIndicator
+import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
@@ -40,12 +42,14 @@ import androidx.compose.material3.SnackbarHost
 import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
+import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -60,8 +64,6 @@ import androidx.compose.ui.text.input.VisualTransformation
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
-import android.widget.Toast
-import androidx.compose.runtime.saveable.rememberSaveable
 import coil.compose.AsyncImage
 import com.example.app_clinica_atl.R
 import com.example.app_clinica_atl.data.remote.dto.DoctorMonthlyStatDto
@@ -79,6 +81,7 @@ import java.util.Objects
 @RequiresApi(Build.VERSION_CODES.O)
 private val monthFormatter = DateTimeFormatter.ofPattern("MMM yyyy", Locale("es", "CL"))
 
+@OptIn(ExperimentalMaterial3Api::class)
 @RequiresApi(Build.VERSION_CODES.O)
 @Composable
 fun DoctorProfileScreen(
@@ -130,7 +133,8 @@ fun DoctorProfileScreen(
 
     Scaffold(
         modifier = modifier.fillMaxSize(),
-        snackbarHost = { SnackbarHost(snackbarHostState) }
+        snackbarHost = { SnackbarHost(snackbarHostState) },
+        topBar = { DoctorProfileTopBar(onBackClick) }
     ) { paddingValues ->
         DoctorProfileContentHost(
             doctorId = doctorId,
@@ -141,11 +145,44 @@ fun DoctorProfileScreen(
             onSavePhone = viewModel::savePhone,
             onPasswordChange = viewModel::onPasswordChange,
             onConfirmPasswordChange = viewModel::onConfirmPasswordChange,
-            onSavePassword = viewModel::savePassword,
-            onBackClick = onBackClick
+            onSavePassword = viewModel::savePassword
         )
     }
 }
+
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+private fun DoctorProfileTopBar(onBackClick: () -> Unit) {
+    TopAppBar(
+        title = { Text("Perfil de doctor") },
+        navigationIcon = {
+            IconButton(onClick = onBackClick) {
+                Icon(Icons.Default.ArrowBack, contentDescription = "Volver")
+            }
+        }
+    )
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 @RequiresApi(Build.VERSION_CODES.O)
 @Composable
@@ -158,8 +195,7 @@ private fun DoctorProfileContentHost(
     onSavePhone: () -> Unit,
     onPasswordChange: (String) -> Unit,
     onConfirmPasswordChange: (String) -> Unit,
-    onSavePassword: () -> Unit,
-    onBackClick: () -> Unit
+    onSavePassword: () -> Unit
 ) {
     Box(
         modifier = Modifier
@@ -206,8 +242,7 @@ private fun DoctorProfileContentHost(
                     onPasswordChange = onPasswordChange,
                     onConfirmPasswordChange = onConfirmPasswordChange,
                     onSavePassword = onSavePassword,
-                    onProfileImageClick = onRequestCamera,
-                    onBackClick = onBackClick
+                    onProfileImageClick = onRequestCamera
                 )
             }
         }
@@ -235,31 +270,14 @@ private fun DoctorProfileContent(
     onPasswordChange: (String) -> Unit,
     onConfirmPasswordChange: (String) -> Unit,
     onSavePassword: () -> Unit,
-    onProfileImageClick: () -> Unit,
-    onBackClick: () -> Unit
+    onProfileImageClick: () -> Unit
 ) {
     LazyColumn(
         modifier = Modifier.fillMaxSize(),
         verticalArrangement = Arrangement.spacedBy(20.dp),
-        horizontalAlignment = Alignment.CenterHorizontally
+        horizontalAlignment = Alignment.CenterHorizontally,
+        contentPadding = PaddingValues(bottom = 24.dp)
     ) {
-        item {
-            Row(
-                verticalAlignment = Alignment.CenterVertically,
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(horizontal = 4.dp)
-            ) {
-                IconButton(onClick = onBackClick) {
-                    Icon(Icons.Default.ArrowBack, contentDescription = "Volver")
-                }
-                Text(
-                    text = "Perfil de doctor",
-                    style = MaterialTheme.typography.titleLarge,
-                    fontWeight = FontWeight.Bold
-                )
-            }
-        }
         item {
             DoctorProfileHeader(
                 doctor = doctor,

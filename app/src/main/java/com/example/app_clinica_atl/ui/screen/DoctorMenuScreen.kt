@@ -1,5 +1,6 @@
 package com.example.app_clinica_atl.ui.screen
 
+import androidx.compose.foundation.Image
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Spacer
@@ -13,11 +14,14 @@ import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
-import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.unit.dp
+import com.example.app_clinica_atl.R
+
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -25,13 +29,9 @@ fun DoctorMenuScreen(
     onProfileClick: () -> Unit,
     onScheduleClick: () -> Unit,
     onSearchPatient: () -> Unit,
-    onLogout: () -> Unit // <-- ¡¡PARÁMETRO AÑADIDO!!
+    onLogout: () -> Unit
 ) {
-    Scaffold(
-        topBar = {
-            TopAppBar(title = { Text("Portal del Doctor") })
-        }
-    ) { paddingValues ->
+    Scaffold { paddingValues ->
         Column(
             modifier = Modifier
                 .fillMaxSize()
@@ -40,28 +40,44 @@ fun DoctorMenuScreen(
             horizontalAlignment = Alignment.CenterHorizontally,
             verticalArrangement = Arrangement.Center
         ) {
-            Text("Menú del Doctor", style = MaterialTheme.typography.headlineMedium)
-            Spacer(modifier = Modifier.height(32.dp))
+
+            // IMAGEN ARRIBA DEL MENÚ
+            Image(
+                painter = painterResource(id = R.drawable.logo_clean),
+                contentDescription = "Doctor",
+                modifier = Modifier
+                    .height(120.dp))
+
+            Spacer(modifier = Modifier.height(52.dp))
+
+            Text("Menú del Doctor", style = MaterialTheme.typography.headlineLarge)
+            Spacer(modifier = Modifier.height(100.dp))
+
+
+
+
 
             Button(onClick = onProfileClick, modifier = Modifier.fillMaxWidth()) {
                 Text("Ver mi Perfil")
             }
             Spacer(modifier = Modifier.height(16.dp))
+
             Button(onClick = onScheduleClick, modifier = Modifier.fillMaxWidth()) {
                 Text("Ver mi Agenda")
             }
             Spacer(modifier = Modifier.height(16.dp))
+
             Button(onClick = onSearchPatient, modifier = Modifier.fillMaxWidth()) {
                 Text("Buscar Pacientes por ID")
             }
 
-            // --- ¡¡BOTÓN DE LOGOUT AÑADIDO!! ---
-            Spacer(modifier = Modifier.height(32.dp))
+            Spacer(modifier = Modifier.height(60.dp))
+
             Button(
                 onClick = onLogout,
                 colors = ButtonDefaults.buttonColors(
-                    containerColor = MaterialTheme.colorScheme.secondaryContainer,
-                    contentColor = MaterialTheme.colorScheme.onSecondaryContainer
+                    containerColor = MaterialTheme.colorScheme.error,
+                    contentColor = MaterialTheme.colorScheme.onError
                 ),
                 modifier = Modifier.fillMaxWidth()
             ) {

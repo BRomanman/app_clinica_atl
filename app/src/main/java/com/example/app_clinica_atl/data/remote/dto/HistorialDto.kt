@@ -15,7 +15,7 @@ data class HistorialDto(
     ) val fechaConsulta: String? = null, // DATETIME
     @SerializedName(
         value = "diagnostico",
-        alternate = ["diagnosis", "estado"]
+        alternate = ["diagnosis"]
     ) val diagnostico: String? = null,
     @SerializedName(value = "estado", alternate = ["status"]) val estado: String? = null,
     @SerializedName(

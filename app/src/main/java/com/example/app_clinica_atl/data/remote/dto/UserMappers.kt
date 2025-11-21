@@ -6,9 +6,37 @@ package com.example.app_clinica_atl.data.remote.dto
  * la aplicación (`UsuarioDto`).
  */
 
+/**
+ * Normaliza el rol que llega desde la API (texto o id numérico) a los
+ * valores usados en la app: "paciente", "doctor" o "administrador".
+ */
+fun normalizeRole(rawRole: String?): String {
+    val cleaned = rawRole?.trim().orEmpty()
+    val numericCode = cleaned.toLongOrNull()
+    return when {
+        numericCode == 3L -> "administrador"
+        numericCode == 2L -> "doctor"
+        numericCode == 1L -> "paciente"
+        cleaned.equals("administrador", true) || cleaned.equals("admin", true) -> "administrador"
+        cleaned.equals("doctor", true) || cleaned.equals("medico", true) -> "doctor"
+        cleaned.equals("paciente", true) || cleaned.equals("usuario", true) -> "paciente"
+        else -> "paciente"
+    }
+}
+
+/**
+ * Convierte el rol normalizado al id esperado por la API:
+ * 1 = usuario/paciente, 2 = doctor, 3 = administrador.
+ */
+fun roleToId(role: String?): Long = when (normalizeRole(role)) {
+    "administrador" -> 3L
+    "doctor" -> 2L
+    else -> 1L
+}
+
 fun UsuarioResponseDto.toUsuarioDto(): UsuarioDto {
     val displayName = listOfNotNull(nombre, apellido).joinToString(" ").trim()
-    val normalizedRole = rol?.lowercase() ?: "paciente"
+    val normalizedRole = normalizeRole(rol)
     return UsuarioDto(
         id = id,
         name = if (displayName.isBlank()) correo.orEmpty() else displayName,

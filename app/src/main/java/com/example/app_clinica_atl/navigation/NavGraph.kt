@@ -18,6 +18,7 @@ import androidx.navigation.navArgument
 import com.example.app_clinica_atl.ui.screen.*
 // Imports de ViewModels
 import com.example.app_clinica_atl.ui.viewmodel.*
+import com.example.app_clinica_atl.data.remote.dto.normalizeRole
 import kotlinx.coroutines.launch
 
 @RequiresApi(Build.VERSION_CODES.O)
@@ -52,7 +53,7 @@ fun AppNavGraph(
             LoginScreenVm(
                 authViewModel = authViewModel,
                 onLoginSuccessNavigate = { role ->
-                    val destination = when (role) {
+                    val destination = when (normalizeRole(role)) {
                         "administrador" -> Route.AdminMenu.path
                         "doctor" -> Route.DoctorMenu.path
                         else -> Route.Home.path

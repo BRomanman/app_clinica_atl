@@ -1,23 +1,20 @@
 package com.example.app_clinica_atl.data.remote
 
-import com.example.app_clinica_atl.data.remote.dto.HistorialDto
-import retrofit2.Response
-import retrofit2.http.Body
-import retrofit2.http.DELETE
+import okhttp3.ResponseBody
 import retrofit2.http.GET
-import retrofit2.http.POST
-import retrofit2.http.PUT
 import retrofit2.http.Path
 
 interface HistorialesApi {
 
+    @GET("historial")
+    suspend fun getHistoriales(): retrofit2.Response<ResponseBody>
+
     @GET("historial/{historialId}")
-    suspend fun getHistorialById(@Path("historialId") id: Long): HistorialDto
+    suspend fun getHistorialById(@Path("historialId") id: Long): retrofit2.Response<ResponseBody>
 
     @GET("historial/usuario/{usuarioId}")
-    suspend fun getHistorialByUserId(@Path("usuarioId") userId: Long): List<HistorialDto>
+    suspend fun getHistorialByUserId(@Path("usuarioId") userId: Long): retrofit2.Response<ResponseBody>
 
     @GET("historial/doctor/{doctorId}")
-    suspend fun getHistorialByDoctorId(@Path("doctorId") doctorId: Long): List<HistorialDto>
-
+    suspend fun getHistorialByDoctorId(@Path("doctorId") doctorId: Long): retrofit2.Response<ResponseBody>
 }
