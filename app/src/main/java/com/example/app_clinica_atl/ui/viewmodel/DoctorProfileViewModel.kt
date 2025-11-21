@@ -6,9 +6,10 @@ import androidx.annotation.RequiresApi
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.example.app_clinica_atl.data.remote.dto.DoctorMonthlyStatDto
-import com.example.app_clinica_atl.data.remote.dto.CitaDto
+import com.example.app_clinica_atl.data.remote.dto.HistorialDto
 import com.example.app_clinica_atl.data.remote.dto.UsuarioResponseDto
 import com.example.app_clinica_atl.data.repository.DoctorProfileRepository
+import com.example.app_clinica_atl.data.repository.HistorialRepository
 import com.example.app_clinica_atl.data.repository.UsuariosRepository
 import com.example.app_clinica_atl.domain.validation.validateChileanPhoneNumber
 import com.example.app_clinica_atl.domain.validation.validateRegisterPassword
@@ -58,7 +59,8 @@ data class DoctorProfileUiState(
 
 class DoctorProfileViewModel(
     private val doctorProfileRepository: DoctorProfileRepository,
-    private val usuariosRepository: UsuariosRepository
+    private val usuariosRepository: UsuariosRepository,
+    private val historialRepository: HistorialRepository
 ) : ViewModel() {
 
     private val _uiState = MutableStateFlow(DoctorProfileUiState())
@@ -67,6 +69,7 @@ class DoctorProfileViewModel(
     private var currentUserId: Long? = null
     private var currentDoctorId: Long? = null
     private var statsJob: Job? = null
+    private var specialtiesJob: Job? = null
 
     @RequiresApi(Build.VERSION_CODES.O)
     fun loadDoctorProfile(userId: Long) {
@@ -86,7 +89,13 @@ class DoctorProfileViewModel(
                         errorMsg = null
                     )
                 }
-                info.doctorId?.let { observeStats(it) }
+                val doctorKey = info.doctorId ?: userId
+                if (doctorKey != null) {
+                    observeStats(doctorKey)
+                    observeSpecialties(doctorKey)
+                } else {
+                    _uiState.update { it.copy(transientError = "No se encontró id de doctor para calcular estadísticas.") }
+                }
             } else {
                 _uiState.update {
                     it.copy(
@@ -103,15 +112,17 @@ class DoctorProfileViewModel(
     private fun observeStats(doctorId: Long) {
         statsJob?.cancel()
         statsJob = viewModelScope.launch {
-            val result = doctorProfileRepository.getAppointmentsForDoctor(doctorId)
+            val result = historialRepository.getHistorialForDoctor(doctorId)
             if (result.isSuccess) {
-                val stats = calculateMonthlyStats(result.getOrNull().orEmpty())
-                val total = stats.sumOf { it.totalAppointments }
+                val histories = result.getOrNull().orEmpty()
+                val stats = calculateMonthlyStats(histories)
+                val latestMonthTotal = stats.firstOrNull()?.totalAppointments ?: 0
+                val tarifa = _uiState.value.doctor?.tarifaConsulta ?: 0
                 _uiState.update {
                     it.copy(
                         stats = stats,
-                        totalAppointments = total,
-                        bonusAmount = total * 0.1
+                        totalAppointments = latestMonthTotal,
+                        bonusAmount = latestMonthTotal * tarifa * 0.1
                     )
                 }
             } else {
@@ -119,6 +130,21 @@ class DoctorProfileViewModel(
                     it.copy(
                         transientError = result.exceptionOrNull()?.message ?: "No se pudieron cargar las estadísticas."
                     )
+                }
+            }
+        }
+    }
+
+    private fun observeSpecialties(doctorId: Long) {
+        specialtiesJob?.cancel()
+        specialtiesJob = viewModelScope.launch {
+            val result = doctorProfileRepository.getSpecialtiesForDoctor(doctorId)
+            if (result.isSuccess) {
+                val names = result.getOrNull().orEmpty().mapNotNull { it.nombre }.distinct()
+                _uiState.update { state ->
+                    state.doctor?.let { current ->
+                        state.copy(doctor = current.copy(specialty = names.joinToString(", ").ifBlank { null }))
+                    } ?: state
                 }
             }
         }
@@ -256,21 +282,32 @@ class DoctorProfileViewModel(
     }
 
     @RequiresApi(Build.VERSION_CODES.O)
-    private fun calculateMonthlyStats(appointments: List<CitaDto>): List<DoctorMonthlyStatDto> {
+    private fun calculateMonthlyStats(histories: List<HistorialDto>): List<DoctorMonthlyStatDto> {
         val formatter = DateTimeFormatter.ISO_DATE
-        val counts = mutableMapOf<String, Int>()
-        appointments
-            .filter { it.status.equals("CONFIRMADA", true) || it.status.equals("COMPLETADA", true) }
-            .forEach { cita ->
-                val ym = runCatching {
-                    YearMonth.from(LocalDate.parse(cita.date, formatter))
-                }.getOrNull() ?: return@forEach
-                val key = ym.toString()
-                counts[key] = (counts[key] ?: 0) + 1
+        val counts = histories
+            .count { hist ->
+                val status = hist.estado?.lowercase()?.trim().orEmpty()
+                if (status.contains("cancel")) return@count false
+                val dateStr = hist.fechaConsulta?.takeIf { it.isNotBlank() } ?: return@count false
+                val date = runCatching { LocalDate.parse(dateStr, formatter) }.getOrNull() ?: return@count false
+                true
             }
-        return counts.entries
+        val groups = histories
+            .asSequence()
+            .filter {
+                val status = it.estado?.lowercase()?.trim().orEmpty()
+                !status.contains("cancel") && !it.fechaConsulta.isNullOrBlank()
+            }
+            .mapNotNull { hist ->
+                val ym = runCatching { YearMonth.from(LocalDate.parse(hist.fechaConsulta, formatter)) }.getOrNull()
+                ym
+            }
+            .groupingBy { it }
+            .eachCount()
+
+        return groups.entries
             .sortedByDescending { it.key }
-            .map { DoctorMonthlyStatDto(month = it.key, totalAppointments = it.value) }
+            .map { DoctorMonthlyStatDto(month = it.key.toString(), totalAppointments = it.value) }
             .take(6)
     }
 }

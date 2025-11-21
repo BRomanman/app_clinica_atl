@@ -10,7 +10,7 @@ object RetrofitClient {
     // ÚNICA baseUrl compartida por todos los endpoints REST.
     // Si mueves el backend, cambia solo esta constante (o léela de BuildConfig).
     private const val BASE_URL_USUARIO = "https://3zvxm102-8082.brs.devtunnels.ms/api/v1/"
-    private const val BASE_URL_SEGURO = "https://3zvxm102-8081.brs.devtunnels.ms/api/v1/"
+    private const val BASE_URL_SEGURO = "https://3zvxm102-8084.brs.devtunnels.ms/api/v1/"
     private const val BASE_URL_CITAS = "https://3zvxm102-8080.brs.devtunnels.ms/api/v1/"
     private const val BASE_URL_HISTORIAL = "https://3zvxm102-8083.brs.devtunnels.ms/api/v1/"
 

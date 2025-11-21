@@ -88,13 +88,15 @@ fun DoctorPatientProfileScreen(
             item { PersonalInfoCard(patient) }
         }
 
-        item { SectionTitle("Citas") }
-        if (uiState.appointments.isEmpty()) {
-            item { EmptyState("Este paciente no tiene citas registradas.") }
-        } else {
-            items(uiState.appointments) { cita ->
-                AppointmentRow(cita)
+        item { SectionTitle("Citas Próximas") }
+        when {
+            uiState.appointments.isNotEmpty() -> {
+                items(uiState.appointments) { cita -> AppointmentRow(cita) }
             }
+            uiState.errorMsg?.contains("citas", true) == true -> {
+                item { EmptyState(uiState.errorMsg ?: "No fue posible cargar las próximas citas.") }
+            }
+            else -> item { EmptyState("Este paciente no tiene citas próximas registradas.") }
         }
 
         item { SectionTitle("Seguros") }
@@ -111,12 +113,14 @@ fun DoctorPatientProfileScreen(
         }
 
         item { SectionTitle("Historial médico") }
-        if (uiState.histories.isEmpty()) {
-            item { EmptyState("No hay registros de historial para este paciente.") }
-        } else {
-            items(uiState.histories) { hist ->
-                HistoryRow(hist)
+        when {
+            uiState.histories.isNotEmpty() -> {
+                items(uiState.histories) { hist -> HistoryRow(hist) }
             }
+            uiState.errorMsg?.contains("historial", true) == true -> {
+                item { EmptyState(uiState.errorMsg ?: "No fue posible cargar el historial médico.") }
+            }
+            else -> item { EmptyState("No hay registros de historial para este paciente.") }
         }
 
         if (uiState.patient == null) {
@@ -194,9 +198,19 @@ private fun HistoryRow(hist: HistorialDto) {
         colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface)
     ) {
         Column(modifier = Modifier.padding(12.dp), verticalArrangement = Arrangement.spacedBy(4.dp)) {
-            Text("Fecha: ${hist.fechaConsulta}", style = MaterialTheme.typography.bodyLarge, fontWeight = FontWeight.SemiBold)
-            Text("Diagnóstico: ${hist.diagnostico}", style = MaterialTheme.typography.bodyMedium)
-            Text("Observaciones: ${hist.observaciones}", style = MaterialTheme.typography.bodySmall)
+            Text(
+                "Fecha: ${hist.fechaConsulta?.takeIf { it.isNotBlank() } ?: "Sin fecha"}",
+                style = MaterialTheme.typography.bodyLarge,
+                fontWeight = FontWeight.SemiBold
+            )
+            Text(
+                "Diagnóstico: ${hist.diagnostico?.takeIf { it.isNotBlank() } ?: "Sin diagnóstico"}",
+                style = MaterialTheme.typography.bodyMedium
+            )
+            Text(
+                "Observaciones: ${hist.observaciones?.takeIf { it.isNotBlank() } ?: "Sin observaciones"}",
+                style = MaterialTheme.typography.bodySmall
+            )
         }
     }
 }

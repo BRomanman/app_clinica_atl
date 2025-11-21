@@ -30,6 +30,7 @@ fun AppNavGraph(
     patientViewModel: PatientViewModel,
     doctorSearchViewModel: DoctorSearchViewModel,
     doctorProfileViewModel: DoctorProfileViewModel,
+    doctorScheduleViewModel: DoctorScheduleViewModel,
     bookAppointmentViewModel: BookAppointmentViewModel,
     adminManageSpecialtiesViewModel: AdminManageSpecialtiesViewModel,
     adminAddDoctorViewModel: AdminAddDoctorViewModel,
@@ -46,13 +47,13 @@ fun AppNavGraph(
         startDestination = Route.Login.path,
         modifier = Modifier.padding(paddingValues)
     ) {
-        // --- Rutas de Login/Registro ---
+        // todo arreglar para que funque con admin
         composable(Route.Login.path) {
             LoginScreenVm(
                 authViewModel = authViewModel,
                 onLoginSuccessNavigate = { role ->
                     val destination = when (role) {
-                        "admin" -> Route.AdminMenu.path
+                        "administrador" -> Route.AdminMenu.path
                         "doctor" -> Route.DoctorMenu.path
                         else -> Route.Home.path
                     }
@@ -61,6 +62,9 @@ fun AppNavGraph(
                 onGoRegister = { navController.navigate(Route.Register.path) }
             )
         }
+
+
+
         composable(Route.Register.path) {
             RegisterScreenVm(
                 authViewModel = authViewModel,
@@ -118,7 +122,11 @@ fun AppNavGraph(
             )
         }
         composable(Route.DoctorSchedule.path) {
-            DoctorScheduleScreen(onBackClick = { navController.popBackStack() })
+            DoctorScheduleScreen(
+                doctorId = currentDoctorId,
+                onBackClick = { navController.popBackStack() },
+                viewModel = doctorScheduleViewModel
+            )
         }
         composable(Route.DoctorSearchPatient.path) {
             DoctorSearchPatientScreen(

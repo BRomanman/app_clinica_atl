@@ -16,7 +16,7 @@ interface CitasRepository {
 
     /**
      * Obtiene una lista de las horas (Strings) que YA están reservadas
-     * para un doctor específico en una fecha específica.
+     * para un doctor específico en una fecha específica (citas no disponibles).
      */
     suspend fun getBookedTimes(doctorId: Long, date: String): Result<List<String>>
 
@@ -29,6 +29,16 @@ interface CitasRepository {
      * Obtiene las citas de un paciente en una sola consulta.
      */
     suspend fun getAppointmentsForPatientOnce(patientId: Long): Result<List<CitaDto>>
+
+    /**
+     * Obtiene todas las citas de un doctor en una sola consulta.
+     */
+    suspend fun getAppointmentsForDoctorOnce(doctorId: Long): Result<List<CitaDto>>
+
+    /**
+     * Obtiene solo las citas próximas de un paciente (endpoint dedicado).
+     */
+    suspend fun getUpcomingAppointmentsForPatient(patientId: Long): Result<List<CitaDto>>
 
     /**
      * Cancela una cita.

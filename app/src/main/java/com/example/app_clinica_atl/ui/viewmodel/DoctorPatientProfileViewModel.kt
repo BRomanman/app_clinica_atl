@@ -52,7 +52,7 @@ class DoctorPatientProfileViewModel(
 
             val patient = userResult.getOrNull()
 
-            val appointmentsResult = citasRepository.getAppointmentsForPatientOnce(patientId)
+            val appointmentsResult = citasRepository.getUpcomingAppointmentsForPatient(patientId)
             val historyResult = historialRepository.getHistorialForUser(patientId)
             val insurancesResult = try {
                 segurosRepository.getInsurancesForPatient(patientId)
@@ -60,13 +60,19 @@ class DoctorPatientProfileViewModel(
                 Result.failure(e)
             }
 
+            val loadingErrors = buildList {
+                appointmentsResult.exceptionOrNull()?.let { add("No se pudieron cargar las próximas citas.") }
+                historyResult.exceptionOrNull()?.let { add("No se pudo cargar el historial médico.") }
+                insurancesResult.exceptionOrNull()?.let { add("No se pudieron cargar los seguros.") }
+            }.takeIf { it.isNotEmpty() }?.joinToString(" ")
+
             _uiState.value = _uiState.value.copy(
                 isLoading = false,
                 patient = patient,
                 appointments = appointmentsResult.getOrElse { emptyList() },
                 histories = historyResult.getOrElse { emptyList() },
                 insurances = insurancesResult.getOrElse { emptyList() },
-                errorMsg = null // No bloqueamos la UI si alguna sección falla
+                errorMsg = loadingErrors // No bloqueamos la UI si alguna sección falla
             )
         }
     }

@@ -492,7 +492,7 @@ private fun DoctorStatsCard(
             Text("Estadísticas mensuales", style = MaterialTheme.typography.titleMedium)
             Spacer(modifier = Modifier.height(8.dp))
             Text(
-                text = "Total citas: $totalAppointments",
+                text = "Citas (mes más reciente): $totalAppointments",
                 style = MaterialTheme.typography.bodyLarge,
                 fontWeight = FontWeight.Bold
             )
@@ -504,12 +504,12 @@ private fun DoctorStatsCard(
             Spacer(modifier = Modifier.height(12.dp))
             if (stats.isEmpty()) {
                 Text(
-                    text = "Aún no hay citas registradas este año.",
+                    text = "Aún no hay citas registradas en historial.",
                     style = MaterialTheme.typography.bodyMedium
                 )
             } else {
                 Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                    stats.sortedBy { it.month }.forEach { stat ->
+                    stats.sortedByDescending { it.month }.forEach { stat ->
                         StatRow(
                             label = formatMonthLabel(stat.month),
                             value = "${stat.totalAppointments} citas"

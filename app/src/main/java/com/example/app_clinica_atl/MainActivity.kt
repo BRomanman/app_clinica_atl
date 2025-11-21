@@ -52,11 +52,12 @@ class MainActivity : ComponentActivity() {
     private val patientViewModel: PatientViewModel by viewModels { PatientViewModelFactory(usuariosRepository, userPreferences, segurosRepository, citasRepository) }
     private val doctorSearchViewModel: DoctorSearchViewModel by viewModels { DoctorSearchViewModelFactory(doctorRepository) }
     private val doctorProfileViewModel: DoctorProfileViewModel by viewModels {
-        DoctorProfileViewModelFactory(doctorProfileRepository, usuariosRepository)
+        DoctorProfileViewModelFactory(doctorProfileRepository, usuariosRepository, historialRepository)
     }
     private val bookAppointmentViewModel: BookAppointmentViewModel by viewModels { BookAppointmentViewModelFactory(doctorRepository, citasRepository, userPreferences) }
     private val insuranceViewModel: InsuranceViewModel by viewModels { InsuranceViewModelFactory(segurosRepository, userPreferences) }
     private val doctorSearchPatientViewModel: DoctorSearchPatientViewModel by viewModels { DoctorSearchPatientViewModelFactory(usuariosRepository) }
+    private val doctorScheduleViewModel: DoctorScheduleViewModel by viewModels { DoctorScheduleViewModelFactory(citasRepository, usuariosRepository) }
     private val adminManageSpecialtiesViewModel: AdminManageSpecialtiesViewModel by viewModels { AdminManageSpecialtiesViewModelFactory(specialtyRepository) }
     private val adminAddDoctorViewModel: AdminAddDoctorViewModel by viewModels { AdminAddDoctorViewModelFactory(usuariosRepository, specialtyRepository) }
     private val adminViewDoctorsViewModel: AdminViewDoctorsViewModel by viewModels { AdminViewDoctorsViewModelFactory(usuariosRepository) }
@@ -160,7 +161,7 @@ class MainActivity : ComponentActivity() {
                                 navController = navController, paddingValues = paddingValues,
                                 authViewModel = authViewModel, homeViewModel = homeViewModel,
                                 patientViewModel = patientViewModel, doctorSearchViewModel = doctorSearchViewModel,
-                                doctorProfileViewModel = doctorProfileViewModel, bookAppointmentViewModel = bookAppointmentViewModel,
+                                doctorProfileViewModel = doctorProfileViewModel, doctorScheduleViewModel = doctorScheduleViewModel, bookAppointmentViewModel = bookAppointmentViewModel,
                                 adminManageSpecialtiesViewModel = adminManageSpecialtiesViewModel,
                                 adminAddDoctorViewModel = adminAddDoctorViewModel,
                                 insuranceViewModel = insuranceViewModel,

@@ -208,6 +208,13 @@ fun BookAppointmentScreen(
                 isLoading = state.isLoadingTimes,
                 isError = state.timeError != null
             )
+            if (!state.isLoadingTimes && state.selectedDate.isNotBlank() && state.availableTimes.isEmpty()) {
+                Text(
+                    text = "No hay horarios disponibles para la fecha seleccionada.",
+                    style = MaterialTheme.typography.bodyMedium,
+                    color = MaterialTheme.colorScheme.error
+                )
+            }
             state.timeError?.let { Text(it, color = MaterialTheme.colorScheme.error) }
             Spacer(Modifier.height(16.dp))
 

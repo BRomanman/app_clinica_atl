@@ -201,6 +201,8 @@ private fun PatientProfileContent(
     ) {
         // --- Item 1: Imagen de Perfil ---
         item {
+
+            //todo implementar foto api SIN GOKUUUUUUUU
             AsyncImage(
                 model = patient.profileImageUrl, // Carga la URL de la BD (String o Uri)
                 contentDescription = "Foto de ${patient.name}",

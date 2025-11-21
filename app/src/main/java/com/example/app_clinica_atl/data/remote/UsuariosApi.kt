@@ -3,6 +3,7 @@ package com.example.app_clinica_atl.data.remote
 import com.example.app_clinica_atl.data.remote.dto.LoginRequestDto
 import com.example.app_clinica_atl.data.remote.dto.LoginResponseDto
 import com.example.app_clinica_atl.data.remote.dto.DoctorDto
+import com.example.app_clinica_atl.data.remote.dto.EspecialidadResponseDto
 import com.example.app_clinica_atl.data.remote.dto.UsuarioResponseDto
 import com.example.app_clinica_atl.data.remote.dto.UsuarioUpdateRequestDto
 import retrofit2.Response
@@ -65,6 +66,9 @@ interface UsuariosApi {
     @DELETE("doctores/{id}")
     suspend fun deleteDoc(@Path("id") id: Long): Response<Unit>
 
+    // Especialidades por doctor (personal_service)
+    @GET("doctores/{doctorId}/especialidades")
+    suspend fun getDoctorSpecialties(@Path("doctorId") doctorId: Long): List<EspecialidadResponseDto>
 
 
 

@@ -122,7 +122,7 @@ fun AppDrawer(
                     color = MaterialTheme.colorScheme.primary
                 )
                 Text(
-                    text = "ATL DUOC",
+                    text = "ATL",
                     fontWeight = FontWeight.Light,
                     fontSize = 24.sp,
                     color = MaterialTheme.colorScheme.onSurface

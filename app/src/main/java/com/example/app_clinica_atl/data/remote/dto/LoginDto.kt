@@ -18,10 +18,10 @@ data class LoginResponseDto(
 
 
 
-
+//todo arreglar flujo admin
 fun LoginResponseDto.toUsuarioDtoFromLogin(plainPassword: String): UsuarioDto {
     val normalizedRole = when (role?.lowercase()) {
-        "administrador" -> "admin"
+        "administrador" -> "administrador"
         "doctor" -> "doctor"
         "paciente" -> "paciente"
         else -> role ?: "paciente"

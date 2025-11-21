@@ -105,18 +105,6 @@ fun HomeScreen(
                         color = MaterialTheme.colorScheme.onSurface
                     )
                 }
-                // ¡CAMBIO! Usamos AsyncImage para cargar la foto de perfil
-                AsyncImage(
-                    model = uiState.profileImageUrl, // <-- Carga la URL de la BD
-                    contentDescription = "Foto de perfil",
-                    placeholder = painterResource(id = R.drawable.goku_perfil), // Tu placeholder
-                    error = painterResource(id = R.drawable.goku_perfil), // Tu placeholder si falla
-                    contentScale = ContentScale.Crop, // Escala la imagen
-                    modifier = Modifier
-                        .size(50.dp)
-                        .clip(CircleShape)
-                        .clickable { onProfileClick() }
-                )
             }
         }
 

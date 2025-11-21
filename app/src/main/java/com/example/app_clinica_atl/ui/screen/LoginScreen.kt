@@ -181,6 +181,9 @@ fun LoginScreen(
                 verticalAlignment = Alignment.CenterVertically,
                 horizontalArrangement = Arrangement.End
             ) {
+
+                // todo es necesario asignarle un flujo siendo realista?
+                //de ser así, cómo lo implementamos?
                 Text(
                     "¿Olvidaste tu contraseña?",
                     color = MaterialTheme.colorScheme.primary,

@@ -14,7 +14,7 @@ import kotlinx.coroutines.flow.firstOrNull
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 
-// --- ¡¡UiState Actualizado!! ---
+// todo traer especialidades desde el backend hacer un get doctor para traer los doctores
 data class BookAppointmentUiState(
     val specialties: List<String> = listOf(
         "Cardiología", "Dermatología", "Medicina General", "Pediatría", "Psicología"
@@ -213,12 +213,18 @@ class BookAppointmentViewModel(
                 return@launch
             }
 
+            val startWithSeconds = formatTimeWithSeconds(s.selectedTime)
+            val endWithSeconds = calculateEndTime(s.selectedTime, 30)
+
             val newAppointment = CitaDto(
                 patientId = patientId,
                 doctorId = s.selectedDoctorId,
-                date = s.selectedDate,
-                time = s.selectedTime,
-                status = "agendada"
+                dateTime = "${s.selectedDate}T$startWithSeconds",
+                startTime = startWithSeconds,
+                endTime = endWithSeconds,
+                durationMinutes = 30,
+                status = "CONFIRMADA",
+                available = false
             )
 
             val result = appointmentRepository.bookAppointment(newAppointment)
@@ -231,5 +237,20 @@ class BookAppointmentViewModel(
                 }
             }
         }
+    }
+
+    private fun formatTimeWithSeconds(time: String): String {
+        val normalized = if (time.contains(":")) time.take(5) else time
+        return "$normalized:00"
+    }
+
+    private fun calculateEndTime(startTime: String, durationMinutes: Int): String {
+        val parts = startTime.split(":")
+        val hour = parts.getOrNull(0)?.toIntOrNull() ?: return formatTimeWithSeconds(startTime)
+        val minute = parts.getOrNull(1)?.toIntOrNull() ?: return formatTimeWithSeconds(startTime)
+        val totalMinutes = (hour * 60 + minute + durationMinutes) % (24 * 60)
+        val endHour = totalMinutes / 60
+        val endMinute = totalMinutes % 60
+        return String.format("%02d:%02d:00", endHour, endMinute)
     }
 }

@@ -4,6 +4,7 @@ import com.example.app_clinica_atl.data.remote.CitasApi
 import com.example.app_clinica_atl.data.remote.RetrofitClient
 import com.example.app_clinica_atl.data.remote.UsuariosApi
 import com.example.app_clinica_atl.data.remote.dto.CitaDto
+import com.example.app_clinica_atl.data.remote.dto.EspecialidadResponseDto
 import com.example.app_clinica_atl.data.remote.dto.UsuarioResponseDto
 import retrofit2.HttpException
 
@@ -28,15 +29,26 @@ class DoctorProfileRepository(
 
     suspend fun getAppointmentsForDoctor(doctorId: Long): Result<List<CitaDto>> {
         return try {
-            val appointments = citasApi.getAppointments()
-            Result.success(appointments.filter { it.doctorId == doctorId })
-        } catch (e: HttpException) {
-            // Si el backend responde 204 o 500, devolvemos lista vacía para no romper la UI.
-            if (e.code() == 204 || e.code() == 500) {
+            val response = citasApi.getAppointments()
+            if (response.isSuccessful) {
+                val appointments = response.body().orEmpty().filter { it.doctorId == doctorId }
+                Result.success(appointments)
+            } else if (response.code() == 204) {
                 Result.success(emptyList())
             } else {
-                Result.failure(e)
+                Result.failure(HttpException(response))
             }
+        } catch (e: Exception) {
+            Result.failure(e)
+        }
+    }
+
+    suspend fun getSpecialtiesForDoctor(doctorId: Long): Result<List<EspecialidadResponseDto>> {
+        return try {
+            val list = usuariosApi.getDoctorSpecialties(doctorId)
+            Result.success(list)
+        } catch (e: HttpException) {
+            if (e.code() == 204) Result.success(emptyList()) else Result.failure(e)
         } catch (e: Exception) {
             Result.failure(e)
         }

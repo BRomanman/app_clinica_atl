@@ -17,4 +17,7 @@ interface HistorialesApi {
     @GET("historial/usuario/{usuarioId}")
     suspend fun getHistorialByUserId(@Path("usuarioId") userId: Long): List<HistorialDto>
 
+    @GET("historial/doctor/{doctorId}")
+    suspend fun getHistorialByDoctorId(@Path("doctorId") doctorId: Long): List<HistorialDto>
+
 }
