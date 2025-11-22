@@ -5,19 +5,13 @@ import androidx.lifecycle.viewModelScope
 import com.example.app_clinica_atl.data.local.storage.UserPreferences
 import com.example.app_clinica_atl.data.remote.dto.SeguroDto
 import com.example.app_clinica_atl.data.repository.SegurosRepository
-import kotlinx.coroutines.flow.MutableStateFlow
-import kotlinx.coroutines.flow.StateFlow
-import kotlinx.coroutines.flow.asStateFlow
-import kotlinx.coroutines.flow.catch
-import kotlinx.coroutines.flow.firstOrNull
-import kotlinx.coroutines.flow.update
+import com.example.app_clinica_atl.ui.screen.BeneficiarioForm
+import kotlinx.coroutines.flow.*
 import kotlinx.coroutines.launch
 
-/**
- * Estado de la UI para la pantalla de Seguros.
- */
 data class InsuranceUiState(
-    val availableInsurances: List<SeguroDto> = emptyList(),
+    val healthInsurances: List<SeguroDto> = emptyList(),
+    val lifeInsurances: List<SeguroDto> = emptyList(),
     val isLoading: Boolean = true,
     val errorMsg: String? = null,
     val successMsg: String? = null
@@ -32,17 +26,25 @@ class InsuranceViewModel(
     val uiState: StateFlow<InsuranceUiState> = _uiState.asStateFlow()
 
     init {
-        // Carga la lista de seguros disponibles
         viewModelScope.launch {
             insuranceRepository.getAvailableInsurances()
                 .catch { e ->
                     _uiState.update { it.copy(isLoading = false, errorMsg = e.message) }
                 }
                 .collect { insuranceList ->
+                    val health = insuranceList.filter {
+                        it.name.contains("Salud", ignoreCase = true)
+                    }
+
+                    val life = insuranceList.filter {
+                        it.name.contains("Vida", ignoreCase = true)
+                    }
+
                     _uiState.update {
                         it.copy(
                             isLoading = false,
-                            availableInsurances = insuranceList
+                            healthInsurances = health,
+                            lifeInsurances = life
                         )
                     }
                 }
@@ -50,21 +52,32 @@ class InsuranceViewModel(
     }
 
     /**
-     * Intenta suscribir al usuario a un seguro.
+     *  NUEVO: contratación completa de seguro con beneficiarios y método de pago
      */
-    fun subscribeToInsurance(insuranceId: Long) {
+    fun contratarSeguro(
+        seguroId: Long,
+        beneficiarios: List<BeneficiarioForm>,
+        metodoPago: String,
+        estado: String
+    ) {
         viewModelScope.launch {
-            // Primero, obtenemos el ID del paciente logueado
-            val patientId = userPreferences.userIdFlow.firstOrNull()
-            if (patientId == null) {
-                _uiState.update { it.copy(errorMsg = "No se pudo identificar al usuario. Inicie sesión de nuevo.") }
+
+            val userId = userPreferences.userIdFlow.firstOrNull()
+            if (userId == null) {
+                _uiState.update { it.copy(errorMsg = "Usuario no identificado") }
                 return@launch
             }
 
-            val result = insuranceRepository.subscribeToInsurance(patientId, insuranceId)
+            val result = insuranceRepository.contratarSeguro(
+                userId = userId,
+                seguroId = seguroId,
+                beneficiarios = beneficiarios,
+                metodoPago = metodoPago,
+                estado = estado
+            )
 
             if (result.isSuccess) {
-                _uiState.update { it.copy(successMsg = "¡Seguro contratado con éxito!") }
+                _uiState.update { it.copy(successMsg = "Seguro contratado correctamente") }
             } else {
                 _uiState.update { it.copy(errorMsg = result.exceptionOrNull()?.message) }
             }

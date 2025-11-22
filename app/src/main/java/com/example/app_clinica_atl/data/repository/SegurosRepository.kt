@@ -2,6 +2,7 @@ package com.example.app_clinica_atl.data.repository
 
 import com.example.app_clinica_atl.data.remote.dto.SeguroDto
 import com.example.app_clinica_atl.data.remote.dto.UsuarioSeguroDto
+import com.example.app_clinica_atl.ui.screen.BeneficiarioForm
 import kotlinx.coroutines.flow.Flow
 
 /**
@@ -38,4 +39,13 @@ interface SegurosRepository {
      * Cancela una suscripción existente.
      */
     suspend fun cancelSubscription(subscriptionId: Long): Result<Unit>
+
+    suspend fun contratarSeguro(
+        userId: Long,
+        seguroId: Long,
+        beneficiarios: List<BeneficiarioForm>,
+        metodoPago: String,
+        estado: String
+    ): Result<Unit>
+
 }
