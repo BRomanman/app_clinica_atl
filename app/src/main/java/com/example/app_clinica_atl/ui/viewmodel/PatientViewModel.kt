@@ -11,6 +11,8 @@ import com.example.app_clinica_atl.data.remote.dto.UsuarioSeguroDto
 import com.example.app_clinica_atl.data.repository.CitasRepository
 import com.example.app_clinica_atl.data.repository.SegurosRepository
 import com.example.app_clinica_atl.data.repository.UsuariosRepository
+import com.example.app_clinica_atl.domain.validation.validateChileanPhoneNumber
+import com.example.app_clinica_atl.domain.validation.validateRegisterPassword
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
@@ -31,7 +33,15 @@ data class PatientProfileUiState(
     val activeSubscription: UsuarioSeguroDto? = null,
     val activeAppointments: List<CitaDetalleDto> = emptyList(),
     val errorMsg: String? = null,
-    val successMsg: String? = null
+    val successMsg: String? = null,
+    val phoneInput: String = "",
+    val phoneError: String? = null,
+    val isSavingPhone: Boolean = false,
+    val passwordInput: String = "",
+    val confirmPasswordInput: String = "",
+    val passwordError: String? = null,
+    val confirmPasswordError: String? = null,
+    val isSavingPassword: Boolean = false
 )
 
 class PatientViewModel(
@@ -43,10 +53,25 @@ class PatientViewModel(
 
     // --- LÓGICA REACTIVA ---
     private val _messageState = MutableStateFlow(Pair<String?, String?>(null, null))
+    private val _editState = MutableStateFlow(PatientProfileEditState())
+    private val _profileImageOverride = MutableStateFlow<String?>(null)
+    private var cachedUserId: Long? = null
+
+    private data class PatientProfileEditState(
+        val phoneInput: String = "",
+        val phoneError: String? = null,
+        val isSavingPhone: Boolean = false,
+        val passwordInput: String = "",
+        val confirmPasswordInput: String = "",
+        val passwordError: String? = null,
+        val confirmPasswordError: String? = null,
+        val isSavingPassword: Boolean = false
+    )
 
     @OptIn(ExperimentalCoroutinesApi::class)
     val uiState: StateFlow<PatientProfileUiState> = userPreferences.userIdFlow
         .flatMapLatest { userId ->
+            cachedUserId = userId
             if (userId == null) {
                 flowOf(
                     PatientProfileUiState(
@@ -55,18 +80,35 @@ class PatientViewModel(
                     )
                 )
             } else {
-                combine(
+                val base = combine(
                     userRepository.getUserByIdAsFlow(userId),
                     insuranceRepository.getActiveSubscriptionDetails(userId),
                     insuranceRepository.getActiveSubscription(userId),
-                    appointmentRepository.getAppointmentsForPatient(userId)
-                ) { patient, insuranceDetails, insuranceSub, appointments ->
+                    appointmentRepository.getAppointmentsForPatient(userId),
+                    _profileImageOverride
+                ) { patient, insuranceDetails, insuranceSub, appointments, overrideImage ->
+                    val enrichedPatient = patient?.copy(
+                        profileImageUrl = overrideImage ?: patient.profileImageUrl
+                    )
                     PatientProfileUiState(
                         isLoading = false,
-                        patient = patient,
+                        patient = enrichedPatient,
                         activeInsuranceDetails = insuranceDetails,
                         activeSubscription = insuranceSub,
                         activeAppointments = appointments
+                    )
+                }
+
+                base.combine(_editState) { dataState, editState ->
+                    dataState.copy(
+                        phoneInput = editState.phoneInput.ifBlank { dataState.patient?.phone.orEmpty() },
+                        phoneError = editState.phoneError,
+                        isSavingPhone = editState.isSavingPhone,
+                        passwordInput = editState.passwordInput,
+                        confirmPasswordInput = editState.confirmPasswordInput,
+                        passwordError = editState.passwordError,
+                        confirmPasswordError = editState.confirmPasswordError,
+                        isSavingPassword = editState.isSavingPassword
                     )
                 }
             }
@@ -115,6 +157,92 @@ class PatientViewModel(
         }
     }
 
+    fun onPhoneChange(phone: String) {
+        val error = validateChileanPhoneNumber(phone)
+        _editState.update { it.copy(phoneInput = phone, phoneError = error) }
+    }
+
+    fun savePhone() {
+        val phone = _editState.value.phoneInput
+        val phoneError = validateChileanPhoneNumber(phone)
+        if (phoneError != null) {
+            _editState.update { it.copy(phoneError = phoneError) }
+            return
+        }
+        val userId = cachedUserId ?: return
+        viewModelScope.launch {
+            _editState.update { it.copy(isSavingPhone = true) }
+            val result = userRepository.updatePhoneNumber(userId, phone)
+            if (result.isSuccess) {
+                _messageState.update { it.copy(second = "Teléfono actualizado.") }
+                _editState.update { it.copy(isSavingPhone = false, phoneError = null) }
+            } else {
+                _messageState.update { it.copy(first = result.exceptionOrNull()?.message) }
+                _editState.update { it.copy(isSavingPhone = false) }
+            }
+        }
+    }
+
+    fun onPasswordChange(value: String) {
+        val validation = validateRegisterPassword(value, _editState.value.confirmPasswordInput)
+        val msg = validation.exceptionOrNull()?.message
+        _editState.update {
+            it.copy(
+                passwordInput = value,
+                passwordError = msg?.takeIf { text -> text.contains("débil", ignoreCase = true) },
+                confirmPasswordError = msg?.takeIf { text -> text.contains("coinciden", ignoreCase = true) }
+            )
+        }
+    }
+
+    fun onConfirmPasswordChange(value: String) {
+        val validation = validateRegisterPassword(_editState.value.passwordInput, value)
+        val msg = validation.exceptionOrNull()?.message
+        _editState.update {
+            it.copy(
+                confirmPasswordInput = value,
+                passwordError = msg?.takeIf { text -> text.contains("débil", ignoreCase = true) },
+                confirmPasswordError = msg?.takeIf { text -> text.contains("coinciden", ignoreCase = true) }
+            )
+        }
+    }
+
+    fun savePassword() {
+        val state = _editState.value
+        val validation = validateRegisterPassword(state.passwordInput, state.confirmPasswordInput)
+        val msg = validation.exceptionOrNull()?.message
+        if (validation.isFailure) {
+            _editState.update {
+                it.copy(
+                    passwordError = msg?.takeIf { text -> text.contains("débil", ignoreCase = true) },
+                    confirmPasswordError = msg?.takeIf { text -> text.contains("coinciden", ignoreCase = true) }
+                )
+            }
+            if (msg != null) _messageState.update { it.copy(first = msg) }
+            return
+        }
+        val userId = cachedUserId ?: return
+        viewModelScope.launch {
+            _editState.update { it.copy(isSavingPassword = true) }
+            val result = userRepository.updatePassword(userId, state.passwordInput)
+            if (result.isSuccess) {
+                _messageState.update { it.copy(second = "Contraseña actualizada.") }
+                _editState.update {
+                    it.copy(
+                        isSavingPassword = false,
+                        passwordInput = "",
+                        confirmPasswordInput = "",
+                        passwordError = null,
+                        confirmPasswordError = null
+                    )
+                }
+            } else {
+                _messageState.update { it.copy(first = result.exceptionOrNull()?.message) }
+                _editState.update { it.copy(isSavingPassword = false) }
+            }
+        }
+    }
+
     fun clearMessages() {
         _messageState.update { Pair(null, null) }
     }
@@ -129,6 +257,9 @@ class PatientViewModel(
             val result = userRepository.updateProfileImageUrl(userId, uri.toString())
             if (result.isFailure) {
                 _messageState.update { it.copy(first = result.exceptionOrNull()?.message) }
+            } else {
+                _profileImageOverride.update { uri.toString() }
+                _messageState.update { it.copy(second = "Foto de perfil actualizada.") }
             }
         }
     }

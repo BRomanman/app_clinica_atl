@@ -22,6 +22,8 @@ object NotificationHelper {
 
     private const val APPOINTMENT_NOTIFICATION_ID = 1001
     private const val INSURANCE_NOTIFICATION_ID = 1002
+
+    // todo españolizarrrr
     const val APPOINTMENT_CHANNEL_ID = "appointment_confirmations"
     const val INSURANCE_CHANNEL_ID = "insurance_confirmations"
 

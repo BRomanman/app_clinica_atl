@@ -6,10 +6,11 @@ import com.google.gson.annotations.SerializedName
  * Representa la tabla `Doctor` (datos adicionales al usuario base).
  */
 data class DoctorDto(
-    @SerializedName("id_doctor") val id: Long?,
-    @SerializedName("tarifa_consulta") val tarifaConsulta: Int,
-    @SerializedName("id_usuario") val idUsuario: Long,
-    @SerializedName("sueldo") val sueldo: Long?,
+    @SerializedName(value = "id", alternate = ["id_doctor"]) val id: Long?,
+    @SerializedName(value = "tarifaConsulta", alternate = ["tarifa_consulta"]) val tarifaConsulta: Int,
+    @SerializedName(value = "sueldo", alternate = ["pay"]) val sueldo: Long?,
     @SerializedName("bono") val bono: Long?,
-    @SerializedName("activo") val activo: Int // 0 o 1
+    @SerializedName("activo") val activo: Int, // 0 o 1
+    @SerializedName("usuario") val usuario: UsuarioResponseDto? = null,
+    @SerializedName("especialidad") val especialidad: String? = null
 )

@@ -5,9 +5,11 @@ import android.os.Build
 import androidx.annotation.RequiresApi
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.example.app_clinica_atl.data.remote.dto.CitaDto
 import com.example.app_clinica_atl.data.remote.dto.DoctorMonthlyStatDto
 import com.example.app_clinica_atl.data.remote.dto.HistorialDto
 import com.example.app_clinica_atl.data.remote.dto.UsuarioResponseDto
+import com.example.app_clinica_atl.data.repository.CitasRepository
 import com.example.app_clinica_atl.data.repository.DoctorProfileRepository
 import com.example.app_clinica_atl.data.repository.HistorialRepository
 import com.example.app_clinica_atl.data.repository.UsuariosRepository
@@ -62,7 +64,8 @@ data class DoctorProfileUiState(
 class DoctorProfileViewModel(
     private val doctorProfileRepository: DoctorProfileRepository,
     private val usuariosRepository: UsuariosRepository,
-    private val historialRepository: HistorialRepository
+    private val historialRepository: HistorialRepository,
+    private val citasRepository: CitasRepository
 ) : ViewModel() {
 
     private val _uiState = MutableStateFlow(DoctorProfileUiState())
@@ -114,28 +117,34 @@ class DoctorProfileViewModel(
     private fun observeStats(doctorId: Long) {
         statsJob?.cancel()
         statsJob = viewModelScope.launch {
-            val historiesResult = loadDoctorHistoriesOnly(doctorId)
-            if (historiesResult.isFailure) {
-                _uiState.update {
-                    it.copy(
-                        transientError = historiesResult.exceptionOrNull()?.message
-                            ?: "No se pudieron cargar las estadísticas."
-                    )
-                }
-                return@launch
+            val statsResult = runCatching {
+                val histories = loadDoctorHistoriesOnly(doctorId).getOrThrow()
+                val stats = calculateMonthlyStats(histories)
+                if (stats.isNotEmpty()) stats else fallbackStatsFromAppointments(doctorId).getOrThrow()
+            }.recoverCatching {
+                fallbackStatsFromAppointments(doctorId).getOrThrow()
             }
 
-            val histories = historiesResult.getOrNull().orEmpty()
-            val stats = calculateMonthlyStats(histories)
-
-            val latestMonthTotal = stats.firstOrNull()?.totalAppointments ?: 0
-            val tarifa = _uiState.value.doctor?.tarifaConsulta ?: 0
-            _uiState.update {
-                it.copy(
-                    stats = stats,
-                    totalAppointments = latestMonthTotal,
-                    bonusAmount = latestMonthTotal * tarifa * 0.1
-                )
+            statsResult.onSuccess { stats ->
+                val latestMonthTotal = stats.firstOrNull()?.totalAppointments ?: 0
+                val tarifa = _uiState.value.doctor?.tarifaConsulta ?: 0
+                _uiState.update {
+                    it.copy(
+                        stats = stats,
+                        totalAppointments = latestMonthTotal,
+                        bonusAmount = latestMonthTotal * tarifa * 0.1,
+                        transientError = null
+                    )
+                }
+            }.onFailure { error ->
+                _uiState.update {
+                    it.copy(
+                        transientError = error.message ?: "No se pudieron cargar las estadísticas.",
+                        stats = emptyList(),
+                        totalAppointments = 0,
+                        bonusAmount = 0.0
+                    )
+                }
             }
         }
     }
@@ -307,6 +316,29 @@ class DoctorProfileViewModel(
             .take(6)
     }
 
+    @RequiresApi(Build.VERSION_CODES.O)
+    private suspend fun fallbackStatsFromAppointments(doctorId: Long): Result<List<DoctorMonthlyStatDto>> {
+        return citasRepository.getAppointmentsForDoctorOnce(doctorId)
+            .map { calculateMonthlyStatsFromCitas(it) }
+    }
+
+    @RequiresApi(Build.VERSION_CODES.O)
+    private fun calculateMonthlyStatsFromCitas(citas: List<CitaDto>): List<DoctorMonthlyStatDto> {
+        return citas
+            .asSequence()
+            .filter { cita ->
+                !cita.status.contains("cancel", ignoreCase = true)
+            }
+            .mapNotNull { cita -> parseYearMonth(cita.date) }
+            .groupingBy { it }
+            .eachCount()
+            .entries
+            .sortedByDescending { it.key }
+            .map { DoctorMonthlyStatDto(month = it.key.toString(), totalAppointments = it.value) }
+            .take(6)
+    }
+
+    @RequiresApi(Build.VERSION_CODES.O)
     private fun parseYearMonth(rawDate: String?): YearMonth? {
         if (rawDate.isNullOrBlank()) return null
         val trimmed = rawDate.trim()
@@ -335,7 +367,7 @@ class DoctorProfileViewModel(
 
 private fun UsuarioResponseDto.toDoctorProfileInfo(existingImage: String?): DoctorProfileInfo {
     val displayName = listOfNotNull(nombre, apellido).joinToString(" ").trim().ifBlank { correo.orEmpty() }
-    val specialtyText = "Especialidad no disponible" // TODO: obtenerla cuando el backend la exponga
+    val specialtyText = "Especialidad no disponible"
     return DoctorProfileInfo(
         userId = id,
         doctorId = doctor?.id,

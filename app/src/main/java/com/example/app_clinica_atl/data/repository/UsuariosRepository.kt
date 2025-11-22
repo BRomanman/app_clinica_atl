@@ -5,6 +5,7 @@ import com.example.app_clinica_atl.data.remote.UsuariosApi
 import com.example.app_clinica_atl.data.remote.dto.LoginRequestDto
 import com.example.app_clinica_atl.data.remote.dto.UsuarioDto
 import com.example.app_clinica_atl.data.remote.dto.UsuarioUpdateRequestDto
+import com.example.app_clinica_atl.data.remote.dto.EspecialidadResponseDto
 import com.example.app_clinica_atl.data.remote.dto.roleToId
 import com.example.app_clinica_atl.data.remote.dto.toUsuarioDto
 import com.example.app_clinica_atl.data.remote.dto.toUsuarioDtoFromLogin
@@ -48,10 +49,7 @@ class UsuariosRepository(
         }
     }
 
-    /**
-     * Obtiene un usuario por su ID como Flow.
-     * TODO: cachear resultado en BD local cuando exista.
-     */
+
     fun getUserByIdAsFlow(id: Long): Flow<UsuarioDto?> = flow {
         emit(
             runCatching { usuariosApi.getUserById(id).toUsuarioDto() }
@@ -91,6 +89,17 @@ class UsuariosRepository(
         }
     }
 
+    suspend fun getAllSpecialties(): Result<List<EspecialidadResponseDto>> = withContext(Dispatchers.IO) {
+        runCatching {
+            val response = usuariosApi.getAllSpecialties()
+            if (response.isSuccessful) {
+                response.body().orEmpty()
+            } else {
+                throw HttpException(response)
+            }
+        }
+    }
+
     /**
      * Login contra la API `auth/login`.
      */
@@ -105,6 +114,31 @@ class UsuariosRepository(
                 else -> e.message()
             }
             Result.failure(Exception(message ?: "Error HTTP ${e.code()}", e))
+        } catch (e: Exception) {
+            Result.failure(e)
+        }
+    }
+
+    /**
+     * Simula un flujo de recuperación de contraseña:
+     * genera una clave temporal y la actualiza en el backend para el usuario encontrado.
+     */
+    suspend fun requestPasswordReset(email: String): Result<String> = withContext(Dispatchers.IO) {
+        try {
+            val users = usuariosApi.getUsers()
+            val target = users.firstOrNull { it.correo.equals(email, true) }
+                ?: return@withContext Result.failure(Exception("No encontramos una cuenta con ese correo."))
+
+            val temporaryPassword = "ATL-${(100000..999999).random()}"
+            usuariosApi.updateUser(
+                target.id,
+                UsuarioUpdateRequestDto(contrasena = temporaryPassword)
+            )
+
+            val message = "Hemos enviado instrucciones a $email. También puedes usar la clave temporal $temporaryPassword para iniciar sesión y cambiarla."
+            Result.success(message)
+        } catch (e: HttpException) {
+            Result.failure(Exception(e.message() ?: "Error HTTP ${e.code()}", e))
         } catch (e: Exception) {
             Result.failure(e)
         }

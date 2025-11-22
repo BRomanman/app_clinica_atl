@@ -7,7 +7,7 @@ import com.google.gson.annotations.SerializedName
  * Expone helpers derivados (`date` y `time`) para no romper la UI previa.
  */
 data class CitaDto(
-    @SerializedName("id") val id: Long = 0,
+    @SerializedName("id") val id: Long? = null,
     @SerializedName("idUsuario") val patientId: Long? = null,
     @SerializedName("idDoctor") val doctorId: Long,
     @SerializedName("fechaCita") val dateTime: String,

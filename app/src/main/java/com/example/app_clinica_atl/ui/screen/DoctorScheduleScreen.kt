@@ -11,10 +11,13 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ArrowBack
+import androidx.compose.material3.Button
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.CircularProgressIndicator
@@ -74,13 +77,25 @@ fun DoctorScheduleScreen(
             uiState.isLoading -> LoadingState(paddingValues)
             uiState.errorMsg != null -> EmptyState(uiState.errorMsg!!, paddingValues)
             uiState.appointments.isEmpty() -> EmptyState("No tienes citas próximas.", paddingValues)
-            else -> AgendaList(uiState.appointments, paddingValues)
+            else -> AgendaList(
+                appointments = uiState.appointments,
+                paddingValues = paddingValues,
+                cancelingId = uiState.isCancelingId,
+                infoMsg = uiState.infoMsg,
+                onCancel = { id -> viewModel.cancelAppointment(id) }
+            )
         }
     }
 }
 
 @Composable
-private fun AgendaList(appointments: List<DoctorAgendaItem>, paddingValues: PaddingValues) {
+private fun AgendaList(
+    appointments: List<DoctorAgendaItem>,
+    paddingValues: PaddingValues,
+    cancelingId: Long?,
+    infoMsg: String?,
+    onCancel: (Long) -> Unit
+) {
     LazyColumn(
         modifier = Modifier
             .fillMaxSize()
@@ -89,14 +104,32 @@ private fun AgendaList(appointments: List<DoctorAgendaItem>, paddingValues: Padd
         verticalArrangement = Arrangement.spacedBy(12.dp),
         contentPadding = PaddingValues(bottom = 16.dp)
     ) {
+        if (infoMsg != null) {
+            item {
+                Text(
+                    text = infoMsg,
+                    color = MaterialTheme.colorScheme.primary,
+                    style = MaterialTheme.typography.bodyMedium,
+                    modifier = Modifier.fillMaxWidth()
+                )
+            }
+        }
         items(appointments) { cita ->
-            AgendaCard(cita)
+            AgendaCard(
+                cita = cita,
+                isCanceling = cancelingId == cita.appointmentId,
+                onCancel = onCancel
+            )
         }
     }
 }
 
 @Composable
-private fun AgendaCard(cita: DoctorAgendaItem) {
+private fun AgendaCard(
+    cita: DoctorAgendaItem,
+    isCanceling: Boolean,
+    onCancel: (Long) -> Unit
+) {
     Card(
         modifier = Modifier.fillMaxWidth(),
         colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant)
@@ -116,10 +149,26 @@ private fun AgendaCard(cita: DoctorAgendaItem) {
                 Text("Estado:", style = MaterialTheme.typography.bodyMedium, fontWeight = FontWeight.Medium)
                 StatusBadge(cita.status)
             }
+            if (!cita.status.equals("cancelada", true) && !cita.status.equals("completada", true)) {
+                Spacer(modifier = Modifier.height(8.dp))
+                Button(
+                    onClick = { cita.appointmentId?.let(onCancel) },
+                    enabled = cita.appointmentId != null && !isCanceling,
+                    modifier = Modifier.fillMaxWidth()
+                ) {
+                    if (isCanceling) {
+                        CircularProgressIndicator(modifier = Modifier.size(18.dp), strokeWidth = 2.dp)
+                        Spacer(modifier = Modifier.width(8.dp))
+                    }
+                    Text(if (isCanceling) "Cancelando..." else "Cancelar cita")
+                }
+            }
         }
     }
 }
 
+
+// todo poder hacer que el doctor pueda cancelar una cita en su agenda
 @Composable
 private fun StatusBadge(status: String) {
     val normalized = status.lowercase()

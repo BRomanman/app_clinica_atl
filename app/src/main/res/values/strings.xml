@@ -48,4 +48,5 @@
     <string name="drawer_insurance">Mis Seguros</string>
     <string name="drawer_book_appointment">Agendar Cita</string>
     <string name="drawer_profile">Mi Perfil</string>
+    <string name="drawer_logout">Cerrar sesión</string>
 </resources>

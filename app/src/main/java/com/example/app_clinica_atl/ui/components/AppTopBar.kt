@@ -32,17 +32,6 @@ fun AppTopBar(
                     contentDescription = "Abrir menú"
                 )
             }
-        },
-        actions = {
-            // --- Botón de Tema (Sol/Luna) ---
-            IconButton(onClick = onToggleTheme) {
-                Icon(
-                    imageVector = if (isDarkTheme) Icons.Default.LightMode else Icons.Default.DarkMode,
-                    contentDescription = if (isDarkTheme) "Activar modo claro" else "Activar modo oscuro"
-                )
-            }
-
-            // --- ¡¡BOTÓN DE LOGOUT ELIMINADO!! ---
         }
     )
 }

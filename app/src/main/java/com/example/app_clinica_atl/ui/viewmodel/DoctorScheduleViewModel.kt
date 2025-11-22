@@ -13,10 +13,11 @@ import java.time.format.DateTimeFormatter
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 
 data class DoctorAgendaItem(
-    val appointmentId: Long,
+    val appointmentId: Long?,
     val patientId: Long?,
     val patientName: String,
     val date: String,
@@ -27,7 +28,9 @@ data class DoctorAgendaItem(
 data class DoctorScheduleUiState(
     val isLoading: Boolean = true,
     val appointments: List<DoctorAgendaItem> = emptyList(),
-    val errorMsg: String? = null
+    val errorMsg: String? = null,
+    val isCancelingId: Long? = null,
+    val infoMsg: String? = null
 )
 
 class DoctorScheduleViewModel(
@@ -37,6 +40,7 @@ class DoctorScheduleViewModel(
 
     private val _uiState = MutableStateFlow(DoctorScheduleUiState())
     val uiState: StateFlow<DoctorScheduleUiState> = _uiState.asStateFlow()
+    private var cachedDoctorId: Long? = null
 
     @RequiresApi(Build.VERSION_CODES.O)
     fun loadAgenda(userId: Long) {
@@ -52,6 +56,7 @@ class DoctorScheduleViewModel(
                     )
                     return@launch
                 }
+            cachedDoctorId = doctorId
 
             val result = citasRepository.getAppointmentsForDoctorOnce(doctorId)
             if (result.isFailure) {
@@ -78,6 +83,31 @@ class DoctorScheduleViewModel(
                 }
 
             _uiState.value = DoctorScheduleUiState(isLoading = false, appointments = mapped)
+        }
+    }
+
+    fun cancelAppointment(appointmentId: Long) {
+        viewModelScope.launch {
+            _uiState.update { it.copy(isCancelingId = appointmentId, infoMsg = null, errorMsg = null) }
+            val result = citasRepository.cancelAppointment(appointmentId)
+            if (result.isSuccess) {
+                _uiState.update { state ->
+                    state.copy(
+                        isCancelingId = null,
+                        appointments = state.appointments.map { cita ->
+                            if (cita.appointmentId == appointmentId) cita.copy(status = "Cancelada") else cita
+                        },
+                        infoMsg = "Cita cancelada."
+                    )
+                }
+            } else {
+                _uiState.update {
+                    it.copy(
+                        isCancelingId = null,
+                        errorMsg = result.exceptionOrNull()?.message ?: "No se pudo cancelar la cita."
+                    )
+                }
+            }
         }
     }
 

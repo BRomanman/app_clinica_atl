@@ -16,6 +16,9 @@ sealed class Route(val path: String) {
     object DoctorProfile : Route("doctor_profile/{doctorId}") {
         fun createRoute(doctorId: Long) = "doctor_profile/$doctorId"
     }
+    object DoctorPreview : Route("doctor_preview/{doctorId}") {
+        fun createRoute(doctorId: Long) = "doctor_preview/$doctorId"
+    }
     object DoctorPatientProfile : Route("doctor_patient_profile/{patientId}") {
         fun createRoute(patientId: Long) = "doctor_patient_profile/$patientId"
     }

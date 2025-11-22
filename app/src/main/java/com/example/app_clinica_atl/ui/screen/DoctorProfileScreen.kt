@@ -88,7 +88,8 @@ fun DoctorProfileScreen(
     doctorId: Long?,
     onBackClick: () -> Unit,
     viewModel: DoctorProfileViewModel,
-    modifier: Modifier = Modifier
+    modifier: Modifier = Modifier,
+    isPublicView: Boolean = false
 ) {
     val uiState by viewModel.uiState.collectAsState()
     val snackbarHostState = remember { SnackbarHostState() }
@@ -134,7 +135,7 @@ fun DoctorProfileScreen(
     Scaffold(
         modifier = modifier.fillMaxSize(),
         snackbarHost = { SnackbarHost(snackbarHostState) },
-        topBar = { DoctorProfileTopBar(onBackClick) }
+        topBar = { DoctorProfileTopBar(onBackClick, isPublicView) }
     ) { paddingValues ->
         DoctorProfileContentHost(
             doctorId = doctorId,
@@ -145,16 +146,17 @@ fun DoctorProfileScreen(
             onSavePhone = viewModel::savePhone,
             onPasswordChange = viewModel::onPasswordChange,
             onConfirmPasswordChange = viewModel::onConfirmPasswordChange,
-            onSavePassword = viewModel::savePassword
+            onSavePassword = viewModel::savePassword,
+            isPublicView = isPublicView
         )
     }
 }
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-private fun DoctorProfileTopBar(onBackClick: () -> Unit) {
+private fun DoctorProfileTopBar(onBackClick: () -> Unit, isPublicView: Boolean) {
     TopAppBar(
-        title = { Text("Perfil de doctor") },
+        title = { Text(if (isPublicView) "Doctor seleccionado" else "Perfil de doctor") },
         navigationIcon = {
             IconButton(onClick = onBackClick) {
                 Icon(Icons.Default.ArrowBack, contentDescription = "Volver")
@@ -195,7 +197,8 @@ private fun DoctorProfileContentHost(
     onSavePhone: () -> Unit,
     onPasswordChange: (String) -> Unit,
     onConfirmPasswordChange: (String) -> Unit,
-    onSavePassword: () -> Unit
+    onSavePassword: () -> Unit,
+    isPublicView: Boolean
 ) {
     Box(
         modifier = Modifier
@@ -242,7 +245,8 @@ private fun DoctorProfileContentHost(
                     onPasswordChange = onPasswordChange,
                     onConfirmPasswordChange = onConfirmPasswordChange,
                     onSavePassword = onSavePassword,
-                    onProfileImageClick = onRequestCamera
+                    onProfileImageClick = onRequestCamera,
+                    isPublicView = isPublicView
                 )
             }
         }
@@ -270,7 +274,8 @@ private fun DoctorProfileContent(
     onPasswordChange: (String) -> Unit,
     onConfirmPasswordChange: (String) -> Unit,
     onSavePassword: () -> Unit,
-    onProfileImageClick: () -> Unit
+    onProfileImageClick: () -> Unit,
+    isPublicView: Boolean
 ) {
     LazyColumn(
         modifier = Modifier.fillMaxSize(),
@@ -282,7 +287,8 @@ private fun DoctorProfileContent(
             DoctorProfileHeader(
                 doctor = doctor,
                 isUploadingPhoto = isUploadingPhoto,
-                onProfileImageClick = onProfileImageClick
+                onProfileImageClick = onProfileImageClick,
+                isPublicView = isPublicView
             )
         }
         item {
@@ -294,33 +300,44 @@ private fun DoctorProfileContent(
         item {
             InfoCard(label = "Especialidad", value = doctor.specialty ?: "Sin especialidad")
         }
-        item {
-            PhoneEditorCard(
-                phoneInput = phoneInput,
-                phoneError = phoneError,
-                isSaving = isSavingPhone,
-                onPhoneChange = onPhoneChange,
-                onSavePhone = onSavePhone
-            )
-        }
-        item {
-            PasswordEditorCard(
-                passwordInput = passwordInput,
-                confirmPasswordInput = confirmPasswordInput,
-                passwordError = passwordError,
-                confirmPasswordError = confirmPasswordError,
-                isSaving = isSavingPassword,
-                onPasswordChange = onPasswordChange,
-                onConfirmPasswordChange = onConfirmPasswordChange,
-                onSavePassword = onSavePassword
-            )
-        }
-        item {
-            DoctorStatsCard(
-                stats = stats,
-                totalAppointments = totalAppointments,
-                bonusAmount = bonusAmount
-            )
+        if (isPublicView) {
+            item {
+                InfoCard(label = "Teléfono", value = doctor.phone.ifBlank { "No disponible" })
+            }
+            doctor.tarifaConsulta?.let { fee ->
+                item {
+                    InfoCard(label = "Tarifa de consulta", value = "$$fee")
+                }
+            }
+        } else {
+            item {
+                PhoneEditorCard(
+                    phoneInput = phoneInput,
+                    phoneError = phoneError,
+                    isSaving = isSavingPhone,
+                    onPhoneChange = onPhoneChange,
+                    onSavePhone = onSavePhone
+                )
+            }
+            item {
+                PasswordEditorCard(
+                    passwordInput = passwordInput,
+                    confirmPasswordInput = confirmPasswordInput,
+                    passwordError = passwordError,
+                    confirmPasswordError = confirmPasswordError,
+                    isSaving = isSavingPassword,
+                    onPasswordChange = onPasswordChange,
+                    onConfirmPasswordChange = onConfirmPasswordChange,
+                    onSavePassword = onSavePassword
+                )
+            }
+            item {
+                DoctorStatsCard(
+                    stats = stats,
+                    totalAppointments = totalAppointments,
+                    bonusAmount = bonusAmount
+                )
+            }
         }
     }
 }
@@ -329,26 +346,54 @@ private fun DoctorProfileContent(
 private fun DoctorProfileHeader(
     doctor: DoctorProfileInfo,
     isUploadingPhoto: Boolean,
-    onProfileImageClick: () -> Unit
+    onProfileImageClick: () -> Unit,
+    isPublicView: Boolean
 ) {
-    Column(horizontalAlignment = Alignment.CenterHorizontally) {
-        Box(contentAlignment = Alignment.Center) {
-            AsyncImage(
-                model = doctor.profileImageUrl ?: R.drawable.logo_clean,
-                placeholder = painterResource(id = R.drawable.logo_clean),
-                contentDescription = "Foto de ${doctor.name}",
-                modifier = Modifier
-                    .size(140.dp)
-                    .clip(CircleShape)
-                    .clickable(onClick = onProfileImageClick),
-                contentScale = ContentScale.Crop
-            )
-            if (isUploadingPhoto) {
-                CircularProgressIndicator(modifier = Modifier.size(48.dp))
+    Card(
+        modifier = Modifier.fillMaxWidth(),
+        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.primaryContainer),
+        shape = RoundedCornerShape(24.dp)
+    ) {
+        Column(
+            horizontalAlignment = Alignment.CenterHorizontally,
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(vertical = 20.dp, horizontal = 16.dp)
+        ) {
+            Box(contentAlignment = Alignment.Center) {
+                AsyncImage(
+                    model = doctor.profileImageUrl ?: R.drawable.logo_clean,
+                    placeholder = painterResource(id = R.drawable.logo_clean),
+                    contentDescription = "Foto de ${doctor.name}",
+                    modifier = Modifier
+                        .size(140.dp)
+                        .clip(CircleShape)
+                        .let { mod -> if (isPublicView) mod else mod.clickable(onClick = onProfileImageClick) },
+                    contentScale = ContentScale.Crop
+                )
+                if (isUploadingPhoto) {
+                    CircularProgressIndicator(modifier = Modifier.size(48.dp))
+                }
             }
-        }
-        TextButton(onClick = onProfileImageClick) {
-            Text("Cambiar foto")
+            Spacer(modifier = Modifier.height(12.dp))
+            Text(
+                text = doctor.name,
+                style = MaterialTheme.typography.titleLarge,
+                fontWeight = FontWeight.Bold,
+                color = MaterialTheme.colorScheme.onPrimaryContainer
+            )
+            doctor.specialty?.let {
+                Text(
+                    text = it,
+                    style = MaterialTheme.typography.bodyMedium,
+                    color = MaterialTheme.colorScheme.onPrimaryContainer
+                )
+            }
+            if (!isPublicView) {
+                TextButton(onClick = onProfileImageClick) {
+                    Text("Cambiar foto", color = MaterialTheme.colorScheme.onPrimaryContainer)
+                }
+            }
         }
     }
 }

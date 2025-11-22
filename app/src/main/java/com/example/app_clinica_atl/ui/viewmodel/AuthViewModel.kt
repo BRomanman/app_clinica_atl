@@ -26,7 +26,13 @@ data class LoginUiState(
     val loginError: String? = null,
     val loginSuccess: Boolean = false,
     val userRole: String? = null,
-    val weakPasswordWarning: String? = null
+    val weakPasswordWarning: String? = null,
+    val isResetDialogOpen: Boolean = false,
+    val resetEmail: String = "",
+    val resetEmailError: String? = null,
+    val resetError: String? = null,
+    val isSendingReset: Boolean = false,
+    val resetSuccessMessage: String? = null
 )
 
 // --- Estados de UI para Registro ---
@@ -140,6 +146,87 @@ class AuthViewModel(
             }
         }
     }
+
+    fun openResetDialog() {
+        _loginUiState.update {
+            it.copy(
+                isResetDialogOpen = true,
+                resetEmail = it.email,
+                resetEmailError = null,
+                resetError = null,
+                resetSuccessMessage = null,
+                loginError = null
+            )
+        }
+    }
+
+    fun closeResetDialog() {
+        _loginUiState.update {
+            it.copy(
+                isResetDialogOpen = false,
+                isSendingReset = false,
+                resetError = null,
+                resetEmailError = null
+            )
+        }
+    }
+
+    fun onResetEmailChange(email: String) {
+        val emailError = validateEmail(email)
+        _loginUiState.update {
+            it.copy(
+                resetEmail = email,
+                resetEmailError = emailError,
+                resetError = null
+            )
+        }
+    }
+
+    fun sendResetInstructions() {
+        val current = _loginUiState.value
+        val targetEmail = current.resetEmail.ifBlank { current.email }
+        val emailError = validateEmail(targetEmail)
+
+        if (emailError != null) {
+            _loginUiState.update { it.copy(resetEmail = targetEmail, resetEmailError = emailError) }
+            return
+        }
+
+        viewModelScope.launch {
+            _loginUiState.update {
+                it.copy(
+                    isSendingReset = true,
+                    resetEmail = targetEmail,
+                    resetEmailError = null,
+                    resetError = null,
+                    resetSuccessMessage = null
+                )
+            }
+
+            val result = userRepository.requestPasswordReset(targetEmail)
+
+            _loginUiState.update {
+                if (result.isSuccess) {
+                    it.copy(
+                        isSendingReset = false,
+                        isResetDialogOpen = false,
+                        resetSuccessMessage = result.getOrNull(),
+                        resetError = null
+                    )
+                } else {
+                    it.copy(
+                        isSendingReset = false,
+                        resetError = result.exceptionOrNull()?.message
+                            ?: "No se pudo enviar el correo de recuperación."
+                    )
+                }
+            }
+        }
+    }
+
+    fun clearResetMessage() {
+        _loginUiState.update { it.copy(resetSuccessMessage = null) }
+    }
     fun registerUser() {
         // ... (Validación final)
         val s = _registerUiState.value
@@ -183,17 +270,13 @@ class AuthViewModel(
         }
     }
 
-    // --- ¡¡FUNCIÓN DE LOGOUT CORREGIDA!! ---
-    fun logout() {
-        viewModelScope.launch {
-            // 1. Limpia la sesión en DataStore
-            userPreferences.clearUserSession()
+    suspend fun logout() {
+        // 1. Limpia la sesión en DataStore
+        userPreferences.clearUserSession()
 
-            // 2. Resetea el estado de ESTE ViewModel a su estado inicial
-            // (Esto arregla el bug del "amague")
-            _loginUiState.update { LoginUiState() }
-            _registerUiState.update { RegisterUiState() }
-        }
+        // 2. Resetea el estado de ESTE ViewModel a su estado inicial
+        _loginUiState.update { LoginUiState() }
+        _registerUiState.update { RegisterUiState() }
     }
 
     private fun isWeakDoctorPassword(role: String, fullName: String, password: String): Boolean {

@@ -18,6 +18,7 @@ import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.lazy.LazyColumn
@@ -30,6 +31,7 @@ import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.SnackbarHost
 import androidx.compose.material3.SnackbarHostState
@@ -50,6 +52,7 @@ import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.text.input.PasswordVisualTransformation
 import com.example.app_clinica_atl.R
 import com.example.app_clinica_atl.data.remote.dto.CitaDetalleDto
 import com.example.app_clinica_atl.data.remote.dto.SeguroDto
@@ -142,10 +145,23 @@ fun PatientProfileScreen(
                         patient = uiState.patient!!,
                         activeInsurance = uiState.activeInsuranceDetails,
                         appointments = uiState.activeAppointments,
+                        phoneInput = uiState.phoneInput,
+                        phoneError = uiState.phoneError,
+                        isSavingPhone = uiState.isSavingPhone,
+                        passwordInput = uiState.passwordInput,
+                        confirmPasswordInput = uiState.confirmPasswordInput,
+                        passwordError = uiState.passwordError,
+                        confirmPasswordError = uiState.confirmPasswordError,
+                        isSavingPassword = uiState.isSavingPassword,
                         onCancelInsurance = viewModel::cancelSubscription,
                         onCancelAppointment = viewModel::cancelAppointment,
                         onGoToSeguros = onGoToSeguros,
                         onLogout = onLogout,
+                        onPhoneChange = viewModel::onPhoneChange,
+                        onSavePhone = viewModel::savePhone,
+                        onPasswordChange = viewModel::onPasswordChange,
+                        onConfirmPasswordChange = viewModel::onConfirmPasswordChange,
+                        onSavePassword = viewModel::savePassword,
                         onProfileImageClick = {
                             // Pide permiso de cámara al hacer clic
                             permissionLauncher.launch(Manifest.permission.CAMERA)
@@ -157,12 +173,6 @@ fun PatientProfileScreen(
     }
 }
 
-/**
- * ¡¡FUNCIÓN CORREGIDA!!
- * Ahora usa 'context.cacheDir' y la subcarpeta 'images'
- * para que coincida con el '<cache-path ... path="images/" />'
- * de tu 'file_paths.xml'.
- */
 private fun createImageUri(context: Context): Uri {
     // 1. Define la subcarpeta "images" (debe coincidir con path="images/" en file_paths.xml)
     val imageCacheFolder = File(context.cacheDir, "images")
@@ -189,10 +199,23 @@ private fun PatientProfileContent(
     patient: UsuarioDto,
     activeInsurance: SeguroDto?,
     appointments: List<CitaDetalleDto>,
+    phoneInput: String,
+    phoneError: String?,
+    isSavingPhone: Boolean,
+    passwordInput: String,
+    confirmPasswordInput: String,
+    passwordError: String?,
+    confirmPasswordError: String?,
+    isSavingPassword: Boolean,
     onCancelInsurance: () -> Unit,
     onCancelAppointment: (Long) -> Unit,
     onGoToSeguros: () -> Unit,
     onLogout: () -> Unit,
+    onPhoneChange: (String) -> Unit,
+    onSavePhone: () -> Unit,
+    onPasswordChange: (String) -> Unit,
+    onConfirmPasswordChange: (String) -> Unit,
+    onSavePassword: () -> Unit,
     onProfileImageClick: () -> Unit
 ) {
     LazyColumn(
@@ -202,12 +225,11 @@ private fun PatientProfileContent(
         // --- Item 1: Imagen de Perfil ---
         item {
 
-            //todo implementar foto api SIN GOKUUUUUUUU
             AsyncImage(
                 model = patient.profileImageUrl, // Carga la URL de la BD (String o Uri)
                 contentDescription = "Foto de ${patient.name}",
-                placeholder = painterResource(id = R.drawable.goku_perfil), // Tu placeholder
-                error = painterResource(id = R.drawable.goku_perfil), // Tu placeholder si falla
+                placeholder = painterResource(id = R.drawable.logo_clean),
+                error = painterResource(id = R.drawable.logo_clean),
                 contentScale = ContentScale.Crop,
                 modifier = Modifier
                     .size(150.dp)
@@ -228,6 +250,25 @@ private fun PatientProfileContent(
             Spacer(modifier = Modifier.height(24.dp))
             InfoRow(label = "Email", value = patient.email)
             InfoRow(label = "Teléfono", value = patient.phone)
+            Spacer(modifier = Modifier.height(12.dp))
+            PhoneEditorCard(
+                phoneInput = phoneInput,
+                phoneError = phoneError,
+                isSaving = isSavingPhone,
+                onPhoneChange = onPhoneChange,
+                onSavePhone = onSavePhone
+            )
+            Spacer(modifier = Modifier.height(12.dp))
+            PasswordEditorCard(
+                passwordInput = passwordInput,
+                confirmPasswordInput = confirmPasswordInput,
+                passwordError = passwordError,
+                confirmPasswordError = confirmPasswordError,
+                isSaving = isSavingPassword,
+                onPasswordChange = onPasswordChange,
+                onConfirmPasswordChange = onConfirmPasswordChange,
+                onSavePassword = onSavePassword
+            )
             Spacer(modifier = Modifier.height(16.dp))
             HorizontalDivider()
             Spacer(modifier = Modifier.height(16.dp))
@@ -268,7 +309,7 @@ private fun PatientProfileContent(
             items(appointments) { appointment ->
                 AppointmentCard(
                     appointment = appointment,
-                    onCancel = { onCancelAppointment(appointment.appointmentId) }
+                    onCancel = { appointment.appointmentId?.let { onCancelAppointment(it) } }
                 )
                 Spacer(modifier = Modifier.height(12.dp))
             }
@@ -280,8 +321,8 @@ private fun PatientProfileContent(
             Button(
                 onClick = onLogout,
                 colors = ButtonDefaults.buttonColors(
-                    containerColor = MaterialTheme.colorScheme.secondaryContainer,
-                    contentColor = MaterialTheme.colorScheme.onSecondaryContainer
+                    containerColor = MaterialTheme.colorScheme.error,
+                    contentColor = MaterialTheme.colorScheme.onError
                 ),
                 modifier = Modifier
                     .fillMaxWidth()
@@ -327,7 +368,8 @@ private fun AppointmentCard(
             Button(
                 onClick = onCancel,
                 colors = ButtonDefaults.buttonColors(
-                    containerColor = MaterialTheme.colorScheme.error
+                    containerColor = MaterialTheme.colorScheme.error,
+                    contentColor = MaterialTheme.colorScheme.onError
                 ),
                 modifier = Modifier.fillMaxWidth()
             ) {
@@ -388,6 +430,110 @@ private fun InsuranceInfoCard(
                 TextButton(onClick = onGoToSeguros) {
                     Text("Ver planes disponibles")
                 }
+            }
+        }
+    }
+}
+
+@Composable
+private fun PhoneEditorCard(
+    phoneInput: String,
+    phoneError: String?,
+    isSaving: Boolean,
+    onPhoneChange: (String) -> Unit,
+    onSavePhone: () -> Unit
+) {
+    Card(
+        modifier = Modifier.fillMaxWidth(),
+        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant)
+    ) {
+        Column(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(16.dp),
+            verticalArrangement = Arrangement.spacedBy(8.dp)
+        ) {
+            Text("Actualizar teléfono", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold)
+            OutlinedTextField(
+                value = phoneInput,
+                onValueChange = onPhoneChange,
+                label = { Text("Teléfono (+569...)") },
+                modifier = Modifier.fillMaxWidth(),
+                isError = phoneError != null,
+                singleLine = true
+            )
+            phoneError?.let {
+                Text(it, color = MaterialTheme.colorScheme.error, style = MaterialTheme.typography.labelSmall)
+            }
+            Button(
+                onClick = onSavePhone,
+                enabled = !isSaving,
+                modifier = Modifier.fillMaxWidth()
+            ) {
+                if (isSaving) {
+                    CircularProgressIndicator(modifier = Modifier.size(18.dp), strokeWidth = 2.dp)
+                    Spacer(modifier = Modifier.width(8.dp))
+                }
+                Text(if (isSaving) "Guardando..." else "Guardar teléfono")
+            }
+        }
+    }
+}
+
+@Composable
+private fun PasswordEditorCard(
+    passwordInput: String,
+    confirmPasswordInput: String,
+    passwordError: String?,
+    confirmPasswordError: String?,
+    isSaving: Boolean,
+    onPasswordChange: (String) -> Unit,
+    onConfirmPasswordChange: (String) -> Unit,
+    onSavePassword: () -> Unit
+) {
+    Card(
+        modifier = Modifier.fillMaxWidth(),
+        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant)
+    ) {
+        Column(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(16.dp),
+            verticalArrangement = Arrangement.spacedBy(8.dp)
+        ) {
+            Text("Cambiar contraseña", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold)
+            OutlinedTextField(
+                value = passwordInput,
+                onValueChange = onPasswordChange,
+                label = { Text("Nueva contraseña") },
+                singleLine = true,
+                isError = passwordError != null,
+                visualTransformation = PasswordVisualTransformation()
+            )
+            passwordError?.let {
+                Text(it, color = MaterialTheme.colorScheme.error, style = MaterialTheme.typography.labelSmall)
+            }
+            OutlinedTextField(
+                value = confirmPasswordInput,
+                onValueChange = onConfirmPasswordChange,
+                label = { Text("Confirmar contraseña") },
+                singleLine = true,
+                isError = confirmPasswordError != null,
+                visualTransformation = PasswordVisualTransformation()
+            )
+            confirmPasswordError?.let {
+                Text(it, color = MaterialTheme.colorScheme.error, style = MaterialTheme.typography.labelSmall)
+            }
+            Button(
+                onClick = onSavePassword,
+                enabled = !isSaving,
+                modifier = Modifier.fillMaxWidth()
+            ) {
+                if (isSaving) {
+                    CircularProgressIndicator(modifier = Modifier.size(18.dp), strokeWidth = 2.dp)
+                    Spacer(modifier = Modifier.width(8.dp))
+                }
+                Text(if (isSaving) "Guardando..." else "Actualizar contraseña")
             }
         }
     }

@@ -20,6 +20,10 @@ interface UsuariosApi {
     @POST("auth/login")
     suspend fun login(@Body credentials: LoginRequestDto): LoginResponseDto
 
+    // Especialidades (personal_service)
+    @GET("especialidades")
+    suspend fun getAllSpecialties(): Response<List<EspecialidadResponseDto>>
+
 
 
 

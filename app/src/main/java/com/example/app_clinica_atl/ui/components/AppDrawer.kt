@@ -13,6 +13,7 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.Assignment
 import androidx.compose.material.icons.filled.CalendarToday
+import androidx.compose.material.icons.filled.ExitToApp
 import androidx.compose.material.icons.filled.FavoriteBorder
 import androidx.compose.material.icons.filled.Home
 import androidx.compose.material.icons.filled.Person
@@ -60,6 +61,7 @@ fun AppDrawerVm(
     onHome: () -> Unit,
     onInsurance: () -> Unit,
     onBookAppointment: () -> Unit,
+    onLogout: () -> Unit,
     modifier: Modifier = Modifier
 ) {
     // --- ¡SOLUCIÓN 1, 2 y 3! ---
@@ -77,7 +79,8 @@ fun AppDrawerVm(
         onHome = onHome,
         onInsurance = onInsurance,
         onBookAppointment = onBookAppointment,
-        onProfile = onGoToProfile // ¡Usa la acción de perfil correcta!
+        onProfile = onGoToProfile, // ¡Usa la acción de perfil correcta!
+        onLogout = onLogout
     )
 
     // Llama a la UI "tonta"
@@ -163,7 +166,8 @@ private fun defaultDrawerItems(
     onHome: () -> Unit,
     onInsurance: () -> Unit,
     onBookAppointment: () -> Unit,
-    onProfile: () -> Unit
+    onProfile: () -> Unit,
+    onLogout: () -> Unit
 ): List<DrawerItem> {
     return listOf(
         DrawerItem(
@@ -173,7 +177,7 @@ private fun defaultDrawerItems(
             action = onHome
         ),
         DrawerItem(
-            // --- ¡SOLUCIÓN 4! ---
+
             route = Route.Seguros.path,
             icon = Icons.Default.FavoriteBorder,
             label = stringResource(id = R.string.drawer_insurance),
@@ -192,6 +196,12 @@ private fun defaultDrawerItems(
             icon = Icons.Default.Person,
             label = stringResource(id = R.string.drawer_profile),
             action = onProfile
+        ),
+        DrawerItem(
+            route = Route.LogoutConfirmation.path,
+            icon = Icons.Default.ExitToApp,
+            label = stringResource(id = R.string.drawer_logout),
+            action = onLogout
         )
     )
 }

@@ -21,6 +21,11 @@ interface CitasRepository {
     suspend fun getBookedTimes(doctorId: Long, date: String): Result<List<String>>
 
     /**
+     * Obtiene los bloques disponibles (disponible=true) de un doctor en una fecha específica.
+     */
+    suspend fun getAvailableSlots(doctorId: Long, date: String): Result<List<String>>
+
+    /**
      * Obtiene un Flow con todas las citas activas de un paciente.
      */
     fun getAppointmentsForPatient(patientId: Long): Flow<List<CitaDetalleDto>>

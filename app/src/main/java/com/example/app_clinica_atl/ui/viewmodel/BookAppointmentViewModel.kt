@@ -7,6 +7,7 @@ import com.example.app_clinica_atl.data.remote.dto.CitaDto
 import com.example.app_clinica_atl.data.remote.dto.UsuarioDto
 import com.example.app_clinica_atl.data.repository.CitasRepository
 import com.example.app_clinica_atl.data.repository.DoctorRepository
+import com.example.app_clinica_atl.data.repository.UsuariosRepository
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -14,17 +15,16 @@ import kotlinx.coroutines.flow.firstOrNull
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 
-// todo traer especialidades desde el backend hacer un get doctor para traer los doctores
+
 data class BookAppointmentUiState(
-    val specialties: List<String> = listOf(
-        "Cardiología", "Dermatología", "Medicina General", "Pediatría", "Psicología"
-    ),
+    val specialties: List<String> = emptyList(),
     val doctors: List<UsuarioDto> = emptyList(),
     val availableTimes: List<String> = emptyList(),
 
     // Estado de los campos
     val selectedSpecialty: String = "",
-    val selectedDoctorId: Long? = null,
+    val selectedDoctorUserId: Long? = null,
+    val selectedDoctorBackendId: Long? = null,
     val selectedDoctorName: String = "",
     val selectedDate: String = "", // Formato "YYYY-MM-DD"
     val selectedTime: String = "", // Formato "HH:MM"
@@ -34,6 +34,7 @@ data class BookAppointmentUiState(
     val timeError: String? = null,
 
     // Estado de la UI
+    val isLoadingSpecialties: Boolean = false,
     val isLoadingDoctors: Boolean = false,
     val isLoadingTimes: Boolean = false,
     val isBooking: Boolean = false,
@@ -47,16 +48,16 @@ data class BookAppointmentUiState(
 class BookAppointmentViewModel(
     private val doctorRepository: DoctorRepository,
     private val appointmentRepository: CitasRepository,
-    private val userPreferences: UserPreferences
+    private val userPreferences: UserPreferences,
+    private val usuariosRepository: UsuariosRepository
 ) : ViewModel() {
 
     private val _uiState = MutableStateFlow(BookAppointmentUiState())
     val uiState: StateFlow<BookAppointmentUiState> = _uiState.asStateFlow()
 
-    private val allDaySlots = listOf(
-        "09:00", "09:30", "10:00", "10:30", "11:00", "11:30", "12:00", "12:30",
-        "14:00", "14:30", "15:00", "15:30", "16:00", "16:30", "17:00"
-    )
+    init {
+        loadSpecialties()
+    }
 
     // --- Handlers de UI ---
 
@@ -65,7 +66,8 @@ class BookAppointmentViewModel(
             it.copy(
                 selectedSpecialty = specialty,
                 doctors = emptyList(),
-                selectedDoctorId = null,
+                selectedDoctorUserId = null,
+                selectedDoctorBackendId = null,
                 selectedDoctorName = "",
                 availableTimes = emptyList(),
                 selectedDate = "",
@@ -80,7 +82,8 @@ class BookAppointmentViewModel(
     fun onDoctorChange(doctor: UsuarioDto) {
         _uiState.update {
             it.copy(
-                selectedDoctorId = doctor.id,
+                selectedDoctorUserId = doctor.id,
+                selectedDoctorBackendId = null,
                 selectedDoctorName = doctor.name,
                 availableTimes = emptyList(),
                 selectedDate = "",
@@ -88,6 +91,17 @@ class BookAppointmentViewModel(
                 dateError = null,
                 timeError = null
             )
+        }
+        // Resuelve el id de tabla doctor para las consultas de agenda
+        viewModelScope.launch {
+            val doctorIdResult = usuariosRepository.getDoctorIdForUser(doctor.id)
+            _uiState.update {
+                if (doctorIdResult.isSuccess) {
+                    it.copy(selectedDoctorBackendId = doctorIdResult.getOrNull())
+                } else {
+                    it.copy(errorMsg = "No se pudo identificar el registro de doctor seleccionado.")
+                }
+            }
         }
     }
 
@@ -103,14 +117,16 @@ class BookAppointmentViewModel(
                 isDatePickerVisible = false // Oculta el calendario
             )
         }
-        val doctorId = _uiState.value.selectedDoctorId
+        val doctorId = _uiState.value.selectedDoctorBackendId
         if (doctorId != null) {
             loadAvailableTimes(doctorId, date)
+        } else {
+            _uiState.update { it.copy(errorMsg = "Seleccione un doctor válido antes de elegir fecha.") }
         }
     }
 
     fun showDatePicker() {
-        if (_uiState.value.selectedDoctorId != null) {
+        if (_uiState.value.selectedDoctorBackendId != null) {
             _uiState.update { it.copy(isDatePickerVisible = true) }
         } else {
             _uiState.update { it.copy(errorMsg = "Seleccione un doctor primero") }
@@ -140,7 +156,8 @@ class BookAppointmentViewModel(
             it.copy(
                 bookingSuccess = false,
                 selectedSpecialty = "",
-                selectedDoctorId = null,
+                selectedDoctorUserId = null,
+                selectedDoctorBackendId = null,
                 selectedDoctorName = "",
                 selectedDate = "",
                 selectedTime = "",
@@ -151,6 +168,21 @@ class BookAppointmentViewModel(
     }
 
     // --- Lógica de Carga de Datos (sin cambios) ---
+
+    private fun loadSpecialties() {
+        viewModelScope.launch {
+            _uiState.update { it.copy(isLoadingSpecialties = true, errorMsg = null) }
+            val result = usuariosRepository.getAllSpecialties()
+            _uiState.update {
+                if (result.isSuccess) {
+                    val names = result.getOrNull()?.map { spec -> spec.nombre }?.filter { it.isNotBlank() }?.distinct().orEmpty()
+                    it.copy(isLoadingSpecialties = false, specialties = names)
+                } else {
+                    it.copy(isLoadingSpecialties = false, errorMsg = result.exceptionOrNull()?.message)
+                }
+            }
+        }
+    }
 
     private fun loadDoctorsBySpecialty(specialty: String) {
         // ... (código sin cambios)
@@ -168,15 +200,13 @@ class BookAppointmentViewModel(
     }
 
     private fun loadAvailableTimes(doctorId: Long, date: String) {
-        // ... (código sin cambios)
         viewModelScope.launch {
             _uiState.update { it.copy(isLoadingTimes = true, errorMsg = null) }
-            val result = appointmentRepository.getBookedTimes(doctorId, date)
+            val result = appointmentRepository.getAvailableSlots(doctorId, date)
             _uiState.update {
                 if (result.isSuccess) {
-                    val bookedTimes = result.getOrNull() ?: emptyList()
-                    val availableSlots = allDaySlots.filter { it !in bookedTimes }
-                    it.copy(isLoadingTimes = false, availableTimes = availableSlots)
+                    val slots = result.getOrNull().orEmpty().distinct().sorted()
+                    it.copy(isLoadingTimes = false, availableTimes = slots)
                 } else {
                     it.copy(isLoadingTimes = false, errorMsg = result.exceptionOrNull()?.message)
                 }
@@ -193,7 +223,7 @@ class BookAppointmentViewModel(
         val dateError = if (s.selectedDate.isBlank()) "Seleccione una fecha" else null
         val timeError = if (s.selectedTime.isBlank()) "Seleccione una hora" else null
 
-        if (s.isBooking || s.selectedDoctorId == null || dateError != null || timeError != null) {
+        if (s.isBooking || s.selectedDoctorBackendId == null || s.selectedDoctorUserId == null || dateError != null || timeError != null) {
             _uiState.update {
                 it.copy(
                     errorMsg = "Debe seleccionar doctor, fecha y hora.",
@@ -213,17 +243,19 @@ class BookAppointmentViewModel(
                 return@launch
             }
 
-            val startWithSeconds = formatTimeWithSeconds(s.selectedTime)
-            val endWithSeconds = calculateEndTime(s.selectedTime, 30)
+            val startTime = s.selectedTime.take(5)
+            val endTime = calculateEndTime(startTime, 30)
+            val dateTime = "${s.selectedDate}T$startTime:00"
 
             val newAppointment = CitaDto(
+                id = null,
                 patientId = patientId,
-                doctorId = s.selectedDoctorId,
-                dateTime = "${s.selectedDate}T$startWithSeconds",
-                startTime = startWithSeconds,
-                endTime = endWithSeconds,
+                doctorId = s.selectedDoctorBackendId,
+                dateTime = dateTime,
+                startTime = "$startTime:00",
+                endTime = "$endTime:00",
                 durationMinutes = 30,
-                status = "CONFIRMADA",
+                status = "RESERVADA",
                 available = false
             )
 
@@ -239,18 +271,13 @@ class BookAppointmentViewModel(
         }
     }
 
-    private fun formatTimeWithSeconds(time: String): String {
-        val normalized = if (time.contains(":")) time.take(5) else time
-        return "$normalized:00"
-    }
-
     private fun calculateEndTime(startTime: String, durationMinutes: Int): String {
         val parts = startTime.split(":")
-        val hour = parts.getOrNull(0)?.toIntOrNull() ?: return formatTimeWithSeconds(startTime)
-        val minute = parts.getOrNull(1)?.toIntOrNull() ?: return formatTimeWithSeconds(startTime)
+        val hour = parts.getOrNull(0)?.toIntOrNull() ?: return startTime
+        val minute = parts.getOrNull(1)?.toIntOrNull() ?: return startTime
         val totalMinutes = (hour * 60 + minute + durationMinutes) % (24 * 60)
         val endHour = totalMinutes / 60
         val endMinute = totalMinutes % 60
-        return String.format("%02d:%02d:00", endHour, endMinute)
+        return String.format("%02d:%02d", endHour, endMinute)
     }
 }

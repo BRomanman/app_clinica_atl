@@ -22,27 +22,27 @@ class SegurosRepositoryImpl(
     }
 
     override fun getActiveSubscription(patientId: Long): Flow<UsuarioSeguroDto?> = flow {
-        // TODO: Implementar cuando exista endpoint de subscripciones
+
         emit(null)
     }
 
     override fun getActiveSubscriptionDetails(patientId: Long): Flow<SeguroDto?> = flow {
-        // TODO: Implementar cuando exista endpoint de subscripciones
+
         emit(null)
     }
 
     override suspend fun getInsurancesForPatient(patientId: Long): Result<List<SeguroDto>> {
-        // TODO: Consumir endpoint real cuando exista; por ahora devolvemos vacío para no bloquear la UI.
+
         return Result.success(emptyList())
     }
 
     override suspend fun subscribeToInsurance(patientId: Long, insuranceId: Long): Result<Unit> {
-        // TODO: Consumir endpoint real (POST) cuando esté disponible
+
         return Result.failure(NotImplementedError("Suscripción remota pendiente de implementar"))
     }
 
     override suspend fun cancelSubscription(subscriptionId: Long): Result<Unit> {
-        // TODO: Consumir endpoint real (PATCH/DELETE) cuando esté disponible
+
         return Result.failure(NotImplementedError("Cancelación remota pendiente de implementar"))
     }
 }

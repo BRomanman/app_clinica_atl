@@ -22,22 +22,50 @@ import androidx.core.view.WindowCompat
 
 private val DarkColorScheme = darkColorScheme(
     primary = PrimaryDark,
+    onPrimary = Color.White,
+    primaryContainer = Primary,
+    onPrimaryContainer = PrimaryLight,
     secondary = SecondaryDark,
-    tertiary = NeutralDark,
-    // (Puedes personalizar el resto de los colores oscuros si quieres)
+    onSecondary = Color.White,
+    secondaryContainer = Secondary,
+    onSecondaryContainer = PrimaryLight,
+    tertiary = AccentAqua,
+    onTertiary = Color.White,
+    background = Color(0xFF0F1A26),
+    surface = Color(0xFF152232),
+    surfaceVariant = Color(0xFF1F2E3F),
+    onBackground = Color(0xFFE7ECF4),
+    onSurface = Color(0xFFE7ECF4),
+    onSurfaceVariant = Color(0xFFBAC7DB),
+    error = CalmError,
+    onError = Color(0xFF3D1A10),
+    errorContainer = CalmErrorContainer,
+    onErrorContainer = Color(0xFF3D1A10)
 )
 
 private val LightColorScheme = lightColorScheme(
     primary = Primary,
-    secondary = Secondary,
-    tertiary = NeutralLight,
-    background = Color(0xFFF7F7F7),
-    surface = Color.White,
     onPrimary = Color.White,
+    primaryContainer = PrimaryLight,
+    onPrimaryContainer = PrimaryDark,
+    secondary = Secondary,
     onSecondary = Color.White,
+    secondaryContainer = SecondaryLight,
+    onSecondaryContainer = SecondaryDark,
+    tertiary = AccentAqua,
     onTertiary = Color.White,
-    onBackground = Color(0xFF1C1B1F),
-    onSurface = Color(0xFF1C1B1F),
+    tertiaryContainer = AccentAquaLight,
+    onTertiaryContainer = Color(0xFF0F2E3B),
+    background = NeutralLight,
+    surface = Color.White,
+    surfaceVariant = PrimaryLight,
+    onBackground = NeutralDark,
+    onSurface = NeutralDark,
+    onSurfaceVariant = Color(0xFF4A5B70),
+    error = CalmError,
+    onError = Color(0xFF3D1A10),
+    errorContainer = CalmErrorContainer,
+    onErrorContainer = Color(0xFF3D1A10)
 )
 
 @Composable

@@ -48,7 +48,7 @@ fun AppNavGraph(
         startDestination = Route.Login.path,
         modifier = Modifier.padding(paddingValues)
     ) {
-        // todo arreglar para que funque con admin
+
         composable(Route.Login.path) {
             LoginScreenVm(
                 authViewModel = authViewModel,
@@ -78,6 +78,21 @@ fun AppNavGraph(
             )
         }
 
+        composable(Route.LogoutConfirmation.path) {
+            LogoutConfirmationScreen(
+                onConfirm = {
+                    scope.launch {
+                        authViewModel.logout()
+                        navController.navigate(Route.Login.path) {
+                            popUpTo(navController.graph.startDestinationId) { inclusive = true }
+                            launchSingleTop = true
+                        }
+                    }
+                },
+                onCancel = { navController.popBackStack() }
+            )
+        }
+
         // --- Rutas de Paciente ---
         composable(Route.Home.path) {
             HomeScreen(
@@ -100,7 +115,7 @@ fun AppNavGraph(
         composable(Route.BookAppointment.path) {
             BookAppointmentScreen(
                 viewModel = bookAppointmentViewModel,
-                onViewProfile = { doctorId -> navController.navigate(Route.DoctorProfile.createRoute(doctorId)) },
+                onViewProfile = { doctorId -> navController.navigate(Route.DoctorPreview.createRoute(doctorId)) },
                 onBookingSuccess = {
                     navController.navigate(Route.PatientProfile.path) {
                         popUpTo(Route.Home.path)
@@ -188,27 +203,26 @@ fun AppNavGraph(
                 doctorId = doctorId,
                 onBackClick = { navController.popBackStack() },
                 viewModel = doctorProfileViewModel,
-                modifier = Modifier.padding(PaddingValues(0.dp))
+                modifier = Modifier.padding(PaddingValues(0.dp)),
+                isPublicView = false
+            )
+        }
+        composable(
+            route = Route.DoctorPreview.path,
+            arguments = listOf(navArgument("doctorId") { type = NavType.LongType })
+        ) { backStackEntry ->
+            val doctorId = backStackEntry.arguments?.getLong("doctorId")
+            DoctorProfileScreen(
+                doctorId = doctorId,
+                onBackClick = { navController.popBackStack() },
+                viewModel = doctorProfileViewModel,
+                modifier = Modifier.padding(PaddingValues(0.dp)),
+                isPublicView = true
             )
         }
 
-        // --- ¡¡LÓGICA DE LOGOUT ACTUALIZADA (SOLUCIÓN NUCLEAR)!! ---
-        composable(Route.LogoutConfirmation.path) {
-            LogoutConfirmationScreen(
-                onGoToLogin = {
-                    // ¡¡CAMBIO!! No llamamos a logout()
-                    // Simplemente navegamos a la nueva ruta de reinicio
-                    navController.navigate(Route.Restart.path) {
-                        popUpTo(0) { inclusive = true }
-                    }
-                },
-                onExitApp = { /* Lógica de 'finish' en la pantalla */ }
-            )
-        }
 
-        // --- ¡¡NUEVA RUTA DE REINICIO!! ---
-        // Esta ruta no muestra UI. Su único propósito es
-        // ser detectada por MainActivity para reiniciar la app.
+        // todo questa wea
         composable(Route.Restart.path) {
             // No se muestra nada
         }

@@ -53,9 +53,9 @@ class MainActivity : ComponentActivity() {
     private val patientViewModel: PatientViewModel by viewModels { PatientViewModelFactory(usuariosRepository, userPreferences, segurosRepository, citasRepository) }
     private val doctorSearchViewModel: DoctorSearchViewModel by viewModels { DoctorSearchViewModelFactory(doctorRepository) }
     private val doctorProfileViewModel: DoctorProfileViewModel by viewModels {
-        DoctorProfileViewModelFactory(doctorProfileRepository, usuariosRepository, historialRepository)
+        DoctorProfileViewModelFactory(doctorProfileRepository, usuariosRepository, historialRepository, citasRepository)
     }
-    private val bookAppointmentViewModel: BookAppointmentViewModel by viewModels { BookAppointmentViewModelFactory(doctorRepository, citasRepository, userPreferences) }
+    private val bookAppointmentViewModel: BookAppointmentViewModel by viewModels { BookAppointmentViewModelFactory(doctorRepository, citasRepository, userPreferences, usuariosRepository) }
     private val insuranceViewModel: InsuranceViewModel by viewModels { InsuranceViewModelFactory(segurosRepository, userPreferences) }
     private val doctorSearchPatientViewModel: DoctorSearchPatientViewModel by viewModels { DoctorSearchPatientViewModelFactory(usuariosRepository) }
     private val doctorScheduleViewModel: DoctorScheduleViewModel by viewModels { DoctorScheduleViewModelFactory(citasRepository, usuariosRepository) }
@@ -118,6 +118,7 @@ class MainActivity : ComponentActivity() {
                                 currentRoute == Route.AdminAddDoctor.path || currentRoute == Route.AdminViewDoctors.path -> false
                         currentRoute == Route.DoctorMenu.path || currentRoute == Route.DoctorSchedule.path ||
                                 currentRoute == Route.DoctorSearchPatient.path || currentRoute == Route.DoctorProfile.path ||
+                                currentRoute == Route.DoctorPreview.path ||
                                 currentRoute?.startsWith("doctor_patient_profile") == true -> false
                         currentRoute == Route.LogoutConfirmation.path -> false
                         currentRoute == Route.Restart.path -> false // Oculta en la ruta de reinicio
@@ -140,7 +141,11 @@ class MainActivity : ComponentActivity() {
                                 },
                                 onHome = { navController.navigate(Route.Home.path); scope.launch { drawerState.close() } },
                                 onInsurance = { navController.navigate(Route.Seguros.path); scope.launch { drawerState.close() } },
-                                onBookAppointment = { navController.navigate(Route.BookAppointment.path); scope.launch { drawerState.close() } }
+                                onBookAppointment = { navController.navigate(Route.BookAppointment.path); scope.launch { drawerState.close() } },
+                                onLogout = {
+                                    navController.navigate(Route.LogoutConfirmation.path)
+                                    scope.launch { drawerState.close() }
+                                }
                             )
                         }
                     ) {
