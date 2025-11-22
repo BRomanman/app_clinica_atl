@@ -2,10 +2,10 @@ package com.example.app_clinica_atl.data.repository
 
 import com.example.app_clinica_atl.data.remote.RetrofitClient
 import com.example.app_clinica_atl.data.remote.UsuariosApi
+import com.example.app_clinica_atl.data.remote.dto.EspecialidadResponseDto
 import com.example.app_clinica_atl.data.remote.dto.LoginRequestDto
 import com.example.app_clinica_atl.data.remote.dto.UsuarioDto
 import com.example.app_clinica_atl.data.remote.dto.UsuarioUpdateRequestDto
-import com.example.app_clinica_atl.data.remote.dto.EspecialidadResponseDto
 import com.example.app_clinica_atl.data.remote.dto.roleToId
 import com.example.app_clinica_atl.data.remote.dto.toUsuarioDto
 import com.example.app_clinica_atl.data.remote.dto.toUsuarioDtoFromLogin
@@ -146,7 +146,17 @@ class UsuariosRepository(
 
 
 
-    suspend fun updateProfileImageUrl(userId: Long, imageUrl: String): Result<Unit> = Result.success(Unit)
+    suspend fun updateProfileImageUrl(userId: Long, imageUrl: String): Result<Unit> = withContext(Dispatchers.IO) {
+        try {
+            usuariosApi.updateUser(userId, UsuarioUpdateRequestDto(imagenPerfil = imageUrl))
+            Result.success(Unit)
+        } catch (e: HttpException) {
+            val message = if (e.code() == 404) "Usuario no encontrado." else e.message()
+            Result.failure(Exception(message ?: "Error HTTP ${e.code()}", e))
+        } catch (e: Exception) {
+            Result.failure(e)
+        }
+    }
 
     suspend fun updatePhoneNumber(userId: Long, phone: String): Result<Unit> = withContext(Dispatchers.IO) {
         try {

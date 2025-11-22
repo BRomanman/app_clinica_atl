@@ -80,7 +80,7 @@ class MainActivity : ComponentActivity() {
                 else -> isSystemInDarkTheme()
             }
 
-            App_clinica_atlTheme(darkTheme = isDark) {
+            App_clinica_atlTheme{
                 Surface(
                     modifier = Modifier.fillMaxSize(),
                     color = MaterialTheme.colorScheme.background

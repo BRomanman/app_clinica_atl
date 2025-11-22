@@ -174,17 +174,14 @@ fun PatientProfileScreen(
 }
 
 private fun createImageUri(context: Context): Uri {
-    // 1. Define la subcarpeta "images" (debe coincidir con path="images/" en file_paths.xml)
     val imageCacheFolder = File(context.cacheDir, "images")
     if (!imageCacheFolder.exists()) {
-        imageCacheFolder.mkdirs() // Crea la carpeta si no existe
+        imageCacheFolder.mkdirs()
     }
 
-    // 2. Crea el archivo temporal DENTRO de esa subcarpeta
     val timeStamp = SimpleDateFormat("yyyyMMdd_HHmmss", Locale.getDefault()).format(Date())
     val imageFile = File(imageCacheFolder, "JPEG_${timeStamp}_.jpg")
 
-    // 3. Construye la autoridad (debe coincidir con .fileprovider en AndroidManifest.xml)
     val authority = "${context.packageName}.fileprovider"
 
     return FileProvider.getUriForFile(

@@ -33,6 +33,8 @@ class UserPreferences(context: Context) {
         val THEME_PREFERENCE = stringPreferencesKey("theme_preference")
     }
 
+    private fun profileImageKey(userId: Long) = stringPreferencesKey("profile_image_url_$userId")
+
     // --- Flujos de Sesión (sin cambios) ---
     val userIdFlow: Flow<Long?> = dataStore.data
         .catch { exception ->
@@ -73,6 +75,19 @@ class UserPreferences(context: Context) {
         dataStore.edit { preferences ->
             preferences.remove(PreferencesKeys.USER_ID)
             preferences.remove(PreferencesKeys.USER_ROLE)
+        }
+    }
+
+    fun profileImageFlow(userId: Long): Flow<String?> = dataStore.data
+        .catch { exception ->
+            if (exception is IOException) { emit(emptyPreferences()) } else { throw exception }
+        }.map { preferences ->
+            preferences[profileImageKey(userId)]
+        }
+
+    suspend fun saveProfileImage(userId: Long, uri: String) {
+        dataStore.edit { preferences ->
+            preferences[profileImageKey(userId)] = uri
         }
     }
 

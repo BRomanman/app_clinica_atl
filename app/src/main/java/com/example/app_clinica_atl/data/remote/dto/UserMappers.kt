@@ -42,7 +42,7 @@ fun UsuarioResponseDto.toUsuarioDto(): UsuarioDto {
         email = correo.orEmpty(),
         phone = telefono.orEmpty(),
         password = "",
-        profileImageUrl = null,
+        profileImageUrl = imagenPerfil,
         role = normalizedRole,
         specialty = null,
         salary = doctor?.sueldo?.toDouble()

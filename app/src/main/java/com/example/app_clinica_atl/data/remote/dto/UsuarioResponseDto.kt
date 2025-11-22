@@ -10,7 +10,8 @@ data class UsuarioResponseDto(
     @SerializedName("correo") val correo: String?,
     @SerializedName("telefono") val telefono: String?,
     @SerializedName("rol") val rol: String?,
-    @SerializedName("doctor") val doctor: DoctorInfoDto?
+    @SerializedName("doctor") val doctor: DoctorInfoDto?,
+    @SerializedName("imagenPerfil") val imagenPerfil: String? = null
 )
 
 data class DoctorInfoDto(
@@ -27,5 +28,6 @@ data class UsuarioUpdateRequestDto(
     @SerializedName("correo") val correo: String? = null,
     @SerializedName("telefono") val telefono: String? = null,
     @SerializedName("contrasena") val contrasena: String? = null,
-    @SerializedName("idRol") val idRol: Long? = null
+    @SerializedName("idRol") val idRol: Long? = null,
+    @SerializedName("imagenPerfil") val imagenPerfil: String? = null
 )

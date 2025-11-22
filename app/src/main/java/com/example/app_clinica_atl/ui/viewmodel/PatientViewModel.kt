@@ -80,19 +80,23 @@ class PatientViewModel(
                     )
                 )
             } else {
-                val base = combine(
+                val storedImageFlow = userPreferences.profileImageFlow(userId)
+                val patientWithImage = combine(
                     userRepository.getUserByIdAsFlow(userId),
+                    storedImageFlow,
+                    _profileImageOverride
+                ) { patient, storedImage, overrideImage ->
+                    patient?.copy(profileImageUrl = overrideImage ?: storedImage ?: patient.profileImageUrl)
+                }
+                val base = combine(
+                    patientWithImage,
                     insuranceRepository.getActiveSubscriptionDetails(userId),
                     insuranceRepository.getActiveSubscription(userId),
-                    appointmentRepository.getAppointmentsForPatient(userId),
-                    _profileImageOverride
-                ) { patient, insuranceDetails, insuranceSub, appointments, overrideImage ->
-                    val enrichedPatient = patient?.copy(
-                        profileImageUrl = overrideImage ?: patient.profileImageUrl
-                    )
+                    appointmentRepository.getAppointmentsForPatient(userId)
+                ) { patient, insuranceDetails, insuranceSub, appointments ->
                     PatientProfileUiState(
                         isLoading = false,
-                        patient = enrichedPatient,
+                        patient = patient,
                         activeInsuranceDetails = insuranceDetails,
                         activeSubscription = insuranceSub,
                         activeAppointments = appointments
@@ -258,6 +262,7 @@ class PatientViewModel(
             if (result.isFailure) {
                 _messageState.update { it.copy(first = result.exceptionOrNull()?.message) }
             } else {
+                userPreferences.saveProfileImage(userId, uri.toString())
                 _profileImageOverride.update { uri.toString() }
                 _messageState.update { it.copy(second = "Foto de perfil actualizada.") }
             }
