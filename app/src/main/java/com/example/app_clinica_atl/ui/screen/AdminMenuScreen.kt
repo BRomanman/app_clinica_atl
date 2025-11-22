@@ -1,23 +1,10 @@
 package com.example.app_clinica_atl.ui.screen
 
-import androidx.compose.foundation.layout.Arrangement
-import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.Spacer
-import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.height
-import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.*
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ExitToApp
-import androidx.compose.material.icons.filled.ExitToApp
-import androidx.compose.material3.Button
-import androidx.compose.material3.ExperimentalMaterial3Api
-import androidx.compose.material3.Icon
-import androidx.compose.material3.IconButton
-import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.Scaffold
-import androidx.compose.material3.Text
-import androidx.compose.material3.TopAppBar
+import androidx.compose.material.icons.filled.Person
+import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -28,7 +15,8 @@ import androidx.compose.ui.unit.dp
 fun AdminMenuScreen(
     onAddSpecialty: () -> Unit,
     onAddDoctor: () -> Unit,
-    onViewDoctors: () -> Unit, // <-- ¡¡CALLBACK AÑADIDO!!
+    onViewDoctors: () -> Unit,
+    onProfileClick: () -> Unit, // <--- ¡ESTE ES EL PARÁMETRO QUE FALTABA!
     onLogout: () -> Unit
 ) {
     Scaffold(
@@ -36,6 +24,10 @@ fun AdminMenuScreen(
             TopAppBar(
                 title = { Text("Panel de Administrador") },
                 actions = {
+                    // Botón de Perfil en la barra superior
+                    IconButton(onClick = onProfileClick) {
+                        Icon(Icons.Default.Person, contentDescription = "Mi Perfil")
+                    }
                     IconButton(onClick = onLogout) {
                         Icon(Icons.AutoMirrored.Filled.ExitToApp, contentDescription = "Cerrar Sesión")
                     }
@@ -55,31 +47,30 @@ fun AdminMenuScreen(
 
             Spacer(modifier = Modifier.height(32.dp))
 
-            Button(
-                onClick = onAddSpecialty,
-                modifier = Modifier.fillMaxWidth()
-            ) {
+            Button(onClick = onAddSpecialty, modifier = Modifier.fillMaxWidth()) {
                 Text("Gestionar Especialidades")
             }
 
             Spacer(modifier = Modifier.height(16.dp))
 
-            Button(
-                onClick = onAddDoctor,
-                modifier = Modifier.fillMaxWidth()
-            ) {
+            Button(onClick = onAddDoctor, modifier = Modifier.fillMaxWidth()) {
                 Text("Agregar Nuevo Doctor")
             }
 
-            // --- ¡¡BOTÓN AÑADIDO!! ---
             Spacer(modifier = Modifier.height(16.dp))
-            Button(
-                onClick = onViewDoctors,
-                modifier = Modifier.fillMaxWidth()
-            ) {
+
+            Button(onClick = onViewDoctors, modifier = Modifier.fillMaxWidth()) {
                 Text("Ver Lista de Doctores")
             }
-            // --- FIN ---
+
+            Spacer(modifier = Modifier.height(16.dp))
+
+            // Botón grande para "Mis Datos" también
+            OutlinedButton(onClick = onProfileClick, modifier = Modifier.fillMaxWidth()) {
+                Icon(Icons.Default.Person, contentDescription = null)
+                Spacer(modifier = Modifier.width(8.dp))
+                Text("Mis Datos")
+            }
         }
     }
 }

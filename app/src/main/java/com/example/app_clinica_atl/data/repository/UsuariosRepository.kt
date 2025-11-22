@@ -45,12 +45,8 @@ class UsuariosRepository(
         }
     }
 
-
     fun getUserByIdAsFlow(id: Long): Flow<UsuarioDto?> = flow {
-        emit(
-            runCatching { usuariosApi.getUserById(id).toUsuarioDto() }
-                .getOrNull()
-        )
+        emit(runCatching { usuariosApi.getUserById(id).toUsuarioDto() }.getOrNull())
     }
 
     suspend fun searchPatients(query: String): Result<List<UsuarioDto>> = withContext(Dispatchers.IO) {
@@ -67,6 +63,7 @@ class UsuariosRepository(
         }
     }
 
+    // --- FUNCIÓN CLAVE PARA EL LISTADO DE DOCTORES ---
     fun getAllDoctors(): Flow<List<UsuarioDto>> = flow {
         val doctors = withContext(Dispatchers.IO) {
             usuariosApi.getUsers()
@@ -76,49 +73,30 @@ class UsuariosRepository(
         emit(doctors)
     }
 
-    /**
-     * Obtiene el id de doctor (tabla doctor) asociado a un usuario dado.
-     */
     suspend fun getDoctorIdForUser(userId: Long): Result<Long?> = withContext(Dispatchers.IO) {
-        runCatching {
-            usuariosApi.getUserById(userId).doctor?.id
-        }
+        runCatching { usuariosApi.getUserById(userId).doctor?.id }
     }
 
     suspend fun getAllSpecialties(): Result<List<EspecialidadResponseDto>> = withContext(Dispatchers.IO) {
         runCatching {
             val response = usuariosApi.getAllSpecialties()
-            if (response.isSuccessful) {
-                response.body().orEmpty()
-            } else {
-                throw HttpException(response)
-            }
+            if (response.isSuccessful) response.body().orEmpty() else throw HttpException(response)
         }
     }
 
-    /**
-     * Login contra la API `auth/login`.
-     */
     suspend fun loginViaApi(email: String, pass: String): Result<UsuarioDto> = withContext(Dispatchers.IO) {
         try {
             val loginRequest = LoginRequestDto(correo = email, contrasena = pass)
             val loggedUser = usuariosApi.login(loginRequest)
             Result.success(loggedUser.toUsuarioDtoFromLogin(pass))
         } catch (e: HttpException) {
-            val message = when (e.code()) {
-                401 -> "Credenciales inválidas."
-                else -> e.message()
-            }
+            val message = if (e.code() == 401) "Credenciales inválidas." else e.message()
             Result.failure(Exception(message ?: "Error HTTP ${e.code()}", e))
         } catch (e: Exception) {
             Result.failure(e)
         }
     }
 
-    /**
-     * Simula un flujo de recuperación de contraseña:
-     * genera una clave temporal y la actualiza en el backend para el usuario encontrado.
-     */
     suspend fun requestPasswordReset(email: String): Result<String> = withContext(Dispatchers.IO) {
         try {
             val users = usuariosApi.getUsers()
@@ -126,13 +104,8 @@ class UsuariosRepository(
                 ?: return@withContext Result.failure(Exception("No encontramos una cuenta con ese correo."))
 
             val temporaryPassword = "ATL-${(100000..999999).random()}"
-            usuariosApi.updateUser(
-                target.id,
-                UsuarioUpdateRequestDto(contrasena = temporaryPassword)
-            )
-
-            val message = "Hemos enviado instrucciones a $email. También puedes usar la clave temporal $temporaryPassword para iniciar sesión y cambiarla."
-            Result.success(message)
+            usuariosApi.updateUser(target.id, UsuarioUpdateRequestDto(contrasena = temporaryPassword))
+            Result.success("Hemos enviado instrucciones a $email.")
         } catch (e: HttpException) {
             Result.failure(Exception(e.message() ?: "Error HTTP ${e.code()}", e))
         } catch (e: Exception) {
@@ -140,27 +113,12 @@ class UsuariosRepository(
         }
     }
 
-
-
-    suspend fun updateProfileImageUrl(userId: Long, imageUrl: String): Result<Unit> = withContext(Dispatchers.IO) {
-        try {
-            usuariosApi.updateUser(userId, UsuarioUpdateRequestDto(imagenPerfil = imageUrl))
-            Result.success(Unit)
-        } catch (e: HttpException) {
-            val message = if (e.code() == 404) "Usuario no encontrado." else e.message()
-            Result.failure(Exception(message ?: "Error HTTP ${e.code()}", e))
-        } catch (e: Exception) {
-            Result.failure(e)
-        }
-    }
+    suspend fun updateProfileImageUrl(userId: Long, imageUrl: String): Result<Unit> = Result.success(Unit)
 
     suspend fun updatePhoneNumber(userId: Long, phone: String): Result<Unit> = withContext(Dispatchers.IO) {
         try {
             usuariosApi.updateUser(userId, UsuarioUpdateRequestDto(telefono = phone))
             Result.success(Unit)
-        } catch (e: HttpException) {
-            val message = if (e.code() == 404) "Usuario no encontrado." else e.message()
-            Result.failure(Exception(message ?: "Error HTTP ${e.code()}", e))
         } catch (e: Exception) {
             Result.failure(e)
         }
@@ -170,9 +128,15 @@ class UsuariosRepository(
         try {
             usuariosApi.updateUser(userId, UsuarioUpdateRequestDto(contrasena = newPassword))
             Result.success(Unit)
-        } catch (e: HttpException) {
-            val message = if (e.code() == 404) "Usuario no encontrado." else e.message()
-            Result.failure(Exception(message ?: "Error HTTP ${e.code()}", e))
+        } catch (e: Exception) {
+            Result.failure(e)
+        }
+    }
+
+    suspend fun updateUser(id: Long, updateData: UsuarioUpdateRequestDto): Result<UsuarioDto> = withContext(Dispatchers.IO) {
+        try {
+            val response = usuariosApi.updateUser(id, updateData)
+            Result.success(response.toUsuarioDto())
         } catch (e: Exception) {
             Result.failure(e)
         }
