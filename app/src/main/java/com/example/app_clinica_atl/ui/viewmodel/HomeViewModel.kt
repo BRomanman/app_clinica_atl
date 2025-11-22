@@ -57,10 +57,7 @@ class HomeViewModel(
             initialValue = HomeUiState(userName = "Cargando...")
         )
 
-    /**
-     * Carga información de un usuario (local) y la formatea para mostrar en el panel de depuración.
-     * Si más adelante se conecta a Retrofit, reemplaza el acceso por la llamada remota.
-     */
+
     fun fetchDebugUser(userId: Long) {
         viewModelScope.launch {
             val result = userRepository.getUserById(userId)

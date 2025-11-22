@@ -15,10 +15,6 @@ import kotlinx.coroutines.flow.flow
 import kotlinx.coroutines.withContext
 import retrofit2.HttpException
 
-/**
- * Repositorio alineado con la API de Usuarios.
- * Todas las operaciones ahora devuelven DTOs en lugar de las entidades Room.
- */
 class UsuariosRepository(
     private val usuariosApi: UsuariosApi = RetrofitClient.usuariosApi
 ) {
