@@ -12,10 +12,6 @@ import retrofit2.http.Path
 
 interface SegurosApi {
 
-    // ---------------------
-    // SEGUROS
-    // ---------------------
-
     @GET("seguros")
     suspend fun getSeguros(): List<SeguroDto>
 
@@ -35,9 +31,8 @@ interface SegurosApi {
     suspend fun deleteSeguro(@Path("id") id: Long): Response<Unit>
 
 
-    // ---------------------
-    // CONTRATOS DE SEGURO
-    // ---------------------
+
+
 
     // GET /api/v1/seguros/contratos/usuario/{idUsuario}
     @GET("seguros/contratos/usuario/{idUsuario}")
