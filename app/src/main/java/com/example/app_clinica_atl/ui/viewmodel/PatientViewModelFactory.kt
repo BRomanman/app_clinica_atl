@@ -1,5 +1,6 @@
 package com.example.app_clinica_atl.ui.viewmodel
 
+import android.app.Application
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.ViewModelProvider
 import com.example.app_clinica_atl.data.local.storage.UserPreferences
@@ -12,6 +13,7 @@ import com.example.app_clinica_atl.data.repository.UsuariosRepository
  * ¡CAMBIO! Ahora también inyecta CitasRepository.
  */
 class PatientViewModelFactory(
+    private val application: Application,
     private val userRepository: UsuariosRepository,
     private val userPreferences: UserPreferences,
     private val insuranceRepository: SegurosRepository,
@@ -22,6 +24,7 @@ class PatientViewModelFactory(
     override fun <T : ViewModel> create(modelClass: Class<T>): T {
         if (modelClass.isAssignableFrom(PatientViewModel::class.java)) {
             return PatientViewModel(
+                application,
                 userRepository,
                 userPreferences,
                 insuranceRepository,

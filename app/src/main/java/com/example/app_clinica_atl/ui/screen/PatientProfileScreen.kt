@@ -3,6 +3,7 @@ package com.example.app_clinica_atl.ui.screen
 import android.Manifest
 import android.content.Context
 import android.net.Uri
+import android.widget.Toast
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.clickable
@@ -24,6 +25,7 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Card
@@ -50,6 +52,7 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.text.input.PasswordVisualTransformation
@@ -104,15 +107,8 @@ fun PatientProfileScreen(
     // --- Fin Lógica de Cámara ---
 
 
-    LaunchedEffect(uiState.errorMsg, uiState.successMsg) {
-        uiState.errorMsg?.let {
-            snackbarHostState.showSnackbar(it)
-            viewModel.clearMessages()
-        }
-        uiState.successMsg?.let {
-            snackbarHostState.showSnackbar(it)
-            viewModel.clearMessages()
-        }
+    LaunchedEffect(uiState.errorMsg) {
+        uiState.errorMsg?.let { Toast.makeText(context, it, Toast.LENGTH_SHORT).show() }
     }
 
     Scaffold(
@@ -248,13 +244,19 @@ private fun PatientProfileContent(
             InfoRow(label = "Email", value = patient.email)
             InfoRow(label = "Teléfono", value = patient.phone)
             Spacer(modifier = Modifier.height(12.dp))
-            PhoneEditorCard(
+
+
+            PatientPhoneEditorCard(
                 phoneInput = phoneInput,
                 phoneError = phoneError,
                 isSaving = isSavingPhone,
                 onPhoneChange = onPhoneChange,
                 onSavePhone = onSavePhone
             )
+
+
+
+
             Spacer(modifier = Modifier.height(12.dp))
             PasswordEditorCard(
                 passwordInput = passwordInput,
@@ -433,7 +435,7 @@ private fun InsuranceInfoCard(
 }
 
 @Composable
-private fun PhoneEditorCard(
+private fun PatientPhoneEditorCard(
     phoneInput: String,
     phoneError: String?,
     isSaving: Boolean,
@@ -457,7 +459,8 @@ private fun PhoneEditorCard(
                 label = { Text("Teléfono (+569...)") },
                 modifier = Modifier.fillMaxWidth(),
                 isError = phoneError != null,
-                singleLine = true
+                singleLine = true,
+                keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number)
             )
             phoneError?.let {
                 Text(it, color = MaterialTheme.colorScheme.error, style = MaterialTheme.typography.labelSmall)

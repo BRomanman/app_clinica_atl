@@ -13,15 +13,24 @@ import androidx.core.view.WindowCompat
 
 private val LightColorScheme = lightColorScheme(
     primary = Primary,
-    secondary = Secondary,
-    tertiary = NeutralLight,
-    background = Color.White,
-    surface = Color.White,
     onPrimary = Color.White,
+    primaryContainer = PrimaryLight,
+    onPrimaryContainer = PrimaryDark,
+    secondary = Secondary,
     onSecondary = Color.White,
+    secondaryContainer = SecondaryLight,
+    onSecondaryContainer = SecondaryDark,
+    tertiary = AccentAqua,
     onTertiary = Color.White,
-    onBackground = Color.Black,
-    onSurface = Color.Black,
+    tertiaryContainer = AccentAquaLight,
+    onTertiaryContainer = AccentAqua,
+    background = Color.White,
+    onBackground = NeutralDark,
+    surface = Color.White,
+    onSurface = NeutralDark,
+    surfaceVariant = NeutralLight,
+    onSurfaceVariant = NeutralDark,
+    outline = NeutralDark
 )
 
 @Composable

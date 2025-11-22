@@ -84,7 +84,7 @@ class BookAppointmentViewModel(
             it.copy(
                 selectedDoctorUserId = doctor.id,
                 selectedDoctorBackendId = null,
-                selectedDoctorName = doctor.name,
+                selectedDoctorName = "Dr/a " + doctor.name,
                 availableTimes = emptyList(),
                 selectedDate = "",
                 selectedTime = "",
