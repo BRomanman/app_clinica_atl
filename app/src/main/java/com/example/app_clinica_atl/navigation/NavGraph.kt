@@ -17,16 +17,16 @@ import androidx.navigation.compose.composable
 import androidx.navigation.navArgument
 import kotlinx.coroutines.launch
 
-// --- Imports de Datos ---
+// DATA
 import com.example.app_clinica_atl.data.local.storage.UserPreferences
 import com.example.app_clinica_atl.data.repository.UsuariosRepository
 import com.example.app_clinica_atl.data.remote.dto.normalizeRole
 
-// --- Imports de Pantallas y ViewModels ---
+// SCREENS + VIEWMODELS
 import com.example.app_clinica_atl.ui.screen.*
 import com.example.app_clinica_atl.ui.viewmodel.*
 
-// --- Imports de Factories (asegúrate de que estas clases existan en sus respectivos archivos VM) ---
+// FACTORIES
 import com.example.app_clinica_atl.ui.viewmodel.AdminProfileViewModelFactory
 import com.example.app_clinica_atl.ui.viewmodel.AdminViewDoctorsViewModelFactory
 import com.example.app_clinica_atl.ui.viewmodel.AdminEditDoctorViewModelFactory
@@ -48,7 +48,6 @@ fun AppNavGraph(
     insuranceViewModel: InsuranceViewModel,
     doctorSearchPatientViewModel: DoctorSearchPatientViewModel,
     doctorPatientProfileViewModel: DoctorPatientProfileViewModel,
-    // adminViewDoctorsViewModel lo creamos dentro, no hace falta pasarlo
     adminViewDoctorsViewModel: AdminViewDoctorsViewModel?,
     currentDoctorId: Long?
 ) {
@@ -60,9 +59,9 @@ fun AppNavGraph(
         modifier = Modifier.padding(paddingValues)
     ) {
 
-        // ==========================================
-        // 1. AUTENTICACIÓN (Login/Registro/Logout)
-        // ==========================================
+        // ====================================================
+        //                   LOGIN / REGISTRO
+        // ====================================================
         composable(Route.Login.path) {
             LoginScreenVm(
                 authViewModel = authViewModel,
@@ -72,7 +71,9 @@ fun AppNavGraph(
                         "doctor" -> Route.DoctorMenu.path
                         else -> Route.Home.path
                     }
-                    navController.navigate(destination) { popUpTo(Route.Login.path) { inclusive = true } }
+                    navController.navigate(destination) {
+                        popUpTo(Route.Login.path) { inclusive = true }
+                    }
                 },
                 onGoRegister = { navController.navigate(Route.Register.path) }
             )
@@ -105,9 +106,9 @@ fun AppNavGraph(
             )
         }
 
-        // ==========================================
-        // 2. FLUJO PACIENTE (Sin cambios)
-        // ==========================================
+        // ====================================================
+        //                     PACIENTE
+        // ====================================================
         composable(Route.Home.path) {
             HomeScreen(
                 viewModel = homeViewModel,
@@ -116,6 +117,7 @@ fun AppNavGraph(
                 onProfileClick = { navController.navigate(Route.PatientProfile.path) }
             )
         }
+
         composable(Route.PatientProfile.path) {
             PatientProfileScreen(
                 viewModel = patientViewModel,
@@ -123,13 +125,49 @@ fun AppNavGraph(
                 onLogout = { navController.navigate(Route.LogoutConfirmation.path) }
             )
         }
+
+        // =======================
+        //      SEGUROS
+        // =======================
         composable(Route.Seguros.path) {
-            SegurosScreen(viewModel = insuranceViewModel)
+            SegurosScreen(
+                viewModel = insuranceViewModel,
+                onSeguroSeleccionado = { seguro ->
+                    navController.navigate(Route.ContratarSeguro.create(seguro.id))
+                }
+            )
         }
+
+        // =======================
+        // CONTRATAR SEGURO
+        // =======================
+        composable(
+            route = Route.ContratarSeguro.path,
+            arguments = listOf(navArgument("id") { type = NavType.LongType })
+        ) { backStackEntry ->
+
+            val seguroId = backStackEntry.arguments?.getLong("id") ?: return@composable
+
+            val allSeguros = insuranceViewModel.uiState.value.healthInsurances +
+                    insuranceViewModel.uiState.value.lifeInsurances
+
+            val seguro = allSeguros.firstOrNull { it.id == seguroId }
+
+            if (seguro != null) {
+                ContratarSeguroScreen(
+                    seguro = seguro,
+                    viewModel = insuranceViewModel,
+                    onBack = { navController.popBackStack() }
+                )
+            }
+        }
+
         composable(Route.BookAppointment.path) {
             BookAppointmentScreen(
                 viewModel = bookAppointmentViewModel,
-                onViewProfile = { doctorId -> navController.navigate(Route.DoctorPreview.createRoute(doctorId)) },
+                onViewProfile = { doctorId ->
+                    navController.navigate(Route.DoctorPreview.createRoute(doctorId))
+                },
                 onBookingSuccess = {
                     navController.navigate(Route.PatientProfile.path) {
                         popUpTo(Route.Home.path)
@@ -138,14 +176,14 @@ fun AppNavGraph(
             )
         }
 
-        // ==========================================
-        // 3. FLUJO DOCTOR (Sin cambios)
-        // ==========================================
+        // ====================================================
+        //                     DOCTOR
+        // ====================================================
         composable(Route.DoctorMenu.path) {
             DoctorMenuScreen(
                 onProfileClick = {
-                    currentDoctorId?.let { doctorId ->
-                        navController.navigate(Route.DoctorProfile.createRoute(doctorId))
+                    currentDoctorId?.let { id ->
+                        navController.navigate(Route.DoctorProfile.createRoute(id))
                     }
                 },
                 onScheduleClick = { navController.navigate(Route.DoctorSchedule.path) },
@@ -153,6 +191,7 @@ fun AppNavGraph(
                 onLogout = { navController.navigate(Route.LogoutConfirmation.path) }
             )
         }
+
         composable(Route.DoctorSchedule.path) {
             DoctorScheduleScreen(
                 doctorId = currentDoctorId,
@@ -160,6 +199,7 @@ fun AppNavGraph(
                 viewModel = doctorScheduleViewModel
             )
         }
+
         composable(Route.DoctorSearchPatient.path) {
             DoctorSearchPatientScreen(
                 viewModel = doctorSearchPatientViewModel,
@@ -169,6 +209,7 @@ fun AppNavGraph(
                 }
             )
         }
+
         composable(
             route = Route.DoctorPatientProfile.path,
             arguments = listOf(navArgument("patientId") { type = NavType.LongType })
@@ -181,9 +222,9 @@ fun AppNavGraph(
             )
         }
 
-        // ==========================================
-        // 4. FLUJO ADMINISTRADOR (Restaurado y Limpio)
-        // ==========================================
+        // ====================================================
+        //                   ADMINISTRADOR
+        // ====================================================
         composable(Route.AdminMenu.path) {
             AdminMenuScreen(
                 onAddSpecialty = { navController.navigate(Route.AdminAddSpecialty.path) },
@@ -193,12 +234,14 @@ fun AppNavGraph(
                 onLogout = { navController.navigate(Route.LogoutConfirmation.path) }
             )
         }
+
         composable(Route.AdminAddSpecialty.path) {
             AdminManageSpecialtiesScreen(
                 viewModel = adminManageSpecialtiesViewModel,
                 onBackClick = { navController.popBackStack() }
             )
         }
+
         composable(Route.AdminAddDoctor.path) {
             AdminAddDoctorScreen(
                 viewModel = adminAddDoctorViewModel,
@@ -215,20 +258,18 @@ fun AppNavGraph(
             AdminViewDoctorsScreen(
                 viewModel = viewModel,
                 onBackClick = { navController.popBackStack() },
-                onDoctorClick = { doctorId ->
-                    // Navegación a la pantalla de edición
-                    navController.navigate(Route.AdminEditDoctor.createRoute(doctorId))
+                onDoctorClick = { id ->
+                    navController.navigate(Route.AdminEditDoctor.createRoute(id))
                 }
             )
         }
 
-        // --- PERFIL DEL ADMIN (MIS DATOS) - VERSIÓN BASE ---
+        // --- PERFIL ADMIN ---
         composable(Route.AdminProfile.path) {
             val context = LocalContext.current
             val userPrefs = UserPreferences(context)
             val repo = UsuariosRepository()
 
-            // Factory limpia: Solo Repositorio y Preferencias (sin Context extra para cámara)
             val factory = AdminProfileViewModelFactory(repo, userPrefs)
             val viewModel: AdminProfileViewModel = viewModel(factory = factory)
 
@@ -238,7 +279,7 @@ fun AppNavGraph(
             )
         }
 
-        // --- EDITAR DOCTOR (Desde la lista) ---
+        // --- EDITAR DOCTOR ---
         composable(
             route = Route.AdminEditDoctor.path,
             arguments = listOf(navArgument("doctorId") { type = NavType.LongType })
@@ -246,40 +287,39 @@ fun AppNavGraph(
             val doctorId = backStackEntry.arguments?.getLong("doctorId") ?: return@composable
             val repo = UsuariosRepository()
 
-            // Asegúrate de tener AdminEditDoctorViewModel y su Factory creados como vimos antes
             val factory = AdminEditDoctorViewModelFactory(repo, doctorId)
             val viewModel: AdminEditDoctorViewModel = viewModel(factory = factory)
 
-            // Asegúrate de tener AdminEditDoctorScreen creada
             AdminEditDoctorScreen(
                 viewModel = viewModel,
                 onBackClick = { navController.popBackStack() }
             )
         }
 
-        // ==========================================
-        // 5. RUTAS COMUNES (Perfiles públicos)
-        // ==========================================
+        // ====================================================
+        //                    PREVIEW PÚBLICO
+        // ====================================================
         composable(
             route = Route.DoctorProfile.path,
             arguments = listOf(navArgument("doctorId") { type = NavType.LongType })
         ) { backStackEntry ->
-            val doctorId = backStackEntry.arguments?.getLong("doctorId")
+            val id = backStackEntry.arguments?.getLong("doctorId")
             DoctorProfileScreen(
-                doctorId = doctorId,
+                doctorId = id,
                 onBackClick = { navController.popBackStack() },
                 viewModel = doctorProfileViewModel,
                 modifier = Modifier.padding(PaddingValues(0.dp)),
                 isPublicView = false
             )
         }
+
         composable(
             route = Route.DoctorPreview.path,
             arguments = listOf(navArgument("doctorId") { type = NavType.LongType })
         ) { backStackEntry ->
-            val doctorId = backStackEntry.arguments?.getLong("doctorId")
+            val id = backStackEntry.arguments?.getLong("doctorId")
             DoctorProfileScreen(
-                doctorId = doctorId,
+                doctorId = id,
                 onBackClick = { navController.popBackStack() },
                 viewModel = doctorProfileViewModel,
                 modifier = Modifier.padding(PaddingValues(0.dp)),
@@ -287,8 +327,6 @@ fun AppNavGraph(
             )
         }
 
-        composable(Route.Restart.path) {
-            // Placeholder para reinicio
-        }
+        composable(Route.Restart.path) {}
     }
 }

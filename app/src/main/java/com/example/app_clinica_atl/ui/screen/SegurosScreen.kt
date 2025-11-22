@@ -1,20 +1,11 @@
 package com.example.app_clinica_atl.ui.screen
 
-import androidx.compose.foundation.ScrollState
-import androidx.compose.foundation.layout.Box
-import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.Spacer
-import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.height
-import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.clickable
+import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.verticalScroll
-import androidx.compose.material3.CircularProgressIndicator
-import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.Text
-import androidx.compose.runtime.Composable
-import androidx.compose.runtime.LaunchedEffect
-import androidx.compose.runtime.collectAsState
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.material3.*
+import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
@@ -23,10 +14,10 @@ import com.example.app_clinica_atl.data.remote.dto.SeguroDto
 import com.example.app_clinica_atl.ui.viewmodel.InsuranceViewModel
 import kotlinx.coroutines.delay
 
-
 @Composable
 fun SegurosScreen(
-    viewModel: InsuranceViewModel
+    viewModel: InsuranceViewModel,
+    onSeguroSeleccionado: (SeguroDto) -> Unit
 ) {
     val state = viewModel.uiState.collectAsState().value
 
@@ -46,11 +37,7 @@ fun SegurosScreen(
             .verticalScroll(rememberScrollState())
     ) {
 
-        // ---- SALUD ----
-        Text(
-            text = "Seguros de Salud",
-            style = MaterialTheme.typography.titleLarge
-        )
+        Text("Seguros de Salud", style = MaterialTheme.typography.titleLarge)
 
         if (state.healthInsurances.isEmpty()) {
             Text("No hay seguros de salud disponibles.")
@@ -58,18 +45,14 @@ fun SegurosScreen(
             state.healthInsurances.forEach { seguro ->
                 SeguroItem(
                     seguro = seguro,
-                    onClick = { viewModel.subscribeToInsurance(seguro.id) }
+                    onClick = { onSeguroSeleccionado(seguro) }
                 )
             }
         }
 
         Spacer(Modifier.height(24.dp))
 
-        // ---- VIDA ----
-        Text(
-            text = "Seguros de Vida",
-            style = MaterialTheme.typography.titleLarge
-        )
+        Text("Seguros de Vida", style = MaterialTheme.typography.titleLarge)
 
         if (state.lifeInsurances.isEmpty()) {
             Text("No hay seguros de vida disponibles.")
@@ -77,12 +60,12 @@ fun SegurosScreen(
             state.lifeInsurances.forEach { seguro ->
                 SeguroItem(
                     seguro = seguro,
-                    onClick = { viewModel.subscribeToInsurance(seguro.id) }
+                    onClick = { onSeguroSeleccionado(seguro) }
                 )
             }
         }
 
-        // ---- MENSAJES ----
+        // MENSAJES
         state.errorMsg?.let { msg ->
             Spacer(Modifier.height(16.dp))
             Text(msg, color = Color.Red)
@@ -105,6 +88,19 @@ fun SegurosScreen(
 
 @Composable
 fun SeguroItem(seguro: SeguroDto, onClick: () -> Unit) {
-    TODO()
+    Card(
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(vertical = 8.dp)
+            .clickable { onClick() },
+        elevation = CardDefaults.cardElevation(defaultElevation = 4.dp)
+    ) {
+        Column(Modifier.padding(16.dp)) {
+            Text(seguro.name, style = MaterialTheme.typography.titleMedium)
+            Spacer(Modifier.height(4.dp))
+            Text(seguro.description)
+            Spacer(Modifier.height(6.dp))
+            Text("Precio: $${seguro.price}", style = MaterialTheme.typography.bodyLarge)
+        }
+    }
 }
-

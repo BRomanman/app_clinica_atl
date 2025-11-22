@@ -30,27 +30,19 @@ interface SegurosApi {
     @DELETE("seguros/{id}")
     suspend fun deleteSeguro(@Path("id") id: Long): Response<Unit>
 
-
-
-
-
-    // GET /api/v1/seguros/contratos/usuario/{idUsuario}
     @GET("seguros/contratos/usuario/{idUsuario}")
     suspend fun contratosPorUsuario(@Path("idUsuario") idUsuario: Long): List<ContratoSeguroDto>
 
-    // GET /api/v1/seguros/contratos/seguro/{idSeguro}
     @GET("seguros/contratos/seguro/{idSeguro}")
     suspend fun contratosPorSeguro(@Path("idSeguro") idSeguro: Long): List<ContratoSeguroDto>
 
-    // GET /api/v1/seguros/contratos/{id_contrato}
     @GET("seguros/contratos/{idContrato}")
     suspend fun contratoById(@Path("idContrato") idContrato: Long): ContratoSeguroDto
 
-    // POST /api/v1/seguros/contratos
+    // POST REAL DEL BACKEND
     @POST("seguros/contratos")
     suspend fun crearContrato(@Body contrato: ContratoSeguroDto): ContratoSeguroDto
 
-    // POST /api/v1/seguros/contratos/{id}/cancelar
     @POST("seguros/contratos/{id}/cancelar")
     suspend fun cancelarContrato(@Path("id") idContrato: Long): ContratoSeguroDto
 }

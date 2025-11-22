@@ -3,11 +3,13 @@ package com.example.app_clinica_atl.ui.viewmodel
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.example.app_clinica_atl.data.local.storage.UserPreferences
+import com.example.app_clinica_atl.data.remote.dto.ContratoSeguroDto
 import com.example.app_clinica_atl.data.remote.dto.SeguroDto
 import com.example.app_clinica_atl.data.repository.SegurosRepository
 import com.example.app_clinica_atl.ui.screen.BeneficiarioForm
 import kotlinx.coroutines.flow.*
 import kotlinx.coroutines.launch
+import java.time.LocalDate
 
 data class InsuranceUiState(
     val healthInsurances: List<SeguroDto> = emptyList(),
@@ -32,33 +34,21 @@ class InsuranceViewModel(
                     _uiState.update { it.copy(isLoading = false, errorMsg = e.message) }
                 }
                 .collect { insuranceList ->
-                    val health = insuranceList.filter {
-                        it.name.contains("Salud", ignoreCase = true)
-                    }
-
-                    val life = insuranceList.filter {
-                        it.name.contains("Vida", ignoreCase = true)
-                    }
-
                     _uiState.update {
                         it.copy(
                             isLoading = false,
-                            healthInsurances = health,
-                            lifeInsurances = life
+                            healthInsurances = insuranceList.filter { s -> s.name.contains("Salud") },
+                            lifeInsurances = insuranceList.filter { s -> s.name.contains("Vida") }
                         )
                     }
                 }
         }
     }
 
-    /**
-     *  NUEVO: contratación completa de seguro con beneficiarios y método de pago
-     */
     fun contratarSeguro(
         seguroId: Long,
         beneficiarios: List<BeneficiarioForm>,
-        metodoPago: String,
-        estado: String
+        metodoPago: String
     ) {
         viewModelScope.launch {
 
@@ -68,18 +58,32 @@ class InsuranceViewModel(
                 return@launch
             }
 
-            val result = insuranceRepository.contratarSeguro(
-                userId = userId,
-                seguroId = seguroId,
-                beneficiarios = beneficiarios,
-                metodoPago = metodoPago,
-                estado = estado
-            )
+            try {
+                beneficiarios.forEach { ben ->
 
-            if (result.isSuccess) {
-                _uiState.update { it.copy(successMsg = "Seguro contratado correctamente") }
-            } else {
-                _uiState.update { it.copy(errorMsg = result.exceptionOrNull()?.message) }
+                    val contrato = ContratoSeguroDto(
+                        id = 0,
+                        idSeguro = seguroId,
+                        idUsuario = userId,
+                        rut_beneficiarios = ben.rut,
+                        nombre_beneficiarios = ben.nombre,
+                        apellido_beneficiarios = ben.apellido,
+                        fecha_nacimiento_beneficiarios = ben.fechaNacimiento,
+                        correo_contacto = "",
+                        telefono_contacto = "",
+                        metodo_pago = metodoPago,
+                        fecha_contratacion = LocalDate.now().toString(),
+                        fecha_cancelacion = "",
+                        estado = "ACTIVO"
+                    )
+
+                    insuranceRepository.crearContrato(contrato)
+                }
+
+                _uiState.update { it.copy(successMsg = "Contrato generado con éxito") }
+
+            } catch (e: Exception) {
+                _uiState.update { it.copy(errorMsg = e.message) }
             }
         }
     }
