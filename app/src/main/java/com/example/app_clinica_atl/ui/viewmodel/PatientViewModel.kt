@@ -1,7 +1,9 @@
 package com.example.app_clinica_atl.ui.viewmodel
 
+import android.app.Application
 import android.net.Uri
-import androidx.lifecycle.ViewModel
+import android.widget.Toast
+import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewModelScope
 import com.example.app_clinica_atl.data.local.storage.UserPreferences
 import com.example.app_clinica_atl.data.remote.dto.CitaDetalleDto
@@ -45,14 +47,14 @@ data class PatientProfileUiState(
 )
 
 class PatientViewModel(
+    application: Application,
     private val userRepository: UsuariosRepository,
     private val userPreferences: UserPreferences,
     private val insuranceRepository: SegurosRepository,
     private val appointmentRepository: CitasRepository
-) : ViewModel() {
+) : AndroidViewModel(application) {
 
     // --- LÓGICA REACTIVA ---
-    private val _messageState = MutableStateFlow(Pair<String?, String?>(null, null))
     private val _editState = MutableStateFlow(PatientProfileEditState())
     private val _profileImageOverride = MutableStateFlow<String?>(null)
     private var cachedUserId: Long? = null
@@ -119,12 +121,6 @@ class PatientViewModel(
         }.catch { e ->
             emit(PatientProfileUiState(isLoading = false, errorMsg = e.message))
         }
-        .combine(_messageState) { dataState, messageState ->
-            dataState.copy(
-                errorMsg = messageState.first,
-                successMsg = messageState.second
-            )
-        }
         .stateIn(
             scope = viewModelScope,
             started = SharingStarted.WhileSubscribed(5000),
@@ -132,19 +128,19 @@ class PatientViewModel(
         )
     // --- FIN LÓGICA REACTIVA ---
 
-
     fun cancelSubscription() {
         viewModelScope.launch {
             val subscriptionId = uiState.value.activeSubscription?.id
             if (subscriptionId == null) {
-                _messageState.update { it.copy(first = "No se encontró suscripción para cancelar.") }
+                Toast.makeText(getApplication(), "No se encontró suscripción para cancelar.", Toast.LENGTH_SHORT).show()
                 return@launch
             }
             val result = insuranceRepository.cancelSubscription(subscriptionId)
             if (result.isSuccess) {
-                _messageState.update { it.copy(second = "Seguro cancelado con éxito.") }
+                Toast.makeText(getApplication(), "Seguro cancelado con éxito.", Toast.LENGTH_SHORT).show()
             } else {
-                _messageState.update { it.copy(first = result.exceptionOrNull()?.message) }
+                val fallback = "No se pudo cancelar el seguro."
+                Toast.makeText(getApplication(), result.exceptionOrNull()?.message ?: fallback, Toast.LENGTH_SHORT).show()
             }
         }
     }
@@ -153,10 +149,10 @@ class PatientViewModel(
         viewModelScope.launch {
             val result = appointmentRepository.cancelAppointment(appointmentId)
             if (result.isSuccess) {
-                _messageState.update { it.copy(second = "Cita cancelada con éxito.") }
+                Toast.makeText(getApplication(), "Cita cancelada con éxito.", Toast.LENGTH_SHORT).show()
             } else {
-                // --- ¡¡AQUÍ ESTÁ LA CORRECCIÓN!! ---
-                _messageState.update { it.copy(first = result.exceptionOrNull()?.message) } // Era _messageS
+                val fallback = "No se pudo cancelar la cita."
+                Toast.makeText(getApplication(), result.exceptionOrNull()?.message ?: fallback, Toast.LENGTH_SHORT).show() // Era _messageS
             }
         }
     }
@@ -178,10 +174,11 @@ class PatientViewModel(
             _editState.update { it.copy(isSavingPhone = true) }
             val result = userRepository.updatePhoneNumber(userId, phone)
             if (result.isSuccess) {
-                _messageState.update { it.copy(second = "Teléfono actualizado.") }
+                Toast.makeText(getApplication(), "Teléfono actualizado.", Toast.LENGTH_SHORT).show()
                 _editState.update { it.copy(isSavingPhone = false, phoneError = null) }
             } else {
-                _messageState.update { it.copy(first = result.exceptionOrNull()?.message) }
+                val fallback = "No se pudo actualizar el teléfono."
+                Toast.makeText(getApplication(), result.exceptionOrNull()?.message ?: fallback, Toast.LENGTH_SHORT).show()
                 _editState.update { it.copy(isSavingPhone = false) }
             }
         }
@@ -222,7 +219,7 @@ class PatientViewModel(
                     confirmPasswordError = msg?.takeIf { text -> text.contains("coinciden", ignoreCase = true) }
                 )
             }
-            if (msg != null) _messageState.update { it.copy(first = msg) }
+            if (msg != null) Toast.makeText(getApplication(), msg, Toast.LENGTH_SHORT).show()
             return
         }
         val userId = cachedUserId ?: return
@@ -230,7 +227,7 @@ class PatientViewModel(
             _editState.update { it.copy(isSavingPassword = true) }
             val result = userRepository.updatePassword(userId, state.passwordInput)
             if (result.isSuccess) {
-                _messageState.update { it.copy(second = "Contraseña actualizada.") }
+                Toast.makeText(getApplication(), "Contraseña actualizada.", Toast.LENGTH_SHORT).show()
                 _editState.update {
                     it.copy(
                         isSavingPassword = false,
@@ -241,30 +238,32 @@ class PatientViewModel(
                     )
                 }
             } else {
-                _messageState.update { it.copy(first = result.exceptionOrNull()?.message) }
+                val fallback = "No se pudo actualizar la contraseña."
+                Toast.makeText(getApplication(), result.exceptionOrNull()?.message ?: fallback, Toast.LENGTH_SHORT).show()
                 _editState.update { it.copy(isSavingPassword = false) }
             }
         }
     }
 
     fun clearMessages() {
-        _messageState.update { Pair(null, null) }
+        // Ya no hay mensajes persistentes; los toasts son eventos.
     }
 
     fun updateProfileImage(uri: Uri) {
         viewModelScope.launch {
             val userId = userPreferences.userIdFlow.firstOrNull()
             if (userId == null) {
-                _messageState.update { it.copy(first = "No se pudo encontrar al usuario.") }
+                Toast.makeText(getApplication(), "No se pudo encontrar al usuario.", Toast.LENGTH_SHORT).show()
                 return@launch
             }
             val result = userRepository.updateProfileImageUrl(userId, uri.toString())
             if (result.isFailure) {
-                _messageState.update { it.copy(first = result.exceptionOrNull()?.message) }
+                val fallback = "No se pudo actualizar la foto."
+                Toast.makeText(getApplication(), result.exceptionOrNull()?.message ?: fallback, Toast.LENGTH_SHORT).show()
             } else {
                 userPreferences.saveProfileImage(userId, uri.toString())
                 _profileImageOverride.update { uri.toString() }
-                _messageState.update { it.copy(second = "Foto de perfil actualizada.") }
+                Toast.makeText(getApplication(), "Foto de perfil actualizada.", Toast.LENGTH_SHORT).show()
             }
         }
     }

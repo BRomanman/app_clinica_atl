@@ -50,7 +50,7 @@ class MainActivity : ComponentActivity() {
     // --- ViewModels (sin cambios) ---
     private val authViewModel: AuthViewModel by viewModels { AuthViewModelFactory(usuariosRepository, userPreferences) }
     private val homeViewModel: HomeViewModel by viewModels { HomeViewModelFactory(usuariosRepository, userPreferences) }
-    private val patientViewModel: PatientViewModel by viewModels { PatientViewModelFactory(usuariosRepository, userPreferences, segurosRepository, citasRepository) }
+    private val patientViewModel: PatientViewModel by viewModels { PatientViewModelFactory(application, usuariosRepository, userPreferences, segurosRepository, citasRepository) }
     private val doctorSearchViewModel: DoctorSearchViewModel by viewModels { DoctorSearchViewModelFactory(doctorRepository) }
     private val doctorProfileViewModel: DoctorProfileViewModel by viewModels {
         DoctorProfileViewModelFactory(doctorProfileRepository, usuariosRepository, historialRepository, citasRepository)

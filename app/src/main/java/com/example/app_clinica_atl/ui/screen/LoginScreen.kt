@@ -78,7 +78,7 @@ fun LoginScreenVm(
     }
     LaunchedEffect(uiState.resetSuccessMessage) {
         uiState.resetSuccessMessage?.let {
-            Toast.makeText(context, it, Toast.LENGTH_LONG).show()
+            Toast.makeText(context, it, Toast.LENGTH_SHORT).show()
             authViewModel.clearResetMessage()
         }
     }

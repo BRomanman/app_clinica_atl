@@ -377,7 +377,7 @@ private fun DoctorProfileHeader(
             }
             Spacer(modifier = Modifier.height(12.dp))
             Text(
-                text = doctor.name,
+                text = "Dr/a " + doctor.name,
                 style = MaterialTheme.typography.titleLarge,
                 fontWeight = FontWeight.Bold,
                 color = MaterialTheme.colorScheme.onPrimaryContainer
@@ -422,7 +422,7 @@ private fun InfoCard(label: String, value: String) {
 }
 
 @Composable
-private fun PhoneEditorCard(
+fun PhoneEditorCard(
     phoneInput: String,
     phoneError: String?,
     isSaving: Boolean,
