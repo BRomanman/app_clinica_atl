@@ -112,16 +112,28 @@ class MainActivity : ComponentActivity() {
                     val isPatient = userRole == "paciente"
                     val drawerState = rememberDrawerState(initialValue = DrawerValue.Closed, confirmStateChange = { isPatient })
 
+                    // Lógica para ocultar la barra superior (y desactivar el menú lateral)
                     val topBarVisible = when {
+                        // Login y Registro
                         currentRoute == Route.Login.path || currentRoute == Route.Register.path -> false
-                        currentRoute == Route.AdminMenu.path || currentRoute == Route.AdminAddSpecialty.path ||
-                                currentRoute == Route.AdminAddDoctor.path || currentRoute == Route.AdminViewDoctors.path -> false
+
+                        // --- RUTAS DE ADMIN (Sin Menú Lateral) ---
+                        currentRoute == Route.AdminMenu.path ||
+                                currentRoute == Route.AdminAddSpecialty.path ||
+                                currentRoute == Route.AdminAddDoctor.path ||
+                                currentRoute == Route.AdminViewDoctors.path ||
+                                currentRoute == Route.AdminProfile.path ||      // <--- AGREGADO
+                                currentRoute == Route.AdminEditDoctor.path -> false // <--- AGREGADO
+
+                        // Rutas de Doctor (Sin Menú Lateral)
                         currentRoute == Route.DoctorMenu.path || currentRoute == Route.DoctorSchedule.path ||
                                 currentRoute == Route.DoctorSearchPatient.path || currentRoute == Route.DoctorProfile.path ||
                                 currentRoute == Route.DoctorPreview.path ||
                                 currentRoute?.startsWith("doctor_patient_profile") == true -> false
+
+                        // Otras
                         currentRoute == Route.LogoutConfirmation.path -> false
-                        currentRoute == Route.Restart.path -> false // Oculta en la ruta de reinicio
+                        currentRoute == Route.Restart.path -> false
                         currentRoute == null -> false
                         else -> true
                     }

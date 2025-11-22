@@ -1,52 +1,76 @@
 package com.example.app_clinica_atl.ui.viewmodel
 
 import androidx.lifecycle.ViewModel
+import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.viewModelScope
 import com.example.app_clinica_atl.data.remote.dto.UsuarioDto
 import com.example.app_clinica_atl.data.repository.UsuariosRepository
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
-import kotlinx.coroutines.flow.combine
-import kotlinx.coroutines.flow.stateIn
-import kotlinx.coroutines.flow.SharingStarted
+import kotlinx.coroutines.flow.catch
+import kotlinx.coroutines.flow.update
+import kotlinx.coroutines.launch
 
 data class AdminViewDoctorsUiState(
-    val searchQuery: String = "",
     val isLoading: Boolean = true,
-    val filteredDoctors: List<UsuarioDto> = emptyList()
+    val doctorsList: List<UsuarioDto> = emptyList(),
+    val filteredList: List<UsuarioDto> = emptyList(),
+    val searchQuery: String = "",
+    val errorMsg: String? = null
 )
 
 class AdminViewDoctorsViewModel(
-    userRepository: UsuariosRepository
+    private val repository: UsuariosRepository
 ) : ViewModel() {
 
-    private val _searchQuery = MutableStateFlow("")
-    private val _allDoctorsFlow = userRepository.getAllDoctors()
+    private val _uiState = MutableStateFlow(AdminViewDoctorsUiState())
+    val uiState: StateFlow<AdminViewDoctorsUiState> = _uiState.asStateFlow()
 
-    val uiState: StateFlow<AdminViewDoctorsUiState> =
-        combine(_allDoctorsFlow, _searchQuery) { doctors, query ->
-            val filtered = if (query.isBlank()) {
-                doctors
-            } else {
-                doctors.filter {
-                    it.name.contains(query, ignoreCase = true) ||
-                            (it.specialty?.contains(query, ignoreCase = true) == true) ||
-                            it.email.contains(query, ignoreCase = true)
+    init {
+        loadDoctors()
+    }
+
+    private fun loadDoctors() {
+        viewModelScope.launch {
+            _uiState.update { it.copy(isLoading = true) }
+            // Usamos el flujo getAllDoctors del repositorio con manejo de errores
+            repository.getAllDoctors()
+                .catch { e ->
+                    _uiState.update {
+                        it.copy(isLoading = false, errorMsg = "Error cargando lista: ${e.message}")
+                    }
                 }
-            }
-            AdminViewDoctorsUiState(
-                searchQuery = query,
-                isLoading = false,
-                filteredDoctors = filtered
-            )
-        }.stateIn(
-            scope = viewModelScope,
-            started = SharingStarted.WhileSubscribed(5000),
-            initialValue = AdminViewDoctorsUiState(isLoading = true)
-        )
+                .collect { doctors ->
+                    _uiState.update {
+                        it.copy(
+                            isLoading = false,
+                            doctorsList = doctors,
+                            filteredList = doctors // Al principio mostramos todos
+                        )
+                    }
+                }
+        }
+    }
 
     fun onSearchQueryChange(query: String) {
-        _searchQuery.value = query
+        _uiState.update { currentState ->
+            val filtered = if (query.isBlank()) {
+                currentState.doctorsList
+            } else {
+                currentState.doctorsList.filter { doc ->
+                    doc.name.contains(query, ignoreCase = true) ||
+                            doc.email.contains(query, ignoreCase = true) ||
+                            doc.specialty?.contains(query, ignoreCase = true) == true
+                }
+            }
+            currentState.copy(searchQuery = query, filteredList = filtered)
+        }
+    }
+}
+
+class AdminViewDoctorsViewModelFactory(private val repo: UsuariosRepository) : ViewModelProvider.Factory {
+    override fun <T : ViewModel> create(modelClass: Class<T>): T {
+        return AdminViewDoctorsViewModel(repo) as T
     }
 }
