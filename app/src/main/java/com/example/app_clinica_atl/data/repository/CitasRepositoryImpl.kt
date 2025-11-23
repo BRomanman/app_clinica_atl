@@ -50,23 +50,31 @@ class CitasRepositoryImpl(
 
     @RequiresApi(Build.VERSION_CODES.O)
     override fun getAppointmentsForPatient(patientId: Long): Flow<List<CitaDetalleDto>> = flow {
-        val doctorCache = mutableMapOf<Long, DoctorBrief>()
+        try {
+            val doctorCache = mutableMapOf<Long, DoctorBrief>()
 
-        val appointments = withContext(Dispatchers.IO) {
-            citasApi.getAppointmentsByUser(patientId).bodyOrEmpty()
-        }
-
-        val mapped = appointments
-            .sortedBy { parseDateTime(it) ?: LocalDateTime.MAX }
-            .map { cita ->
-                val doctorInfo = doctorCache.getOrPut(cita.doctorId) { fetchDoctorBrief(cita.doctorId) }
-                cita.toDetalleDto(
-                    doctorName = doctorInfo.name,
-                    doctorSpecialty = doctorInfo.specialty
-                )
+            val appointments = withContext(Dispatchers.IO) {
+                citasApi.getAppointmentsByUser(patientId).bodyOrEmpty()
             }
 
-        emit(mapped)
+            val mapped = appointments
+                .filter { cita ->
+                    !cita.status.equals("cancelado", true) &&
+                            !cita.status.equals("disponible", true)
+                }
+                .sortedBy { parseDateTime(it) ?: LocalDateTime.MAX }
+                .map { cita ->
+                    val doctorInfo = doctorCache.getOrPut(cita.doctorId) { fetchDoctorBrief(cita.doctorId) }
+                    cita.toDetalleDto(
+                        doctorName = doctorInfo.name,
+                        doctorSpecialty = doctorInfo.specialty
+                    )
+                }
+
+            emit(mapped)
+        } catch (e: Exception) {
+            emit(emptyList())
+        }
     }
 
     override suspend fun getAppointmentsForPatientOnce(patientId: Long): Result<List<CitaDto>> = withContext(Dispatchers.IO) {

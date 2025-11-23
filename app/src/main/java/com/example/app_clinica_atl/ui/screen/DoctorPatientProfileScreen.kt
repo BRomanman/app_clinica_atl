@@ -13,6 +13,8 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ArrowBack
+import androidx.compose.material3.Button
+import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.CircularProgressIndicator
@@ -97,7 +99,13 @@ fun DoctorPatientProfileScreen(
             item { SectionTitle("Citas Próximas") }
             when {
                 uiState.appointments.isNotEmpty() -> {
-                    items(uiState.appointments) { cita -> AppointmentRow(cita) }
+                    items(uiState.appointments) { cita ->
+                        AppointmentRow(
+                            cita = cita,
+                            isCancelling = uiState.isCancellingId == cita.id,
+                            onCancel = { cita.id?.let(viewModel::cancelAppointment) }
+                        )
+                    }
                 }
                 uiState.errorMsg?.contains("citas", true) == true -> {
                     item { EmptyState(uiState.errorMsg ?: "No fue posible cargar las próximas citas.") }
@@ -170,7 +178,7 @@ private fun PersonalInfoCard(patient: UsuarioDto) {
 }
 
 @Composable
-private fun AppointmentRow(cita: CitaDto) {
+private fun AppointmentRow(cita: CitaDto, isCancelling: Boolean, onCancel: () -> Unit) {
     Card(
         modifier = Modifier.fillMaxWidth(),
         colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface)
@@ -180,6 +188,14 @@ private fun AppointmentRow(cita: CitaDto) {
             Text("Hora: ${cita.time}", style = MaterialTheme.typography.bodyMedium)
             Text("Doctor ID: ${cita.doctorId}", style = MaterialTheme.typography.bodyMedium)
             Text("Estado: ${cita.status}", style = MaterialTheme.typography.bodyMedium)
+            Spacer(modifier = Modifier.height(8.dp))
+            Button(
+                onClick = onCancel,
+                enabled = !isCancelling,
+                colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.error)
+            ) {
+                Text(if (isCancelling) "Cancelando..." else "Cancelar cita")
+            }
         }
     }
 }

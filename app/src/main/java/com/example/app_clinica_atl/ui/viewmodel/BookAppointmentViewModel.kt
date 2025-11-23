@@ -255,7 +255,7 @@ class BookAppointmentViewModel(
                 startTime = "$startTime:00",
                 endTime = "$endTime:00",
                 durationMinutes = 30,
-                status = "RESERVADA",
+                status = "Confirmado",
                 available = false
             )
 

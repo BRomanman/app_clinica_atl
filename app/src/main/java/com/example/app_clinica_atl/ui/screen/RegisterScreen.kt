@@ -48,10 +48,10 @@ import com.example.app_clinica_atl.ui.viewmodel.AuthViewModel
 
 @Composable
 fun RegisterScreenVm(
-    authViewModel: AuthViewModel,
+    registerViewModel: AuthViewModel,
     onRegisterSuccessNavigate: () -> Unit
 ) {
-    val uiState by authViewModel.registerUiState.collectAsState()
+    val uiState by registerViewModel.registerUiState.collectAsState()
 
     LaunchedEffect(uiState.registerSuccess) {
         if (uiState.registerSuccess) {
@@ -62,25 +62,25 @@ fun RegisterScreenVm(
     RegisterScreen(
         // --- ¡¡CAMPOS ACTUALIZADOS!! ---
         firstName = uiState.firstName,
-        onFirstNameChange = authViewModel::onRegisterFirstNameChange,
+        onFirstNameChange = registerViewModel::onRegisterFirstNameChange,
         firstNameError = uiState.firstNameError,
         lastName = uiState.lastName,
-        onLastNameChange = authViewModel::onRegisterLastNameChange,
+        onLastNameChange = registerViewModel::onRegisterLastNameChange,
         lastNameError = uiState.lastNameError,
         // --- FIN DE CAMBIOS ---
         email = uiState.email,
-        onEmailChange = authViewModel::onRegisterEmailChange,
+        onEmailChange = registerViewModel::onRegisterEmailChange,
         emailError = uiState.emailError,
         phone = uiState.phone,
-        onPhoneChange = authViewModel::onRegisterPhoneChange,
+        onPhoneChange = registerViewModel::onRegisterPhoneChange,
         phoneError = uiState.phoneError,
         password = uiState.password,
-        onPasswordChange = authViewModel::onRegisterPasswordChange,
+        onPasswordChange = registerViewModel::onRegisterPasswordChange,
         passwordError = uiState.passwordError,
         confirmPassword = uiState.confirmPassword,
-        onConfirmPasswordChange = authViewModel::onRegisterConfirmPasswordChange,
+        onConfirmPasswordChange = registerViewModel::onRegisterConfirmPasswordChange,
         confirmPasswordError = uiState.confirmPasswordError,
-        onRegisterClick = authViewModel::registerUser,
+        onRegisterClick = registerViewModel::registerUser,
         isLoading = uiState.isLoading,
         registerError = uiState.registerError
     )

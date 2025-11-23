@@ -30,6 +30,7 @@ import com.example.app_clinica_atl.ui.viewmodel.*
 import com.example.app_clinica_atl.ui.viewmodel.AdminProfileViewModelFactory
 import com.example.app_clinica_atl.ui.viewmodel.AdminViewDoctorsViewModelFactory
 import com.example.app_clinica_atl.ui.viewmodel.AdminEditDoctorViewModelFactory
+import androidx.compose.runtime.collectAsState
 
 @RequiresApi(Build.VERSION_CODES.O)
 @Composable
@@ -79,16 +80,18 @@ fun AppNavGraph(
         }
 
         composable(Route.Register.path) {
+
             RegisterScreenVm(
-                authViewModel = authViewModel,
+                registerViewModel = authViewModel,
                 onRegisterSuccessNavigate = {
                     navController.navigate(Route.Home.path) {
-                        popUpTo(Route.Register.path) { inclusive = true }
                         popUpTo(Route.Login.path) { inclusive = true }
                     }
                 }
             )
         }
+
+
 
         composable(Route.LogoutConfirmation.path) {
             LogoutConfirmationScreen(
@@ -126,6 +129,34 @@ fun AppNavGraph(
         composable(Route.Seguros.path) {
             SegurosScreen(viewModel = insuranceViewModel)
         }
+<<<<<<< Updated upstream
+=======
+
+        // =======================
+        // CONTRATAR SEGURO
+        // =======================
+        composable(
+            route = Route.ContratarSeguro.path,
+            arguments = listOf(navArgument("id") { type = NavType.LongType })
+        ) { backStackEntry ->
+
+            val seguroId = backStackEntry.arguments?.getLong("id") ?: return@composable
+
+            val allSeguros = insuranceViewModel.uiState.collectAsState().value.healthInsurances +
+                    insuranceViewModel.uiState.collectAsState().value.lifeInsurances
+
+            val seguro = allSeguros.firstOrNull { it.id == seguroId }
+
+            if (seguro != null) {
+                ContratarSeguroScreen(
+                    seguro = seguro,
+                    viewModel = insuranceViewModel,
+                    onBack = { navController.popBackStack() }
+                )
+            }
+        }
+
+>>>>>>> Stashed changes
         composable(Route.BookAppointment.path) {
             BookAppointmentScreen(
                 viewModel = bookAppointmentViewModel,

@@ -1,6 +1,9 @@
 package com.example.app_clinica_atl.domain.validation
 
 import android.util.Patterns
+import java.time.LocalDate
+import java.time.format.DateTimeFormatter
+import java.time.format.DateTimeParseException
 
 // NOTA: Estas funciones devuelven un 'String?'
 // Devuelven 'null' si la validación es exitosa.
@@ -12,6 +15,55 @@ import android.util.Patterns
 fun validateRequired(value: String, fieldName: String): String? {
     if (value.isBlank()) {
         return "$fieldName es requerido."
+    }
+    return null
+}
+
+/**
+ * Valida que un nombre/apellido solo contenga letras y espacios.
+ */
+fun validatePersonName(value: String, fieldName: String): String? {
+    if (value.isBlank()) {
+        return "$fieldName es requerido."
+    }
+    val nameRegex = Regex("^[A-Za-zÁÉÍÓÚáéíóúÑñÜü\\s]+$")
+    if (!nameRegex.matches(value.trim())) {
+        return "$fieldName solo puede contener letras y espacios (sin números)."
+    }
+    return null
+}
+
+/**
+ * Valida que el RUT chileno tenga el formato 12345678-9 (sin puntos).
+ */
+fun validateRut(value: String): String? {
+    if (value.isBlank()) {
+        return "RUT es requerido."
+    }
+    val rutRegex = Regex("^\\d{1,2}\\.?\\d{3}\\.?\\d{3}-[0-9kK]$")
+    if (!rutRegex.matches(value)) {
+        return "RUT no válido. Usa el formato 12.345.678-9."
+    }
+    return null
+}
+
+/**
+ * Valida que la fecha esté en formato dd-mm-aaaa y no sea futura.
+ */
+fun validateDateDdMmYyyy(value: String, fieldName: String = "Fecha"): String? {
+    if (value.isBlank()) {
+        return "$fieldName es requerida."
+    }
+    val dateRegex = Regex("^\\d{2}-\\d{2}-\\d{4}$")
+    if (!dateRegex.matches(value)) {
+        return "$fieldName debe tener el formato dd-mm-aaaa."
+    }
+    return try {
+        val formatter = DateTimeFormatter.ofPattern("dd-MM-yyyy")
+        val parsed = LocalDate.parse(value, formatter)
+        if (parsed.isAfter(LocalDate.now())) "$fieldName no puede ser futura." else null
+    } catch (e: DateTimeParseException) {
+        "$fieldName no es válida."
     }
     return null
 }

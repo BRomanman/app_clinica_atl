@@ -4,6 +4,7 @@ import com.example.app_clinica_atl.data.remote.RetrofitClient
 import com.example.app_clinica_atl.data.remote.UsuariosApi
 import com.example.app_clinica_atl.data.remote.dto.EspecialidadResponseDto
 import com.example.app_clinica_atl.data.remote.dto.LoginRequestDto
+import com.example.app_clinica_atl.data.remote.dto.RolRequest
 import com.example.app_clinica_atl.data.remote.dto.UsuarioDto
 import com.example.app_clinica_atl.data.remote.dto.UsuarioUpdateRequestDto
 import com.example.app_clinica_atl.data.remote.dto.roleToId
@@ -66,9 +67,13 @@ class UsuariosRepository(
     // --- FUNCIÓN CLAVE PARA EL LISTADO DE DOCTORES ---
     fun getAllDoctors(): Flow<List<UsuarioDto>> = flow {
         val doctors = withContext(Dispatchers.IO) {
-            usuariosApi.getUsers()
-                .map { it.toUsuarioDto() }
-                .filter { it.role.equals("doctor", true) }
+            runCatching {
+                usuariosApi.getDoc().map { it.toUsuarioDto() }
+            }.getOrElse {
+                usuariosApi.getUsers()
+                    .map { it.toUsuarioDto() }
+                    .filter { it.role.equals("doctor", true) }
+            }
         }
         emit(doctors)
     }
@@ -145,15 +150,17 @@ class UsuariosRepository(
 
 private fun UsuarioDto.toUpdateRequest(): UsuarioUpdateRequestDto {
     val parts = name.trim().split(" ", limit = 2)
-    val nombre = parts.getOrNull(0)
-    val apellido = parts.getOrNull(1)
+    val nombre = parts.getOrElse(0) { "" }.ifBlank { "Usuario" }
+    val apellido = parts.getOrElse(1) { "" }.ifBlank { "Paciente" }
     val roleId = roleToId(role)
     return UsuarioUpdateRequestDto(
         nombre = nombre,
         apellido = apellido,
+        fechaNacimiento = "2000-01-01T00:00:00",
         correo = email,
         telefono = phone,
         contrasena = password,
-        idRol = roleId
+        idRol = roleId,
+        rol = RolRequest(id = roleId)
     )
 }

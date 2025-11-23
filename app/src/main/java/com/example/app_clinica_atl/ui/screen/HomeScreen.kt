@@ -2,8 +2,8 @@ package com.example.app_clinica_atl.ui.screen
 
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
-import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
+import com.example.app_clinica_atl.R
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
@@ -12,10 +12,10 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.items
-import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
@@ -27,19 +27,19 @@ import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
-import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import com.example.app_clinica_atl.R
+import com.example.app_clinica_atl.data.remote.dto.UsuarioDto
 import com.example.app_clinica_atl.ui.viewmodel.HomeViewModel
 
 @Composable
@@ -59,21 +59,6 @@ fun HomeScreen(
         )
     )
 
-    val insuranceDisplayCards = listOf(
-        InsuranceCardDisplay(
-            title = "Seguro de accidente vehicular",
-            imageRes = R.drawable.seguro_salud_1
-        ),
-        InsuranceCardDisplay(
-            title = "Seguro de vida familiar",
-            imageRes = R.drawable.seguro_vida_1
-        ),
-        InsuranceCardDisplay(
-            title = "Seguro de hospitalización",
-            imageRes = R.drawable.seguro_empresarial1
-        )
-    )
-
     LazyColumn(
         modifier = modifier
             .fillMaxSize()
@@ -86,47 +71,38 @@ fun HomeScreen(
             HeroCard(
                 userName = uiState.userName,
                 onBookAppointmentClick = onBookAppointmentClick,
-                onProfileClick = onProfileClick
+                onProfileClick = onProfileClick,
+                onInsuranceClick = onInsuranceClick
             )
         }
 
         item {
-            Text(
-                text = "Nuestros Seguros",
-                style = MaterialTheme.typography.headlineSmall,
-                fontWeight = FontWeight.Bold,
-                modifier = Modifier.fillMaxWidth(),
-                textAlign = TextAlign.Start
-            )
-        }
-
-        items(insuranceDisplayCards) { card ->
-            InsuranceCardItem(
-                title = card.title,
-                imageRes = card.imageRes,
-                onClick = onInsuranceClick
-            )
+            DoctorsCarousel(doctors = uiState.popularDoctors)
         }
     }
 }
+
+
+
 
 @Composable
 private fun HeroCard(
     userName: String,
     onBookAppointmentClick: () -> Unit,
-    onProfileClick: () -> Unit
+    onProfileClick: () -> Unit,
+    onInsuranceClick: () -> Unit
 ) {
     Card(
         modifier = Modifier
-            .fillMaxWidth(),
-        shape = RoundedCornerShape(22.dp),
-        colors = CardDefaults.cardColors(containerColor = Color.Transparent),
-        elevation = CardDefaults.cardElevation(defaultElevation = 10.dp)
+            .fillMaxWidth()
+            .padding(top = 4.dp),
+        shape = RoundedCornerShape(26.dp),
+        elevation = CardDefaults.cardElevation(10.dp),
+        colors = CardDefaults.cardColors(containerColor = Color.Transparent)
     ) {
         Box(
             modifier = Modifier
                 .fillMaxWidth()
-                .clip(RoundedCornerShape(22.dp))
                 .background(
                     Brush.linearGradient(
                         listOf(
@@ -135,32 +111,14 @@ private fun HeroCard(
                         )
                     )
                 )
-                .padding(20.dp)
+                .padding(22.dp)
         ) {
-            Box(
-                modifier = Modifier
-                    .size(160.dp)
-                    .align(Alignment.TopEnd)
-                    .alpha(0.18f)
-                    .background(
-                        MaterialTheme.colorScheme.onPrimary.copy(alpha = 0.2f),
-                        shape = CircleShape
-                    )
-            )
-            Box(
-                modifier = Modifier
-                    .size(90.dp)
-                    .align(Alignment.BottomStart)
-                    .alpha(0.2f)
-                    .background(
-                        MaterialTheme.colorScheme.secondary.copy(alpha = 0.4f),
-                        shape = CircleShape
-                    )
-            )
+
             Column(
-                verticalArrangement = Arrangement.spacedBy(12.dp),
-                modifier = Modifier.fillMaxWidth()
+                modifier = Modifier.fillMaxWidth(),
+                verticalArrangement = Arrangement.spacedBy(14.dp)
             ) {
+
                 Row(
                     modifier = Modifier.fillMaxWidth(),
                     horizontalArrangement = Arrangement.SpaceBetween,
@@ -168,34 +126,38 @@ private fun HeroCard(
                 ) {
                     Text(
                         text = "Hola, ${userName.ifBlank { "usuario" }}",
-                        style = MaterialTheme.typography.headlineSmall,
-                        fontWeight = FontWeight.Bold,
-                        color = MaterialTheme.colorScheme.onPrimary,
-                        maxLines = 2,
-                        overflow = androidx.compose.ui.text.style.TextOverflow.Ellipsis
+                        style = MaterialTheme.typography.headlineSmall.copy(
+                            fontWeight = FontWeight.Bold,
+                            fontSize = 22.sp
+                        ),
+                        color = MaterialTheme.colorScheme.onPrimary
                     )
+
                     TextButton(onClick = onProfileClick) {
                         Text(
                             text = "Mi perfil",
-                            style = MaterialTheme.typography.bodyMedium,
+                            color = MaterialTheme.colorScheme.onPrimary,
                             fontWeight = FontWeight.SemiBold,
-                            color = MaterialTheme.colorScheme.onPrimary
+                            fontSize = 14.sp
                         )
                     }
                 }
+
                 Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                     PillTag(text = "Citas 24/7")
                     PillTag(text = "Doctores verificados")
                 }
+
                 Image(
                     painter = painterResource(id = R.drawable.atencion_1),
-                    contentDescription = "Agendar atención",
+                    contentDescription = null,
                     modifier = Modifier
                         .fillMaxWidth()
-                        .height(120.dp)
+                        .height(130.dp)
                         .clip(RoundedCornerShape(16.dp)),
                     contentScale = ContentScale.Crop
                 )
+
                 Button(
                     onClick = onBookAppointmentClick,
                     shape = RoundedCornerShape(12.dp),
@@ -203,9 +165,105 @@ private fun HeroCard(
                         containerColor = MaterialTheme.colorScheme.secondary,
                         contentColor = MaterialTheme.colorScheme.onSecondary
                     ),
-                    modifier = Modifier.align(Alignment.Start)
+                    modifier = Modifier
+                        .align(Alignment.Start)
+                        .height(44.dp)
                 ) {
-                    Text("Agendar consulta")
+                    Text("Agendar consulta", fontSize = 15.sp)
+                }
+
+                Button(
+                    onClick = onInsuranceClick,
+                    shape = RoundedCornerShape(12.dp),
+                    colors = ButtonDefaults.buttonColors(
+                        containerColor = MaterialTheme.colorScheme.tertiary,
+                        contentColor = MaterialTheme.colorScheme.onTertiary
+                    ),
+                    modifier = Modifier
+                        .align(Alignment.Start)
+                        .height(44.dp)
+                ) {
+                    Text("Ver seguros disponibles", fontSize = 15.sp)
+                }
+            }
+        }
+    }
+}
+
+
+@Composable
+fun DoctorsCarousel(doctors: List<UsuarioDto>) {
+    val imagePool = listOf(
+        R.drawable.doctor_cardio_1,
+        R.drawable.doctor_cardio_2,
+        R.drawable.doctor_cardio_3,
+        R.drawable.doctor_cardio_4,
+        R.drawable.doctor_cardio_5,
+        R.drawable.doctor_derma_1,
+        R.drawable.doctor_derma_2,
+        R.drawable.doctor_derma_3,
+        R.drawable.doctor_derma_4,
+        R.drawable.doctor_derma_5,
+        R.drawable.doctor_medgen_1,
+        R.drawable.doctor_medgen_2,
+        R.drawable.doctor_medgen_3,
+        R.drawable.doctor_medgen_4,
+        R.drawable.doctor_medgen_5,
+        R.drawable.doctor_nutri_1,
+        R.drawable.doctor_nutri_2,
+        R.drawable.doctor_nutri_3,
+        R.drawable.doctor_nutri_4,
+        R.drawable.doctor_pedi_1,
+        R.drawable.doctor_pedi_2,
+        R.drawable.doctor_pedi_3,
+        R.drawable.doctor_pedi_4,
+        R.drawable.doctor_psico_1,
+        R.drawable.doctor_psico_2,
+        R.drawable.doctor_psico_3,
+        R.drawable.doctor_psico_4,
+        R.drawable.doctor_psico_5
+    )
+
+    val assignedImages by remember(doctors) {
+        mutableStateOf(
+            doctors.associate { it.id to imagePool.shuffled().first() }
+        )
+    }
+
+    val doctorCards = doctors.take(6).map { doctor ->
+        DoctorCardData(
+            name = doctor.name.ifBlank { "Doctor/a" },
+            specialty = doctor.specialty?.ifBlank { "Especialidad no disponible" } ?: "Especialidad no disponible",
+            imageRes = assignedImages[doctor.id] ?: imagePool.random()
+        )
+    }
+
+    Column(
+        modifier = Modifier.fillMaxWidth(),
+        verticalArrangement = Arrangement.spacedBy(12.dp)
+    ) {
+
+        Text(
+            text = "Doctores Populares",
+            style = MaterialTheme.typography.titleLarge.copy(fontWeight = FontWeight.Bold),
+            modifier = Modifier.padding(start = 4.dp, bottom = 4.dp)
+        )
+
+        if (doctorCards.isEmpty()) {
+            Text(
+                text = "No hay doctores disponibles.",
+                style = MaterialTheme.typography.bodyMedium,
+                modifier = Modifier.padding(horizontal = 4.dp)
+            )
+        } else {
+            LazyRow(
+                horizontalArrangement = Arrangement.spacedBy(16.dp),
+                contentPadding = PaddingValues(horizontal = 4.dp)
+            ) {
+                items(doctorCards) { doctor ->
+                    DoctorCard(
+                        doctor = doctor
+                    )
                 }
             }
         }
@@ -213,29 +271,23 @@ private fun HeroCard(
 }
 
 @Composable
-private fun InsuranceCardItem(
-    title: String,
-    imageRes: Int,
-    onClick: () -> Unit,
-    modifier: Modifier = Modifier
-        .fillMaxWidth()
-        .height(200.dp)
-) {
+private fun DoctorCard(doctor: DoctorCardData) {
     Card(
-        modifier = modifier
-            .clickable { onClick() },
-        elevation = CardDefaults.cardElevation(4.dp),
-        shape = RoundedCornerShape(12.dp)
+        modifier = Modifier
+            .width(150.dp)
+            .height(220.dp),
+        shape = RoundedCornerShape(18.dp),
+        elevation = CardDefaults.cardElevation(6.dp)
     ) {
-        Box(
-            modifier = Modifier.fillMaxSize()
-        ) {
+        Box(modifier = Modifier.fillMaxSize()) {
+
             Image(
-                painter = painterResource(id = imageRes),
-                contentDescription = null,
+                painter = painterResource(id = doctor.imageRes),
+                contentDescription = "Doctor",
                 contentScale = ContentScale.Crop,
                 modifier = Modifier.fillMaxSize()
             )
+
             Box(
                 modifier = Modifier
                     .matchParentSize()
@@ -243,34 +295,36 @@ private fun InsuranceCardItem(
                         Brush.verticalGradient(
                             listOf(Color.Transparent, Color.Black.copy(alpha = 0.55f))
                         )
-                    )
+                )
             )
+
             Column(
                 modifier = Modifier
                     .align(Alignment.BottomStart)
-                    .padding(16.dp),
-                verticalArrangement = Arrangement.spacedBy(6.dp)
+                    .padding(horizontal = 12.dp, vertical = 12.dp),
+                verticalArrangement = Arrangement.spacedBy(4.dp)
             ) {
                 Text(
-                    text = title,
+                    text = doctor.name,
                     color = Color.White,
-                    fontSize = 20.sp,
                     fontWeight = FontWeight.Bold
                 )
                 Text(
-                    text = "Cobertura inmediata y beneficios exclusivos",
+                    text = doctor.specialty,
                     color = Color.White.copy(alpha = 0.9f),
-                    style = MaterialTheme.typography.bodySmall
+                    fontSize = 13.sp
                 )
             }
         }
     }
 }
 
-data class InsuranceCardDisplay(
-    val title: String,
+private data class DoctorCardData(
+    val name: String,
+    val specialty: String,
     val imageRes: Int
 )
+
 
 @Composable
 private fun PillTag(text: String) {

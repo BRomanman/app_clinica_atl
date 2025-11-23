@@ -28,7 +28,7 @@ interface CitasApi {
     @GET("citas/doctor/{idDoctor}/fecha/{fecha}")
     suspend fun getAppointmentsByDoctorAndDate(
         @Path("idDoctor") doctorId: Long,
-        @Path("fecha") dateIso: String // Formato yyyy-MM-dd
+        @Path("fecha") dateIso: String
     ): Response<List<CitaDto>>
 
     @POST("citas")

@@ -1,6 +1,7 @@
 package com.example.app_clinica_atl.ui.screen
 
 import androidx.compose.foundation.Image
+<<<<<<< Updated upstream
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -36,6 +37,28 @@ import androidx.compose.ui.unit.sp
 import com.example.app_clinica_atl.R
 import com.example.app_clinica_atl.data.remote.dto.SeguroDto
 import com.example.app_clinica_atl.ui.viewmodel.InsuranceViewModel
+=======
+import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
+import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.verticalScroll
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.material3.*
+import androidx.compose.runtime.*
+import androidx.compose.ui.Alignment
+import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Brush
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.unit.dp
+import com.example.app_clinica_atl.R
+import com.example.app_clinica_atl.data.remote.dto.SeguroDto
+import com.example.app_clinica_atl.ui.viewmodel.InsuranceViewModel
+import kotlinx.coroutines.delay
+import kotlin.collections.random
+>>>>>>> Stashed changes
 
 /**
  * Pantalla de Seguros
@@ -59,6 +82,7 @@ fun SegurosScreen(
         }
     }
 
+<<<<<<< Updated upstream
     Scaffold(
         snackbarHost = { SnackbarHost(snackbarHostState) },
         containerColor = MaterialTheme.colorScheme.background
@@ -84,12 +108,91 @@ fun SegurosScreen(
                         )
                     }
                 }
+=======
+    Column(
+        modifier = Modifier
+            .fillMaxSize()
+            .padding(horizontal = 16.dp)
+            .verticalScroll(rememberScrollState())
+    ) {
+        Text(
+            "Nuestros Seguros",
+            style = MaterialTheme.typography.headlineLarge,
+            fontWeight = FontWeight.Bold,
+            modifier = Modifier.padding(vertical = 16.dp)
+        )
+
+        Text(
+            "Seguros de Salud",
+            style = MaterialTheme.typography.titleLarge,
+            modifier = Modifier.padding(top = 8.dp)
+        )
+
+        if (state.healthInsurances.isEmpty()) {
+            Text("No hay seguros de salud disponibles.")
+        } else {
+            state.healthInsurances.forEach { seguro ->
+                SeguroCard(
+                    seguro = seguro,
+                    onClick = { onSeguroSeleccionado(seguro) }
+                )
+            }
+        }
+
+        Spacer(Modifier.height(28.dp))
+
+        Text(
+            "Seguros de Vida",
+            style = MaterialTheme.typography.titleLarge
+        )
+
+        if (state.lifeInsurances.isEmpty()) {
+            Text("No hay seguros de vida disponibles.")
+        } else {
+            state.lifeInsurances.forEach { seguro ->
+                SeguroCard(
+                    seguro = seguro,
+                    onClick = { onSeguroSeleccionado(seguro) }
+                )
+            }
+        }
+
+        state.errorMsg?.let { msg ->
+            Spacer(Modifier.height(16.dp))
+            Text(msg, color = Color.Red)
+            LaunchedEffect(msg) {
+                delay(2500)
+                viewModel.clearMessages()
+            }
+        }
+
+        state.successMsg?.let { msg ->
+            Spacer(Modifier.height(16.dp))
+            Text(msg, color = Color(0xFF0A7F0A))
+            LaunchedEffect(msg) {
+                delay(2500)
+                viewModel.clearMessages()
+>>>>>>> Stashed changes
             }
         }
     }
 }
-
+val seguroImages = listOf(
+    R.drawable.seguro_1,
+    R.drawable.seguro_2,
+    R.drawable.seguro_3,
+    R.drawable.seguro_empresarial1,
+    R.drawable.seguro_empresarial2,
+    R.drawable.seguro_empresarial3,
+    R.drawable.seguro_salud_1,
+    R.drawable.seguro_salud_2,
+    R.drawable.seguro_salud_3,
+    R.drawable.seguro_vida_1,
+    R.drawable.seguro_vida_2,
+    R.drawable.seguro_vida_3
+)
 @Composable
+<<<<<<< Updated upstream
 private fun InsuranceCard(
     insurance: SeguroDto,
     onSubscribe: () -> Unit
@@ -136,11 +239,75 @@ private fun InsuranceCard(
                 modifier = Modifier.fillMaxWidth(0.8f)
             ) {
                 Text("Contratar Ahora")
+=======
+fun SeguroCard(seguro: SeguroDto, onClick: () -> Unit) {
+
+    val randomImage = remember { seguroImages.random() }
+
+    Card(
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(vertical = 12.dp)
+            .clickable { onClick() },
+        shape = MaterialTheme.shapes.large,
+        elevation = CardDefaults.cardElevation(defaultElevation = 6.dp)
+    ) {
+        Box(
+            modifier = Modifier
+                .height(180.dp)
+                .fillMaxWidth()
+        ) {
+            // Imagen de fondo
+            Image(
+                painter = painterResource(id = randomImage),
+                contentDescription = null,
+                modifier = Modifier.fillMaxSize(),
+                contentScale = ContentScale.Crop
+            )
+
+            // Degradado oscuro sobre la imagen
+            Box(
+                modifier = Modifier
+                    .matchParentSize()
+                    .background(
+                        Brush.verticalGradient(
+                            colors = listOf(
+                                Color.Black.copy(alpha = 0.1f),
+                                Color.Black.copy(alpha = 0.65f)
+                            )
+                        )
+                    )
+            )
+
+            Column(
+                modifier = Modifier
+                    .align(Alignment.BottomStart)
+                    .padding(16.dp)
+            ) {
+                Text(
+                    seguro.name,
+                    color = Color.White,
+                    style = MaterialTheme.typography.titleMedium
+                )
+                Spacer(Modifier.height(4.dp))
+                Text(
+                    seguro.description,
+                    color = Color.White.copy(alpha = 0.85f),
+                    style = MaterialTheme.typography.bodyMedium
+                )
+                Spacer(Modifier.height(6.dp))
+                Text(
+                    "Precio: $${seguro.price}",
+                    color = Color.White,
+                    style = MaterialTheme.typography.bodyLarge
+                )
+>>>>>>> Stashed changes
             }
         }
     }
 }
 
+<<<<<<< Updated upstream
 @Composable
 private fun getInsuranceImage(insuranceId: Long): Int {
     return when (insuranceId) {
@@ -150,3 +317,5 @@ private fun getInsuranceImage(insuranceId: Long): Int {
         else -> R.drawable.logo_clean
     }
 }
+=======
+>>>>>>> Stashed changes

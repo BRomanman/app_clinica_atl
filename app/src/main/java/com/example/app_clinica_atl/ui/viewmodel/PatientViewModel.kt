@@ -57,6 +57,7 @@ class PatientViewModel(
     // --- LÓGICA REACTIVA ---
     private val _editState = MutableStateFlow(PatientProfileEditState())
     private val _profileImageOverride = MutableStateFlow<String?>(null)
+    private val refreshAppointments = MutableStateFlow(0)
     private var cachedUserId: Long? = null
 
     private data class PatientProfileEditState(
@@ -74,6 +75,7 @@ class PatientViewModel(
     val uiState: StateFlow<PatientProfileUiState> = userPreferences.userIdFlow
         .flatMapLatest { userId ->
             cachedUserId = userId
+            refreshAppointments.value = 0
             if (userId == null) {
                 flowOf(
                     PatientProfileUiState(
@@ -90,11 +92,14 @@ class PatientViewModel(
                 ) { patient, storedImage, overrideImage ->
                     patient?.copy(profileImageUrl = overrideImage ?: storedImage ?: patient.profileImageUrl)
                 }
+                val appointmentsFlow = refreshAppointments.flatMapLatest {
+                    appointmentRepository.getAppointmentsForPatient(userId)
+                }
                 val base = combine(
                     patientWithImage,
                     insuranceRepository.getActiveSubscriptionDetails(userId),
                     insuranceRepository.getActiveSubscription(userId),
-                    appointmentRepository.getAppointmentsForPatient(userId)
+                    appointmentsFlow
                 ) { patient, insuranceDetails, insuranceSub, appointments ->
                     PatientProfileUiState(
                         isLoading = false,
@@ -150,6 +155,7 @@ class PatientViewModel(
             val result = appointmentRepository.cancelAppointment(appointmentId)
             if (result.isSuccess) {
                 Toast.makeText(getApplication(), "Cita cancelada con éxito.", Toast.LENGTH_SHORT).show()
+                refreshAppointments.update { it + 1 }
             } else {
                 val fallback = "No se pudo cancelar la cita."
                 Toast.makeText(getApplication(), result.exceptionOrNull()?.message ?: fallback, Toast.LENGTH_SHORT).show() // Era _messageS

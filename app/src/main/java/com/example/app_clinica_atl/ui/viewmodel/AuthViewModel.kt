@@ -9,7 +9,7 @@ import com.example.app_clinica_atl.domain.validation.validateChileanPhoneNumber 
 import com.example.app_clinica_atl.domain.validation.validateEmail
 import com.example.app_clinica_atl.domain.validation.validateLoginPassword
 import com.example.app_clinica_atl.domain.validation.validateRegisterPassword
-import com.example.app_clinica_atl.domain.validation.validateRequired
+import com.example.app_clinica_atl.domain.validation.validatePersonName
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -79,12 +79,14 @@ class AuthViewModel(
 
     // --- Handlers de Registro (con validación en tiempo real) ---
     fun onRegisterFirstNameChange(name: String) {
-        val nameError = validateRequired(name, "Nombre")
-        _registerUiState.update { it.copy(firstName = name, firstNameError = nameError, registerError = null) }
+        val sanitized = sanitizePersonNameInput(name)
+        val nameError = validatePersonName(sanitized, "Nombre")
+        _registerUiState.update { it.copy(firstName = sanitized, firstNameError = nameError, registerError = null) }
     }
     fun onRegisterLastNameChange(lastName: String) {
-        val nameError = validateRequired(lastName, "Apellido")
-        _registerUiState.update { it.copy(lastName = lastName, lastNameError = nameError, registerError = null) }
+        val sanitized = sanitizePersonNameInput(lastName)
+        val nameError = validatePersonName(sanitized, "Apellido")
+        _registerUiState.update { it.copy(lastName = sanitized, lastNameError = nameError, registerError = null) }
     }
     fun onRegisterEmailChange(email: String) {
         val emailError = validateEmail(email)
@@ -230,8 +232,8 @@ class AuthViewModel(
     fun registerUser() {
         // ... (Validación final)
         val s = _registerUiState.value
-        val nameError = validateRequired(s.firstName, "Nombre")
-        val lastNameError = validateRequired(s.lastName, "Apellido")
+        val nameError = validatePersonName(s.firstName, "Nombre")
+        val lastNameError = validatePersonName(s.lastName, "Apellido")
         val emailError = validateEmail(s.email)
         val phoneError = validateChileanPhoneNumber(s.phone)
         val passwordResult = validateRegisterPassword(s.password, s.confirmPassword)
@@ -287,4 +289,7 @@ class AuthViewModel(
         val hasYear = Regex("\\d{4}").containsMatchIn(password)
         return hasName && hasYear
     }
+
+    private fun sanitizePersonNameInput(input: String): String =
+        input.filter { it.isLetter() || it.isWhitespace() }
 }

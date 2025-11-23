@@ -29,5 +29,10 @@ data class UsuarioUpdateRequestDto(
     @SerializedName("telefono") val telefono: String? = null,
     @SerializedName("contrasena") val contrasena: String? = null,
     @SerializedName("idRol") val idRol: Long? = null,
+    @SerializedName("rol") val rol: RolRequest? = null,
     @SerializedName("imagenPerfil") val imagenPerfil: String? = null
+)
+
+data class RolRequest(
+    @SerializedName("id") val id: Long
 )

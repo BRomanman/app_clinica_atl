@@ -4,6 +4,7 @@ import com.example.app_clinica_atl.data.remote.dto.LoginRequestDto
 import com.example.app_clinica_atl.data.remote.dto.LoginResponseDto
 import com.example.app_clinica_atl.data.remote.dto.DoctorDto
 import com.example.app_clinica_atl.data.remote.dto.EspecialidadResponseDto
+import com.example.app_clinica_atl.data.remote.dto.UsuarioDto
 import com.example.app_clinica_atl.data.remote.dto.UsuarioResponseDto
 import com.example.app_clinica_atl.data.remote.dto.UsuarioUpdateRequestDto
 import retrofit2.Response
@@ -20,12 +21,12 @@ interface UsuariosApi {
     @POST("auth/login")
     suspend fun login(@Body credentials: LoginRequestDto): LoginResponseDto
 
+    @POST("auth/register")
+    suspend fun register(@Body user: UsuarioDto): UsuarioResponseDto
+
     // Especialidades (personal_service)
     @GET("especialidades")
     suspend fun getAllSpecialties(): Response<List<EspecialidadResponseDto>>
-
-
-
 
     //UsuarioController
     @GET("usuarios")
@@ -45,11 +46,6 @@ interface UsuariosApi {
 
     @DELETE("usuarios/{id}")
     suspend fun deleteUser(@Path("id") id: Long): Response<Unit>
-
-
-
-
-
 
     //DoctorController
     @GET("doctores")
@@ -73,8 +69,4 @@ interface UsuariosApi {
     // Especialidades por doctor (personal_service)
     @GET("doctores/{doctorId}/especialidades")
     suspend fun getDoctorSpecialties(@Path("doctorId") doctorId: Long): List<EspecialidadResponseDto>
-
-
-
-
 }

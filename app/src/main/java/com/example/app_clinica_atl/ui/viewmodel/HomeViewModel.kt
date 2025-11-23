@@ -9,9 +9,10 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.catch
+import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.flatMapLatest
 import kotlinx.coroutines.flow.flowOf
-import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
 
@@ -19,7 +20,8 @@ import kotlinx.coroutines.launch
 data class HomeUiState(
     val userName: String = "",
     val debugInfo: String? = null,
-    val profileImageUrl: String? = null // <-- ¡¡CAMPO AÑADIDO!!
+    val profileImageUrl: String? = null, // <-- ¡¡CAMPO AÑADIDO!!
+    val popularDoctors: List<com.example.app_clinica_atl.data.remote.dto.UsuarioDto> = emptyList()
 )
 
 class HomeViewModel(
@@ -33,29 +35,32 @@ class HomeViewModel(
 
     // --- ¡¡LÓGICA ACTUALIZADA!! ---
     // Ya no usamos 'init'.
-    // 'uiState' ahora es un Flow que reacciona a los cambios en 'userIdFlow'.
+    // 'uiState' ahora es un Flow que reacciona a los cambios en 'userIdFlow' y lista de doctores.
     @OptIn(ExperimentalCoroutinesApi::class)
-    val uiState: StateFlow<HomeUiState> = userPreferences.userIdFlow
-        .flatMapLatest { userId ->
-            if (userId == null) {
-                // Si no hay ID (logout), devuelve un estado por defecto
-                flowOf(HomeUiState(userName = "Usuario", profileImageUrl = null))
-            } else {
-                // Si hay ID, busca el usuario
-                userRepository.getUserByIdAsFlow(userId)
-                    .map { user ->
-                        HomeUiState(
-                            userName = user?.name ?: "Usuario",
-                            debugInfo = _debugUserInfo.value,
-                            profileImageUrl = user?.profileImageUrl
-                        )
-                    }
-            }
-        }.stateIn(
-            scope = viewModelScope,
-            started = SharingStarted.WhileSubscribed(5000),
-            initialValue = HomeUiState(userName = "Cargando...")
+    private val currentUserFlow = userPreferences.userIdFlow.flatMapLatest { userId ->
+        if (userId == null) flowOf(null) else userRepository.getUserByIdAsFlow(userId)
+    }
+
+    @OptIn(ExperimentalCoroutinesApi::class)
+    val uiState: StateFlow<HomeUiState> = combine(
+        currentUserFlow,
+        userRepository.getAllDoctors().catch { emit(emptyList()) },
+        _debugUserInfo
+    ) { user, doctors, debug ->
+        val popular = doctors
+            .filter { it.role.equals("doctor", true) }
+            .take(6)
+        HomeUiState(
+            userName = user?.name ?: "Usuario",
+            debugInfo = debug,
+            profileImageUrl = user?.profileImageUrl,
+            popularDoctors = popular
         )
+    }.stateIn(
+        scope = viewModelScope,
+        started = SharingStarted.WhileSubscribed(5000),
+        initialValue = HomeUiState(userName = "Cargando...")
+    )
 
 
     fun fetchDebugUser(userId: Long) {

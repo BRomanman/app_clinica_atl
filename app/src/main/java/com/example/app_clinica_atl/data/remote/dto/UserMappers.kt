@@ -50,3 +50,19 @@ fun UsuarioResponseDto.toUsuarioDto(): UsuarioDto {
 }
 
 fun List<UsuarioResponseDto>.toUsuarioDtoList(): List<UsuarioDto> = map { it.toUsuarioDto() }
+
+fun DoctorDto.toUsuarioDto(): UsuarioDto {
+    val u = usuario
+    val displayName = listOfNotNull(u?.nombre, u?.apellido).joinToString(" ").trim()
+    return UsuarioDto(
+        id = u?.id ?: id ?: 0,
+        name = if (displayName.isBlank()) u?.correo.orEmpty() else displayName,
+        email = u?.correo.orEmpty(),
+        phone = u?.telefono.orEmpty(),
+        password = "",
+        profileImageUrl = u?.imagenPerfil,
+        role = "doctor",
+        specialty = especialidad,
+        salary = sueldo?.toDouble()
+    )
+}

@@ -23,7 +23,8 @@ data class DoctorPatientProfileUiState(
     val appointments: List<CitaDto> = emptyList(),
     val insurances: List<SeguroDto> = emptyList(),
     val histories: List<HistorialDto> = emptyList(),
-    val errorMsg: String? = null
+    val errorMsg: String? = null,
+    val isCancellingId: Long? = null
 )
 
 class DoctorPatientProfileViewModel(
@@ -89,6 +90,24 @@ class DoctorPatientProfileViewModel(
                 insurances = insurancesResult.getOrElse { emptyList() },
                 errorMsg = loadingErrors // No bloqueamos la UI si alguna sección falla
             )
+        }
+    }
+
+    fun cancelAppointment(appointmentId: Long) {
+        viewModelScope.launch {
+            _uiState.value = _uiState.value.copy(isCancellingId = appointmentId, errorMsg = null)
+            val result = citasRepository.cancelAppointment(appointmentId)
+            _uiState.value = if (result.isSuccess) {
+                _uiState.value.copy(
+                    isCancellingId = null,
+                    appointments = _uiState.value.appointments.filterNot { it.id == appointmentId }
+                )
+            } else {
+                _uiState.value.copy(
+                    isCancellingId = null,
+                    errorMsg = result.exceptionOrNull()?.message ?: "No se pudo cancelar la cita."
+                )
+            }
         }
     }
 }
