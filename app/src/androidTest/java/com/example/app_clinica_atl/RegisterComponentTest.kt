@@ -10,7 +10,7 @@ class RegisterComponentTest {
 
     @Test
     fun placeholder_register_component_test_runs() {
-        // En esta etapa validamos que la suite de instrumentación se ejecute correctamente.
+        TODO("hacer testde componentes de registro")
         assertTrue(true)
     }
 }

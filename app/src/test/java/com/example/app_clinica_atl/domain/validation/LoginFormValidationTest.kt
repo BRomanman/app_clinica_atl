@@ -4,18 +4,25 @@ import org.junit.Assert.assertEquals
 import org.junit.Assert.assertNull
 import org.junit.Test
 
-class LoginTest {
+/**
+ * Validaciones del formulario de Login.
+ */
+class LoginFormValidationTest {
 
     @Test
-    fun `login email must be valid`() {
+    fun `email requerido e invalido`() {
         assertEquals("Email es requerido.", validateEmail(""))
-        assertEquals("Email no es válido.", validateEmail("invalid"))
+        assertEquals("Email no es válido.", validateEmail("correo@"))
+    }
+
+    @Test
+    fun `email valido limpia error`() {
         assertNull(validateEmail("user@atl.cl"))
     }
 
     @Test
-    fun `login password cannot be blank`() {
+    fun `password requerida`() {
         assertEquals("Contraseña es requerida.", validateLoginPassword(""))
-        assertNull(validateLoginPassword("secreta123"))
+        assertNull(validateLoginPassword("Secreta123"))
     }
 }

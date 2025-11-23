@@ -168,7 +168,7 @@ private fun AgendaCard(
 }
 
 
-// todo poder hacer que el doctor pueda cancelar una cita en su agenda
+
 @Composable
 private fun StatusBadge(status: String) {
     val normalized = status.lowercase()
