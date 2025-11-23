@@ -3,8 +3,10 @@ package com.example.app_clinica_atl.ui.viewmodel
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.example.app_clinica_atl.data.local.storage.UserPreferences
+import com.example.app_clinica_atl.data.remote.dto.ContratoSeguroDto
 import com.example.app_clinica_atl.data.remote.dto.SeguroDto
 import com.example.app_clinica_atl.data.repository.SegurosRepository
+import com.example.app_clinica_atl.ui.screen.BeneficiarioForm
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -12,18 +14,17 @@ import kotlinx.coroutines.flow.catch
 import kotlinx.coroutines.flow.firstOrNull
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
-<<<<<<< Updated upstream
-=======
 import java.time.LocalDate
 import java.time.LocalDateTime
 import java.time.format.DateTimeFormatter
->>>>>>> Stashed changes
 
 /**
  * Estado de la UI para la pantalla de Seguros.
  */
 data class InsuranceUiState(
     val availableInsurances: List<SeguroDto> = emptyList(),
+    val healthInsurances: List<SeguroDto> = emptyList(),
+    val lifeInsurances: List<SeguroDto> = emptyList(),
     val isLoading: Boolean = true,
     val errorMsg: String? = null,
     val successMsg: String? = null
@@ -48,19 +49,15 @@ class InsuranceViewModel(
                     _uiState.update {
                         it.copy(
                             isLoading = false,
-                            availableInsurances = insuranceList
+                            availableInsurances = insuranceList,
+                            healthInsurances = insuranceList.filter { s -> s.name.orEmpty().contains("Salud", true) },
+                            lifeInsurances = insuranceList.filter { s -> s.name.orEmpty().contains("Vida", true) }
                         )
                     }
                 }
         }
     }
 
-<<<<<<< Updated upstream
-    /**
-     * Intenta suscribir al usuario a un seguro.
-     */
-    fun subscribeToInsurance(insuranceId: Long) {
-=======
     fun contratarSeguro(
         seguroId: Long,
         beneficiarios: List<BeneficiarioForm>,
@@ -68,7 +65,6 @@ class InsuranceViewModel(
         correoContacto: String,
         telefonoContacto: String
     ) {
->>>>>>> Stashed changes
         viewModelScope.launch {
             // Primero, obtenemos el ID del paciente logueado
             val patientId = userPreferences.userIdFlow.firstOrNull()
@@ -77,14 +73,6 @@ class InsuranceViewModel(
                 return@launch
             }
 
-<<<<<<< Updated upstream
-            val result = insuranceRepository.subscribeToInsurance(patientId, insuranceId)
-
-            if (result.isSuccess) {
-                _uiState.update { it.copy(successMsg = "¡Seguro contratado con éxito!") }
-            } else {
-                _uiState.update { it.copy(errorMsg = result.exceptionOrNull()?.message) }
-=======
             try {
                 val inputFormatter = DateTimeFormatter.ofPattern("dd-MM-yyyy")
                 val outputDateFormatter = DateTimeFormatter.ISO_LOCAL_DATE
@@ -103,7 +91,7 @@ class InsuranceViewModel(
                 val contrato = ContratoSeguroDto(
                     id = 0,
                     idSeguro = seguroId,
-                    idUsuario = userId,
+                    idUsuario = patientId,
                     rutBeneficiarios = ruts,
                     nombreBeneficiarios = nombres,
                     apellidoBeneficiarios = apellidos,
@@ -116,14 +104,15 @@ class InsuranceViewModel(
                     estado = "ACTIVO"
                 )
 
-                insuranceRepository.crearContrato(contrato)
-
-
-                _uiState.update { it.copy(successMsg = "Contrato generado con éxito") }
+                val result = insuranceRepository.crearContrato(contrato)
+                if (result.isSuccess) {
+                    _uiState.update { it.copy(successMsg = "Contrato generado con éxito") }
+                } else {
+                    _uiState.update { it.copy(errorMsg = result.exceptionOrNull()?.message ?: "No se pudo generar el contrato.") }
+                }
 
             } catch (e: Exception) {
                 _uiState.update { it.copy(errorMsg = e.message) }
->>>>>>> Stashed changes
             }
         }
     }

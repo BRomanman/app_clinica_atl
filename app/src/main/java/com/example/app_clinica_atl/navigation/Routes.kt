@@ -6,6 +6,9 @@ sealed class Route(val path: String) {
     object Home : Route("home")
     object PatientProfile : Route("patient_profile")
     object Seguros : Route("seguros")
+    data object ContratarSeguro : Route("contratarSeguro/{id}") {
+        fun create(id: Long) = "contratarSeguro/$id"
+    }
     object BookAppointment : Route("book_appointment")
     object LogoutConfirmation : Route("logout_confirmation")
 

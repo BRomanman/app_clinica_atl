@@ -140,6 +140,7 @@ fun PatientProfileScreen(
                     PatientProfileContent(
                         patient = uiState.patient!!,
                         activeInsurance = uiState.activeInsuranceDetails,
+                        insurances = uiState.insurances,
                         appointments = uiState.activeAppointments,
                         phoneInput = uiState.phoneInput,
                         phoneError = uiState.phoneError,
@@ -191,6 +192,7 @@ private fun createImageUri(context: Context): Uri {
 private fun PatientProfileContent(
     patient: UsuarioDto,
     activeInsurance: SeguroDto?,
+    insurances: List<SeguroDto>,
     appointments: List<CitaDetalleDto>,
     phoneInput: String,
     phoneError: String?,
@@ -277,6 +279,7 @@ private fun PatientProfileContent(
         item {
             InsuranceInfoCard(
                 activeInsurance = activeInsurance,
+                insurances = insurances,
                 onCancelInsurance = onCancelInsurance,
                 onGoToSeguros = onGoToSeguros
             )
@@ -381,6 +384,7 @@ private fun AppointmentCard(
 @Composable
 private fun InsuranceInfoCard(
     activeInsurance: SeguroDto?,
+    insurances: List<SeguroDto>,
     onCancelInsurance: () -> Unit,
     onGoToSeguros: () -> Unit
 ) {
@@ -428,6 +432,18 @@ private fun InsuranceInfoCard(
                 Spacer(modifier = Modifier.height(8.dp))
                 TextButton(onClick = onGoToSeguros) {
                     Text("Ver planes disponibles")
+                }
+            }
+
+            if (insurances.isNotEmpty()) {
+                Spacer(modifier = Modifier.height(16.dp))
+                Text("Todos mis seguros", fontWeight = FontWeight.SemiBold)
+                Spacer(modifier = Modifier.height(8.dp))
+                insurances.forEach { seguro ->
+                    Column(modifier = Modifier.fillMaxWidth().padding(vertical = 4.dp)) {
+                        Text(seguro.name, fontWeight = FontWeight.Medium)
+                        Text("\$${seguro.price}", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.primary)
+                    }
                 }
             }
         }

@@ -38,4 +38,9 @@ interface SegurosRepository {
      * Cancela una suscripción existente.
      */
     suspend fun cancelSubscription(subscriptionId: Long): Result<Unit>
+
+    /**
+     * Crea un contrato (flujo nuevo).
+     */
+    suspend fun crearContrato(contrato: com.example.app_clinica_atl.data.remote.dto.ContratoSeguroDto): Result<Unit>
 }

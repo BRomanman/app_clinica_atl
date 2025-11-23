@@ -28,6 +28,11 @@ import androidx.compose.material3.CardDefaults
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.ui.text.TextRange
 import androidx.compose.ui.text.input.TextFieldValue
+import androidx.compose.ui.platform.LocalContext
+import android.app.NotificationChannel
+import android.app.NotificationManager
+import androidx.core.app.NotificationCompat
+import androidx.core.app.NotificationManagerCompat
 
 data class BeneficiarioForm(
     val nombre: String = "",
@@ -52,6 +57,7 @@ fun ContratarSeguroScreen(
     onBack: () -> Unit
 ) {
     val uiState = viewModel.uiState.collectAsState().value
+    val context = LocalContext.current
 
     var cantidad by remember { mutableStateOf(1) }
 
@@ -367,6 +373,7 @@ fun ContratarSeguroScreen(
                     correoContacto = correoContacto,
                     telefonoContacto = telefonoContacto
                 )
+                showInsuranceNotification(context, "Contrato generado con éxito")
             }
         ) {
             Text("Confirmar Contratación")
@@ -421,4 +428,24 @@ private fun formatDateInput(input: String): String {
         }
     }
     return sb.toString()
+}
+
+private fun showInsuranceNotification(context: android.content.Context, message: String) {
+    val channelId = "insurance_channel"
+    val manager = NotificationManagerCompat.from(context)
+    if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.O) {
+        val channel = NotificationChannel(
+            channelId,
+            "Seguros",
+            NotificationManager.IMPORTANCE_DEFAULT
+        )
+        manager.createNotificationChannel(channel)
+    }
+    val notification = NotificationCompat.Builder(context, channelId)
+        .setSmallIcon(com.example.app_clinica_atl.R.drawable.logo)
+        .setContentTitle("Contrato de seguro")
+        .setContentText(message)
+        .setAutoCancel(true)
+        .build()
+    manager.notify(2003, notification)
 }

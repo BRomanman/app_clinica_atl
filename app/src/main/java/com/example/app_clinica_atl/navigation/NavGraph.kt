@@ -127,10 +127,13 @@ fun AppNavGraph(
             )
         }
         composable(Route.Seguros.path) {
-            SegurosScreen(viewModel = insuranceViewModel)
+            SegurosScreen(
+                viewModel = insuranceViewModel,
+                onSeguroSeleccionado = { seguro ->
+                    navController.navigate(Route.ContratarSeguro.create(seguro.id))
+                }
+            )
         }
-<<<<<<< Updated upstream
-=======
 
         // =======================
         // CONTRATAR SEGURO
@@ -155,8 +158,6 @@ fun AppNavGraph(
                 )
             }
         }
-
->>>>>>> Stashed changes
         composable(Route.BookAppointment.path) {
             BookAppointmentScreen(
                 viewModel = bookAppointmentViewModel,

@@ -5,7 +5,7 @@ import com.google.gson.annotations.SerializedName
 
 data class SeguroDto(
     @SerializedName("id") val id: Long = 0,
-    @SerializedName("nombre") val name: String,
-    @SerializedName("descripcion") val description: String,
-    @SerializedName("precio") val price: Int
+    @SerializedName(value = "nombre", alternate = ["nombreSeguro"]) val name: String = "",
+    @SerializedName("descripcion") val description: String = "",
+    @SerializedName(value = "precio", alternate = ["valor"]) val price: Int = 0
 )

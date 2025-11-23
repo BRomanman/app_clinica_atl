@@ -23,6 +23,7 @@ import kotlinx.coroutines.flow.catch
 import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.firstOrNull
 import kotlinx.coroutines.flow.flatMapLatest
+import kotlinx.coroutines.flow.flow
 import kotlinx.coroutines.flow.flowOf
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.flow.update
@@ -33,6 +34,7 @@ data class PatientProfileUiState(
     val patient: UsuarioDto? = null,
     val activeInsuranceDetails: SeguroDto? = null,
     val activeSubscription: UsuarioSeguroDto? = null,
+    val insurances: List<SeguroDto> = emptyList(),
     val activeAppointments: List<CitaDetalleDto> = emptyList(),
     val errorMsg: String? = null,
     val successMsg: String? = null,
@@ -58,6 +60,8 @@ class PatientViewModel(
     private val _editState = MutableStateFlow(PatientProfileEditState())
     private val _profileImageOverride = MutableStateFlow<String?>(null)
     private val refreshAppointments = MutableStateFlow(0)
+    private val refreshInsurance = MutableStateFlow(0)
+    private val refreshInsuranceList = MutableStateFlow(0)
     private var cachedUserId: Long? = null
 
     private data class PatientProfileEditState(
@@ -76,6 +80,8 @@ class PatientViewModel(
         .flatMapLatest { userId ->
             cachedUserId = userId
             refreshAppointments.value = 0
+            refreshInsurance.value = 0
+            refreshInsuranceList.value = 0
             if (userId == null) {
                 flowOf(
                     PatientProfileUiState(
@@ -92,21 +98,35 @@ class PatientViewModel(
                 ) { patient, storedImage, overrideImage ->
                     patient?.copy(profileImageUrl = overrideImage ?: storedImage ?: patient.profileImageUrl)
                 }
+                val insuranceDetailsFlow = refreshInsurance.flatMapLatest {
+                    insuranceRepository.getActiveSubscriptionDetails(userId)
+                }
+                val insuranceSubFlow = refreshInsurance.flatMapLatest {
+                    insuranceRepository.getActiveSubscription(userId)
+                }
                 val appointmentsFlow = refreshAppointments.flatMapLatest {
                     appointmentRepository.getAppointmentsForPatient(userId)
                 }
+                val insuranceListFlow = refreshInsuranceList.flatMapLatest {
+                    flow {
+                        val result = insuranceRepository.getInsurancesForPatient(userId)
+                        emit(result.getOrElse { emptyList() })
+                    }
+                }
                 val base = combine(
                     patientWithImage,
-                    insuranceRepository.getActiveSubscriptionDetails(userId),
-                    insuranceRepository.getActiveSubscription(userId),
-                    appointmentsFlow
-                ) { patient, insuranceDetails, insuranceSub, appointments ->
+                    insuranceDetailsFlow,
+                    insuranceSubFlow,
+                    appointmentsFlow,
+                    insuranceListFlow
+                ) { patient, insuranceDetails, insuranceSub, appointments, insuranceList ->
                     PatientProfileUiState(
                         isLoading = false,
                         patient = patient,
                         activeInsuranceDetails = insuranceDetails,
                         activeSubscription = insuranceSub,
-                        activeAppointments = appointments
+                        activeAppointments = appointments,
+                        insurances = insuranceList
                     )
                 }
 
@@ -143,6 +163,8 @@ class PatientViewModel(
             val result = insuranceRepository.cancelSubscription(subscriptionId)
             if (result.isSuccess) {
                 Toast.makeText(getApplication(), "Seguro cancelado con éxito.", Toast.LENGTH_SHORT).show()
+                refreshInsurance.update { it + 1 }
+                refreshInsuranceList.update { it + 1 }
             } else {
                 val fallback = "No se pudo cancelar el seguro."
                 Toast.makeText(getApplication(), result.exceptionOrNull()?.message ?: fallback, Toast.LENGTH_SHORT).show()
