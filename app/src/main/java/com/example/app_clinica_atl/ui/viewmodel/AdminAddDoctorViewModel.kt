@@ -42,7 +42,8 @@ data class AdminAddDoctorUiState(
 
     val isLoading: Boolean = true,
     val registrationSuccess: Boolean = false,
-    val errorMsg: String? = null
+    val errorMsg: String? = null,
+    val createdDoctorName: String? = null
 )
 
 class AdminAddDoctorViewModel(
@@ -143,7 +144,7 @@ class AdminAddDoctorViewModel(
         }
     }
 
-    fun clearSuccess() { _uiState.update { it.copy(registrationSuccess = false) } }
+    fun clearSuccess() { _uiState.update { it.copy(registrationSuccess = false, createdDoctorName = null) } }
 
     // Registro completo: Usuario -> Doctor -> Especialidades nuevas (con doctorId)
     fun registerDoctor() {
@@ -214,6 +215,7 @@ class AdminAddDoctorViewModel(
                 it.copy(
                     isLoading = false,
                     registrationSuccess = true,
+                    createdDoctorName = "${s.firstName} ${s.lastName}".trim(),
                     firstName = "", lastName = "", email = "", phone = "", salary = "",
                     selectedSpecialties = emptyList(), newSpecialties = emptyList()
                 )

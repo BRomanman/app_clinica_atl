@@ -1,5 +1,12 @@
 package com.example.app_clinica_atl.ui.screen
 
+import android.Manifest
+import android.content.Context
+import android.content.pm.PackageManager
+import android.os.Build
+import android.widget.Toast
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -35,10 +42,13 @@ import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
+import androidx.core.content.ContextCompat
 import com.example.app_clinica_atl.data.remote.dto.EspecialidadDto
+import com.example.app_clinica_atl.notifications.NotificationHelper
 import com.example.app_clinica_atl.ui.viewmodel.AdminAddDoctorViewModel
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -49,9 +59,27 @@ fun AdminAddDoctorScreen(
 ) {
     // ✅ CORRECCIÓN: convertir StateFlow -> State para usar 'by'
     val uiState by viewModel.uiState.collectAsState()
+    val context = LocalContext.current
+    val notificationPermissionLauncher = rememberLauncherForActivityResult(
+        contract = ActivityResultContracts.RequestPermission()
+    ) { granted ->
+        if (granted) {
+            uiState.createdDoctorName?.let { NotificationHelper.showDoctorCreated(context, it) }
+        }
+    }
 
     LaunchedEffect(uiState.registrationSuccess) {
         if (uiState.registrationSuccess) {
+            maybeSendDoctorCreatedNotification(
+                context = context,
+                doctorName = uiState.createdDoctorName,
+                requestPermission = notificationPermissionLauncher::launch
+            )
+            Toast.makeText(
+                context,
+                context.getString(com.example.app_clinica_atl.R.string.admin_doctor_created_toast),
+                Toast.LENGTH_LONG
+            ).show()
             viewModel.clearSuccess()
         }
     }
@@ -274,5 +302,24 @@ private fun SpecialtyCheckRow(
             checked = checked,
             onCheckedChange = { onToggle() }
         )
+    }
+}
+
+private fun maybeSendDoctorCreatedNotification(
+    context: Context,
+    doctorName: String?,
+    requestPermission: (String) -> Unit
+) {
+    if (doctorName.isNullOrBlank()) return
+    if (Build.VERSION.SDK_INT < Build.VERSION_CODES.O) return
+
+    NotificationHelper.createNotificationChannel(context)
+    val needsPermission = Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU &&
+            ContextCompat.checkSelfPermission(context, Manifest.permission.POST_NOTIFICATIONS) != PackageManager.PERMISSION_GRANTED
+
+    if (needsPermission) {
+        requestPermission(Manifest.permission.POST_NOTIFICATIONS)
+    } else {
+        NotificationHelper.showDoctorCreated(context, doctorName)
     }
 }

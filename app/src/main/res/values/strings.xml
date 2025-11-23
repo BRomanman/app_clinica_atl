@@ -28,6 +28,11 @@
     <string name="insurance_notification_channel_name">Confirmaciones de seguro</string>
     <string name="insurance_notification_channel_description">Notificaciones cuando se contrata un seguro.</string>
     <string name="insurance_notification_default_name">Cliente</string>
+    <string name="admin_doctor_notification_title">Doctor creado</string>
+    <string name="admin_doctor_notification_body">Se creó el doctor %1$s correctamente.</string>
+    <string name="admin_doctor_notification_channel_name">Registro de doctores</string>
+    <string name="admin_doctor_notification_channel_description">Avisos cuando se crea un nuevo doctor.</string>
+    <string name="admin_doctor_created_toast">Puede revisar al nuevo doctor creado en la lista de doctores.</string>
     <string name="profile_header_title">Perfil del paciente</string>
     <string name="profile_header_subtitle">Actualizar información</string>
     <string name="profile_delete_cta">Eliminar cuenta</string>

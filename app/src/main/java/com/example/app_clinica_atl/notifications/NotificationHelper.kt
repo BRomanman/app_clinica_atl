@@ -22,9 +22,11 @@ object NotificationHelper {
 
     private const val APPOINTMENT_NOTIFICATION_ID = 1001
     private const val INSURANCE_NOTIFICATION_ID = 1002
+    private const val DOCTOR_CREATED_NOTIFICATION_ID = 1003
 
     const val APPOINTMENT_CHANNEL_ID = "appointment_confirmations"
     const val INSURANCE_CHANNEL_ID = "insurance_confirmations"
+    const val DOCTOR_CHANNEL_ID = "admin_doctor_events"
 
     fun createNotificationChannel(context: Context) {
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
@@ -42,9 +44,16 @@ object NotificationHelper {
             ).apply {
                 description = context.getString(R.string.insurance_notification_channel_description)
             }
+            val doctorChannel = NotificationChannel(
+                DOCTOR_CHANNEL_ID,
+                context.getString(R.string.admin_doctor_notification_channel_name),
+                NotificationManager.IMPORTANCE_DEFAULT
+            ).apply {
+                description = context.getString(R.string.admin_doctor_notification_channel_description)
+            }
 
             val manager = context.getSystemService(NotificationManager::class.java)
-            manager?.createNotificationChannels(listOf(appointmentChannel, insuranceChannel))
+            manager?.createNotificationChannels(listOf(appointmentChannel, insuranceChannel, doctorChannel))
         }
     }
 
@@ -111,5 +120,28 @@ object NotificationHelper {
             .build()
 
         NotificationManagerCompat.from(context).notify(INSURANCE_NOTIFICATION_ID, notification)
+    }
+
+    @RequiresPermission(Manifest.permission.POST_NOTIFICATIONS)
+    fun showDoctorCreated(context: Context, doctorName: String) {
+        val title = context.getString(R.string.admin_doctor_notification_title)
+        val message = context.getString(R.string.admin_doctor_notification_body, doctorName)
+
+        val intent = Intent(context, MainActivity::class.java).apply {
+            flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TASK
+        }
+        val flags = PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
+        val pendingIntent = PendingIntent.getActivity(context, 2, intent, flags)
+
+        val notification = NotificationCompat.Builder(context, DOCTOR_CHANNEL_ID)
+            .setSmallIcon(R.drawable.logo_clean)
+            .setContentTitle(title)
+            .setContentText(message)
+            .setStyle(NotificationCompat.BigTextStyle().bigText(message))
+            .setContentIntent(pendingIntent)
+            .setAutoCancel(true)
+            .build()
+
+        NotificationManagerCompat.from(context).notify(DOCTOR_CREATED_NOTIFICATION_ID, notification)
     }
 }
