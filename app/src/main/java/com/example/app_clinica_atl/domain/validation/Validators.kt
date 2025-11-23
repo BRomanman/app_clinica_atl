@@ -75,8 +75,10 @@ fun validateEmail(email: String): String? {
     if (email.isBlank()) {
         return "Email es requerido."
     }
-    if (!Patterns.EMAIL_ADDRESS.matcher(email).matches()) {
-        return "Email no es válido."
+    val androidPattern = Patterns.EMAIL_ADDRESS
+    val matches = androidPattern?.matcher(email)?.matches() ?: SIMPLE_EMAIL_REGEX.matches(email)
+    if (!matches) {
+        return "Email no es v?lido."
     }
     return null
 }
@@ -141,3 +143,6 @@ fun validateChileanPhoneNumber(phone: String): String? {
     }
     return null
 }
+
+// Fallback para tests JVM donde Patterns.EMAIL_ADDRESS puede ser null.
+private val SIMPLE_EMAIL_REGEX = Regex("^[A-Za-z0-9+_.-]+@[A-Za-z0-9.-]+$")
