@@ -24,7 +24,7 @@ class RegisterFormValidationTest {
     @Test
     fun `email y telefono cumplen formato`() {
         assertEquals("Email es requerido.", validateEmail(""))
-        assertEquals("Email no es válido.", validateEmail("usuario@"))
+        assertEquals("Email no es valido.", validateEmail("usuario@"))
         assertNull(validateEmail("usuario@atl.cl"))
 
         assertEquals("Teléfono es requerido.", validateChileanPhoneNumber(""))

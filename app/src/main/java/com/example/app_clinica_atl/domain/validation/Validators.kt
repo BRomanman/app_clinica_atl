@@ -1,9 +1,11 @@
 package com.example.app_clinica_atl.domain.validation
 
-import android.util.Patterns
+import android.os.Build
+import androidx.annotation.RequiresApi
 import java.time.LocalDate
 import java.time.format.DateTimeFormatter
 import java.time.format.DateTimeParseException
+import java.util.regex.Pattern
 
 // NOTA: Estas funciones devuelven un 'String?'
 // Devuelven 'null' si la validación es exitosa.
@@ -50,6 +52,7 @@ fun validateRut(value: String): String? {
 /**
  * Valida que la fecha esté en formato dd-mm-aaaa y no sea futura.
  */
+@RequiresApi(Build.VERSION_CODES.O)
 fun validateDateDdMmYyyy(value: String, fieldName: String = "Fecha"): String? {
     if (value.isBlank()) {
         return "$fieldName es requerida."
@@ -65,20 +68,18 @@ fun validateDateDdMmYyyy(value: String, fieldName: String = "Fecha"): String? {
     } catch (e: DateTimeParseException) {
         "$fieldName no es válida."
     }
-    return null
 }
 
 /**
  * Valida que un texto sea un email válido.
+ * Usa un patrón simple independiente de android.util.Patterns para evitar NPE en tests JVM.
  */
 fun validateEmail(email: String): String? {
     if (email.isBlank()) {
         return "Email es requerido."
     }
-    val androidPattern = Patterns.EMAIL_ADDRESS
-    val matches = androidPattern?.matcher(email)?.matches() ?: SIMPLE_EMAIL_REGEX.matches(email)
-    if (!matches) {
-        return "Email no es v?lido."
+    if (!SIMPLE_EMAIL_REGEX.matcher(email).matches()) {
+        return "Email no es valido."
     }
     return null
 }
@@ -123,16 +124,10 @@ fun validateRegisterPassword(password: String, confirm: String): Result<Unit> {
     return Result.success(Unit)
 }
 
-// --- ¡¡FUNCIÓN AÑADIDA!! ---
 /**
  * Valida que un número de teléfono siga el formato chileno (+569xxxxxxxx).
  */
 fun validateChileanPhoneNumber(phone: String): String? {
-    // Expresión regular:
-    // ^     = inicio de la línea
-    // \+569 = debe empezar exactamente con "+569"
-    // \d{8} = debe ser seguido por 8 dígitos numéricos
-    // $     = fin de la línea
     val phoneRegex = Regex("^\\+569\\d{8}$")
 
     if (phone.isBlank()) {
@@ -144,5 +139,8 @@ fun validateChileanPhoneNumber(phone: String): String? {
     return null
 }
 
-// Fallback para tests JVM donde Patterns.EMAIL_ADDRESS puede ser null.
-private val SIMPLE_EMAIL_REGEX = Regex("^[A-Za-z0-9+_.-]+@[A-Za-z0-9.-]+$")
+// Patrón de email compatible con tests JVM (ASCII).
+private val SIMPLE_EMAIL_REGEX: Pattern = Pattern.compile(
+    "^[A-Z0-9._%+-]+@[A-Z0-9.-]+\\.[A-Z]{2,}\$",
+    Pattern.CASE_INSENSITIVE
+)

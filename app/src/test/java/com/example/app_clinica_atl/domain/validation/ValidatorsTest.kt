@@ -16,7 +16,7 @@ class ValidatorsTest {
     @Test
     fun `validateEmail detects missing and invalid`() {
         assertEquals("Email es requerido.", validateEmail(""))
-        assertEquals("Email no es válido.", validateEmail("invalid"))
+        assertEquals("Email no es valido.", validateEmail("sadolksdm"))
         assertNull(validateEmail("user@example.com"))
     }
 
@@ -46,7 +46,8 @@ class ValidatorsTest {
     @Test
     fun `all validators pass with correct data`() {
         assertNull(validateRequired("Nombre Apellido", "Nombre"))
-        assertNull(validateEmail("ok@correo.cl"))
+        assertNull(validateEmail("ok" +
+                "@correo.cl"))
         assertNull(validateLoginPassword("pass123"))
         assertTrue(validateRegisterPassword("Password1", "Password1").isSuccess)
         assertNull(validateChileanPhoneNumber("+56987654321"))

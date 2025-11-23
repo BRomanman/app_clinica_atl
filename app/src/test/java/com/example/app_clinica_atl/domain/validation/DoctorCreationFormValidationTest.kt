@@ -23,7 +23,7 @@ class DoctorCreationFormValidationTest {
     @Test
     fun `email y telefono siguen formato requerido`() {
         assertEquals("Email es requerido.", validateEmail(""))
-        assertEquals("Email no es válido.", validateEmail("usuario@"))
+        assertEquals("Email no es valido.", validateEmail("usuario@"))
         assertNull(validateEmail("doctor@atl.cl"))
 
         assertEquals("Teléfono es requerido.", validateChileanPhoneNumber(""))
