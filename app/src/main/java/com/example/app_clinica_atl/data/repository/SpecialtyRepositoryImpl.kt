@@ -19,7 +19,7 @@ class SpecialtyRepositoryImpl(
         val resp = api.getAllSpecialties()
         if (!resp.isSuccessful) throw HttpException(resp)
         val list: List<EspecialidadResponseDto> = resp.body() ?: emptyList()
-        emit(list.map { it.toUi() })
+        emit(list.mapNotNull { it.toUiOrNull() })
     }
 
     override suspend fun createSpecialty(body: EspecialidadRequestDto): Result<EspecialidadDto> =
@@ -29,14 +29,18 @@ class SpecialtyRepositoryImpl(
                 if (!resp.isSuccessful) throw HttpException(resp)
                 val created: EspecialidadResponseDto =
                     resp.body() ?: error("Respuesta vacía al crear especialidad")
-                created.toUi()
+                created.toUiOrNull() ?: error("Especialidad creada sin nombre")
             }
         }
 
-    private fun EspecialidadResponseDto.toUi(): EspecialidadDto =
-        EspecialidadDto(
+    private fun EspecialidadResponseDto.toUiOrNull(): EspecialidadDto? {
+        val cleanName = nombre?.trim().orEmpty()
+        if (cleanName.isBlank()) return null
+
+        return EspecialidadDto(
             id = this.id ?: 0L,
-            name = this.nombre,
+            name = cleanName,
             price = 0.0
         )
+    }
 }

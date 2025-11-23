@@ -63,15 +63,17 @@ class AdminManageSpecialtiesViewModel(
             _uiState.update { current ->
                 if (result.isSuccess) {
                     val list = result.getOrNull().orEmpty()
-                        .filter { it.nombre.isNotBlank() }
-                        .distinctBy { it.id to it.nombre }
-                        .map { dto ->
+                        .mapNotNull { dto ->
+                            val cleanName = dto.nombre?.trim().orEmpty()
+                            if (cleanName.isBlank()) return@mapNotNull null
+
                             AdminSpecialtyItem(
                                 id = dto.id,
-                                name = dto.nombre,
+                                name = cleanName,
                                 isFromInitialLoad = true
                             )
                         }
+                        .distinctBy { it.id to it.name }
 
                     current.copy(
                         isLoading = false,

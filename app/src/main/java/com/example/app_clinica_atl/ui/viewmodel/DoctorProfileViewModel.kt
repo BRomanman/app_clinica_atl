@@ -158,7 +158,10 @@ class DoctorProfileViewModel(
         specialtiesJob = viewModelScope.launch {
             val result = doctorProfileRepository.getSpecialtiesForDoctor(doctorId)
             if (result.isSuccess) {
-                val names = result.getOrNull().orEmpty().mapNotNull { it.nombre }.distinct()
+                val names = result.getOrNull()
+                    .orEmpty()
+                    .mapNotNull { it.nombre?.trim()?.takeIf { name -> name.isNotBlank() } }
+                    .distinct()
                 _uiState.update { state ->
                     state.doctor?.let { current ->
                         state.copy(doctor = current.copy(specialty = names.joinToString(", ").ifBlank { null }))

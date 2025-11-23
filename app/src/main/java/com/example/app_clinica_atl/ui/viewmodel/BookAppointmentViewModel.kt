@@ -175,7 +175,11 @@ class BookAppointmentViewModel(
             val result = usuariosRepository.getAllSpecialties()
             _uiState.update {
                 if (result.isSuccess) {
-                    val names = result.getOrNull()?.map { spec -> spec.nombre }?.filter { it.isNotBlank() }?.distinct().orEmpty()
+                    val names = result.getOrNull()
+                        ?.mapNotNull { spec -> spec.nombre?.trim() }
+                        ?.filter { it.isNotBlank() }
+                        ?.distinct()
+                        .orEmpty()
                     it.copy(isLoadingSpecialties = false, specialties = names)
                 } else {
                     it.copy(isLoadingSpecialties = false, errorMsg = result.exceptionOrNull()?.message)

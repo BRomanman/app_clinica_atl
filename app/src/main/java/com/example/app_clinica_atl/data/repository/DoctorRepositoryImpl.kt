@@ -54,12 +54,12 @@ class DoctorRepositoryImpl(
                         }.getOrElse { emptyList() }
 
                     val match: EspecialidadResponseDto? =
-                        specials.firstOrNull { it.nombre.equals(target, ignoreCase = true) }
+                        specials.firstOrNull { it.nombre?.equals(target, ignoreCase = true) == true }
 
                     if (match != null && doc.usuario != null) {
                         val user = doc.usuario.toUsuarioDto()
                         if (user.role.equals("doctor", ignoreCase = true)) {
-                            result += user.copy(specialty = match.nombre)
+                            result += user.copy(specialty = match.nombre.orEmpty())
                         }
                     }
                 }
