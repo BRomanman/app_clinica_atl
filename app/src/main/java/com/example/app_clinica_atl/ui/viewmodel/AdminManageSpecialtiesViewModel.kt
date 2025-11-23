@@ -2,134 +2,167 @@ package com.example.app_clinica_atl.ui.viewmodel
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import com.example.app_clinica_atl.data.remote.dto.EspecialidadDto
-import com.example.app_clinica_atl.data.repository.SpecialtyRepository
-import com.example.app_clinica_atl.domain.validation.validateRequired // <-- ¡IMPORT AÑADIDO!
+import com.example.app_clinica_atl.data.remote.dto.EspecialidadResponseDto
+import com.example.app_clinica_atl.data.repository.UsuariosRepository
+import com.example.app_clinica_atl.domain.validation.validateRequired
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
-import kotlinx.coroutines.flow.catch
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 
 /**
- * ¡ESTADO DE UI ACTUALIZADO!
- * Ahora guarda los campos del formulario y sus errores.
+ * Item que se muestra en la lista de la pantalla de administración.
+ *
+ * isFromInitialLoad:
+ *  - true  -> venía desde la BD al cargar la pantalla (especialidad "original").
+ *  - false -> fue creada en esta pantalla (¡NOTA! en esta versión deshabilitamos creación).
+ */
+data class AdminSpecialtyItem(
+    val id: Long?,
+    val name: String,
+    val isFromInitialLoad: Boolean
+)
+
+/**
+ * Estado de UI para AdminManageSpecialtiesScreen.
+ * (Sin diálogo de "Agregar", solo GET + PUT)
  */
 data class AdminSpecialtiesUiState(
-    val specialties: List<EspecialidadDto> = emptyList(),
-    val isLoading: Boolean = true,
+    val isLoading: Boolean = false,
+    val specialties: List<AdminSpecialtyItem> = emptyList(),
     val errorMsg: String? = null,
-    // --- Campos del formulario ---
-    val newSpecialtyName: String = "",
-    val newSpecialtyPrice: String = "",
-    val nameError: String? = null,
-    val priceError: String? = null
+
+    // --- Diálogo "Modificar especialidad" ---
+    val isEditDialogOpen: Boolean = false,
+    val editingId: Long? = null,
+    val editName: String = "",
+    val editNameError: String? = null
 )
 
 class AdminManageSpecialtiesViewModel(
-    private val specialtyRepository: SpecialtyRepository
+    private val usuariosRepository: UsuariosRepository
 ) : ViewModel() {
 
     private val _uiState = MutableStateFlow(AdminSpecialtiesUiState())
     val uiState: StateFlow<AdminSpecialtiesUiState> = _uiState.asStateFlow()
 
     init {
-        // Observa la base de datos (sin cambios)
-        viewModelScope.launch {
-            specialtyRepository.getAllSpecialties()
-                .catch { e ->
-                    _uiState.update { it.copy(isLoading = false, errorMsg = e.message) }
-                }
-                .collect { specialtyList ->
-                    _uiState.update {
-                        it.copy(
-                            isLoading = false,
-                            specialties = specialtyList,
-                            errorMsg = null
-                        )
-                    }
-                }
-        }
-    }
-
-    // --- ¡¡FUNCIONES AÑADIDAS!! ---
-    // (Estas son las funciones que faltaban y causaban el error)
-    fun onNameChange(name: String) {
-        val error = validateRequired(name, "Nombre")
-        _uiState.update {
-            it.copy(
-                newSpecialtyName = name,
-                nameError = error,
-                errorMsg = null // Limpia el error general
-            )
-        }
-    }
-
-    fun onPriceChange(priceStr: String) {
-        val price = priceStr.toDoubleOrNull()
-        val error = if (price == null || price <= 0) "Debe ser un número válido" else null
-        _uiState.update {
-            it.copy(
-                newSpecialtyPrice = priceStr,
-                priceError = error,
-                errorMsg = null // Limpia el error general
-            )
-        }
+        loadSpecialties()
     }
 
     /**
-     * ¡¡FUNCIÓN ACTUALIZADA!!
-     * Usa el estado del ViewModel para añadir la especialidad.
+     * Reutiliza EXACTAMENTE el mismo flujo que BookAppointment:
+     * UsuariosRepository.getAllSpecialties()
      */
-    fun addSpecialty() {
-        val s = _uiState.value
-
-        val nameError = validateRequired(s.newSpecialtyName, "Nombre")
-        val price = s.newSpecialtyPrice.toDoubleOrNull()
-        val priceError = if (price == null || price <= 0) "Precio no válido" else null
-
-        if (nameError != null || priceError != null) {
-            _uiState.update { it.copy(nameError = nameError, priceError = priceError) }
-            return
-        }
-
+    private fun loadSpecialties() {
         viewModelScope.launch {
-            val newSpecialty = EspecialidadDto(name = s.newSpecialtyName, price = price!!)
-            val result = specialtyRepository.addSpecialty(newSpecialty)
+            _uiState.update { it.copy(isLoading = true, errorMsg = null) }
 
-            if (result.isFailure) {
-                _uiState.update { it.copy(errorMsg = result.exceptionOrNull()?.message) }
-            } else {
-                // Éxito, limpia los campos y el error
-                _uiState.update {
-                    it.copy(
-                        errorMsg = null,
-                        newSpecialtyName = "",
-                        newSpecialtyPrice = "",
-                        nameError = null,
-                        priceError = null
+            val result = usuariosRepository.getAllSpecialties()
+            _uiState.update { current ->
+                if (result.isSuccess) {
+                    val list = result.getOrNull().orEmpty()
+                        .filter { it.nombre.isNotBlank() }
+                        .distinctBy { it.id to it.nombre }
+                        .map { dto ->
+                            AdminSpecialtyItem(
+                                id = dto.id,
+                                name = dto.nombre,
+                                isFromInitialLoad = true
+                            )
+                        }
+
+                    current.copy(
+                        isLoading = false,
+                        specialties = list,
+                        errorMsg = null
+                    )
+                } else {
+                    current.copy(
+                        isLoading = false,
+                        errorMsg = result.exceptionOrNull()?.message ?: "Error al cargar especialidades"
                     )
                 }
             }
         }
     }
 
-    /**
-     * Elimina una especialidad. (Sin cambios)
-     */
-    fun deleteSpecialty(specialty: EspecialidadDto) {
+    // --------------------
+    //  Diálogo: EDITAR
+    // --------------------
+
+    fun openEditDialog(item: AdminSpecialtyItem) {
+        _uiState.update {
+            it.copy(
+                isEditDialogOpen = true,
+                editingId = item.id,
+                editName = item.name,
+                editNameError = null
+            )
+        }
+    }
+
+    fun dismissEditDialog() {
+        _uiState.update {
+            it.copy(
+                isEditDialogOpen = false,
+                editingId = null,
+                editNameError = null
+            )
+        }
+    }
+
+    fun onEditNameChange(newName: String) {
+        _uiState.update { it.copy(editName = newName, editNameError = null) }
+    }
+
+    fun confirmEditSpecialty() {
+        val current = _uiState.value
+        val id = current.editingId
+
+        val error = validateRequired(current.editName, "Nombre")
+        if (error != null) {
+            _uiState.update { it.copy(editNameError = error) }
+            return
+        }
+
+        if (id == null) {
+            _uiState.update { it.copy(editNameError = "Error interno: ID nulo") }
+            return
+        }
+
         viewModelScope.launch {
-            val result = specialtyRepository.deleteSpecialty(specialty)
-            if (result.isFailure) {
-                _uiState.update { it.copy(errorMsg = result.exceptionOrNull()?.message) }
+            _uiState.update { it.copy(isLoading = true, errorMsg = null) }
+
+            val result = usuariosRepository.updateSpecialty(
+                id = id,
+                name = current.editName.trim()
+            )
+
+            _uiState.update { state ->
+                if (result.isSuccess) {
+                    val updatedList = state.specialties.map { item ->
+                        if (item.id == id) item.copy(name = current.editName.trim()) else item
+                    }
+
+                    state.copy(
+                        isLoading = false,
+                        isEditDialogOpen = false,
+                        editingId = null,
+                        editNameError = null,
+                        specialties = updatedList
+                    )
+                } else {
+                    state.copy(
+                        isLoading = false,
+                        errorMsg = result.exceptionOrNull()?.message ?: "Error al actualizar especialidad"
+                    )
+                }
             }
         }
     }
 
-    /**
-     * Limpia el mensaje de error de la UI. (Sin cambios)
-     */
     fun clearError() {
         _uiState.update { it.copy(errorMsg = null) }
     }

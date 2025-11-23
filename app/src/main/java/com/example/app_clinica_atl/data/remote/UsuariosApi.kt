@@ -1,9 +1,13 @@
 package com.example.app_clinica_atl.data.remote
 
+import com.example.app_clinica_atl.data.remote.dto.DoctorCreateRequestDto
 import com.example.app_clinica_atl.data.remote.dto.LoginRequestDto
 import com.example.app_clinica_atl.data.remote.dto.LoginResponseDto
 import com.example.app_clinica_atl.data.remote.dto.DoctorDto
+import com.example.app_clinica_atl.data.remote.dto.EspecialidadCreateRequestDto
+import com.example.app_clinica_atl.data.remote.dto.EspecialidadRequestDto
 import com.example.app_clinica_atl.data.remote.dto.EspecialidadResponseDto
+import com.example.app_clinica_atl.data.remote.dto.EspecialidadUpdateRequestDto
 import com.example.app_clinica_atl.data.remote.dto.UsuarioDto
 import com.example.app_clinica_atl.data.remote.dto.UsuarioResponseDto
 import com.example.app_clinica_atl.data.remote.dto.UsuarioUpdateRequestDto
@@ -66,7 +70,27 @@ interface UsuariosApi {
     @DELETE("doctores/{id}")
     suspend fun deleteDoc(@Path("id") id: Long): Response<Unit>
 
+    // --------- Añadido para creación “minimal” del doctor sin tocar tu DoctorDto ---------
+    // Mismo endpoint, cuerpo genérico. Esto NO rompe lo anterior.
+    @POST("doctores")
+    suspend fun createDocRaw(@Body body: Map<String, @JvmSuppressWildcards Any?>): DoctorDto
+    // ------------------------------------------------------------------------------------
+
     // Especialidades por doctor (personal_service)
     @GET("doctores/{doctorId}/especialidades")
     suspend fun getDoctorSpecialties(@Path("doctorId") doctorId: Long): List<EspecialidadResponseDto>
+
+    @PUT("especialidades/{id}")
+    suspend fun updateSpecialty(
+        @Path("id") id: Long,
+        @Body request: EspecialidadUpdateRequestDto
+    ): Response<EspecialidadResponseDto>
+
+    @POST("doctores")
+    suspend fun createDoctorForUser(@Body body: DoctorCreateRequestDto): DoctorDto
+
+    // --- CÓDIGO CORREGIDO ---
+    @POST("especialidades")
+    suspend fun createSpecialty(@Body body: EspecialidadRequestDto): retrofit2.Response<EspecialidadResponseDto>
+    // --- FIN DEL CÓDIGO CORREGIDO ---
 }

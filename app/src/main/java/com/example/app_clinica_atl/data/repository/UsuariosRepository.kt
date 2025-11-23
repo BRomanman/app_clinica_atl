@@ -2,10 +2,14 @@ package com.example.app_clinica_atl.data.repository
 
 import com.example.app_clinica_atl.data.remote.RetrofitClient
 import com.example.app_clinica_atl.data.remote.UsuariosApi
+import com.example.app_clinica_atl.data.remote.dto.DoctorCreateRequestDto // <-- IMPORT AÑADIDO
 import com.example.app_clinica_atl.data.remote.dto.EspecialidadResponseDto
+import com.example.app_clinica_atl.data.remote.dto.EspecialidadUpdateRequestDto
 import com.example.app_clinica_atl.data.remote.dto.LoginRequestDto
 import com.example.app_clinica_atl.data.remote.dto.RolRequest
 import com.example.app_clinica_atl.data.remote.dto.UsuarioDto
+import com.example.app_clinica_atl.data.remote.dto.UsuarioIdRefDto // <-- IMPORT AÑADIDO
+import com.example.app_clinica_atl.data.remote.dto.UsuarioResponseDto
 import com.example.app_clinica_atl.data.remote.dto.UsuarioUpdateRequestDto
 import com.example.app_clinica_atl.data.remote.dto.roleToId
 import com.example.app_clinica_atl.data.remote.dto.toUsuarioDto
@@ -20,15 +24,36 @@ class UsuariosRepository(
     private val usuariosApi: UsuariosApi = RetrofitClient.usuariosApi
 ) {
 
+    // --- CÓDIGO AÑADIDO ---
+    companion object {
+        private const val DEFAULT_TARIFA_CONSULTA = 25000 // ajusta si quieres otro valor
+    }
+    // --- FIN DEL CÓDIGO AÑADIDO ---
+
     suspend fun login(email: String, pass: String): Result<UsuarioDto> = loginViaApi(email, pass)
 
     suspend fun register(newUser: UsuarioDto): Result<UsuarioDto> = withContext(Dispatchers.IO) {
         try {
+            // Pre-chequeo de correo duplicado para dar error claro
+            val alreadyExists = runCatching { usuariosApi.getUsers() }
+                .getOrDefault(emptyList())
+                .any { it.correo.equals(newUser.email, ignoreCase = true) }
+
+            if (alreadyExists) {
+                return@withContext Result.failure(Exception("El correo ya está registrado. Usa otro correo."))
+            }
+
             val request = newUser.toUpdateRequest()
             val created = usuariosApi.createUser(request)
             Result.success(created.toUsuarioDto())
         } catch (e: HttpException) {
-            Result.failure(Exception(e.message() ?: "Error HTTP ${e.code()}", e))
+            val friendly = when {
+                e.code() == 409 -> "El correo ya está registrado."
+                (e.message()?.contains("Duplicate entry", true) == true) ||
+                        (e.message()?.contains("correo", true) == true) -> "El correo ya está registrado."
+                else -> e.message() ?: "Error HTTP ${e.code()}"
+            }
+            Result.failure(Exception(friendly, e))
         } catch (e: Exception) {
             Result.failure(e)
         }
@@ -146,8 +171,51 @@ class UsuariosRepository(
             Result.failure(e)
         }
     }
+
+    // ========= Mantengo para AdminManageSpecialties (solo PUT) =========
+    suspend fun createSpecialty(name: String) =
+        Result.failure<EspecialidadResponseDto>(IllegalStateException("No se puede crear especialidad sin doctor. Usa 'Crear Doctor'."))
+    // ===================================================================
+
+    suspend fun updateSpecialty(id: Long, name: String): Result<EspecialidadResponseDto> =
+        withContext(Dispatchers.IO) {
+            runCatching {
+                val request = EspecialidadUpdateRequestDto(nombre = name)
+                val response = usuariosApi.updateSpecialty(id, request)
+                if (response.isSuccessful) {
+                    response.body() ?: throw IllegalStateException("Respuesta vacía al actualizar especialidad")
+                } else {
+                    throw HttpException(response)
+                }
+            }
+        }
+
+    // --- CÓDIGO ACTUALIZADO ---
+    /**
+     * Crea la ficha de doctor para un usuario existente.
+     * Envia tarifa_consulta obligatoria (NOT NULL en BD).
+     */
+    suspend fun createDoctorForUser(
+        userId: Long,
+        salary: Double?,               // viene de la UI
+        tarifa: Int = DEFAULT_TARIFA_CONSULTA,
+        bono: Long? = 0L
+    ): Result<Long> = withContext(Dispatchers.IO) {
+        runCatching {
+            val body = DoctorCreateRequestDto(
+                tarifaConsulta = tarifa,
+                sueldo = salary?.toLong(),
+                bono = bono,
+                usuario = UsuarioIdRefDto(id = userId)
+            )
+            val created = usuariosApi.createDoctorForUser(body)
+            created.id ?: error("El backend no devolvió id de doctor")
+        }
+    }
+    // --- FIN DEL CÓDIGO ACTUALIZADO ---
 }
 
+// --- Helper para /api/v1/usuarios ---
 private fun UsuarioDto.toUpdateRequest(): UsuarioUpdateRequestDto {
     val parts = name.trim().split(" ", limit = 2)
     val nombre = parts.getOrElse(0) { "" }.ifBlank { "Usuario" }

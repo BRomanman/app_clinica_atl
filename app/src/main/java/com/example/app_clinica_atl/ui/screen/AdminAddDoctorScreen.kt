@@ -1,40 +1,44 @@
 package com.example.app_clinica_atl.ui.screen
 
+import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ArrowBack
+import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
+import androidx.compose.material3.Checkbox
 import androidx.compose.material3.CircularProgressIndicator
-import androidx.compose.material3.DropdownMenuItem
+import androidx.compose.material3.Divider
 import androidx.compose.material3.ExperimentalMaterial3Api
-import androidx.compose.material3.ExposedDropdownMenuBox
-import androidx.compose.material3.ExposedDropdownMenuDefaults
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
 import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.remember
-import androidx.compose.runtime.setValue
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardType
-// (Imports de contraseña ya no son necesarios)
 import androidx.compose.ui.unit.dp
+import com.example.app_clinica_atl.data.remote.dto.EspecialidadDto
 import com.example.app_clinica_atl.ui.viewmodel.AdminAddDoctorViewModel
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -43,8 +47,8 @@ fun AdminAddDoctorScreen(
     viewModel: AdminAddDoctorViewModel,
     onBackClick: () -> Unit
 ) {
+    // ✅ CORRECCIÓN: convertir StateFlow -> State para usar 'by'
     val uiState by viewModel.uiState.collectAsState()
-    var expanded by remember { mutableStateOf(false) }
 
     LaunchedEffect(uiState.registrationSuccess) {
         if (uiState.registrationSuccess) {
@@ -58,7 +62,7 @@ fun AdminAddDoctorScreen(
                 title = { Text("Añadir Nuevo Doctor") },
                 navigationIcon = {
                     IconButton(onClick = onBackClick) {
-                        Icon(Icons.Default.ArrowBack, contentDescription = "Volver")
+                        Icon(imageVector = Icons.Filled.ArrowBack, contentDescription = "Volver")
                     }
                 }
             )
@@ -72,7 +76,7 @@ fun AdminAddDoctorScreen(
                 .verticalScroll(rememberScrollState())
         ) {
 
-            // --- ¡¡FORMULARIO ACTUALIZADO!! ---
+            // --------- Datos personales ----------
             OutlinedTextField(
                 value = uiState.firstName,
                 onValueChange = viewModel::onFirstNameChange,
@@ -82,7 +86,7 @@ fun AdminAddDoctorScreen(
                 singleLine = true
             )
             uiState.firstNameError?.let { Text(it, color = MaterialTheme.colorScheme.error) }
-            Spacer(modifier = Modifier.height(8.dp))
+            Spacer(Modifier.height(8.dp))
 
             OutlinedTextField(
                 value = uiState.lastName,
@@ -93,8 +97,7 @@ fun AdminAddDoctorScreen(
                 singleLine = true
             )
             uiState.lastNameError?.let { Text(it, color = MaterialTheme.colorScheme.error) }
-            // --- FIN CAMBIO DE NOMBRE ---
-            Spacer(modifier = Modifier.height(8.dp))
+            Spacer(Modifier.height(8.dp))
 
             OutlinedTextField(
                 value = uiState.email,
@@ -106,7 +109,7 @@ fun AdminAddDoctorScreen(
                 keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Email)
             )
             uiState.emailError?.let { Text(it, color = MaterialTheme.colorScheme.error) }
-            Spacer(modifier = Modifier.height(8.dp))
+            Spacer(Modifier.height(8.dp))
 
             OutlinedTextField(
                 value = uiState.phone,
@@ -118,9 +121,7 @@ fun AdminAddDoctorScreen(
                 keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Phone)
             )
             uiState.phoneError?.let { Text(it, color = MaterialTheme.colorScheme.error) }
-            Spacer(modifier = Modifier.height(8.dp))
-
-            // --- ¡¡CAMPOS DE CONTRASEÑA ELIMINADOS!! ---
+            Spacer(Modifier.height(8.dp))
 
             OutlinedTextField(
                 value = uiState.salary,
@@ -132,70 +133,146 @@ fun AdminAddDoctorScreen(
                 keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number)
             )
             uiState.salaryError?.let { Text(it, color = MaterialTheme.colorScheme.error) }
-            Spacer(modifier = Modifier.height(8.dp))
 
-            // --- Combo Box (sin cambios) ---
-            ExposedDropdownMenuBox(
-                expanded = expanded,
-                onExpandedChange = { expanded = !expanded }
+            Spacer(Modifier.height(16.dp))
+
+            // --------- Especialidades ----------
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically
             ) {
-                OutlinedTextField(
-                    value = uiState.selectedSpecialty?.name ?: "",
-                    onValueChange = {},
-                    readOnly = true,
-                    label = { Text("Especialidad") },
-                    trailingIcon = {
-                        ExposedDropdownMenuDefaults.TrailingIcon(expanded = expanded)
-                    },
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .menuAnchor(),
-                    isError = uiState.specialtyError != null
-                )
-                ExposedDropdownMenu(
-                    expanded = expanded,
-                    onDismissRequest = { expanded = false }
-                ) {
-                    if (uiState.isLoading) {
-                        DropdownMenuItem(
-                            text = { Text("Cargando...") },
-                            onClick = { }
-                        )
-                    }
-                    uiState.specialties.forEach { specialty ->
-                        DropdownMenuItem(
-                            text = { Text("${specialty.name} (\$${specialty.price.toInt()})") },
-                            onClick = {
-                                viewModel.onSpecialtyChange(specialty)
-                                expanded = false
-                            }
-                        )
-                    }
+                Text("Especialidades", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.SemiBold)
+                TextButton(onClick = { viewModel.openNewSpecialtyDialog() }) {
+                    Text("Nueva especialidad")
                 }
             }
-            uiState.specialtyError?.let { Text(it, color = MaterialTheme.colorScheme.error) }
-            // --- FIN DEL COMBO BOX ---
+            uiState.specialtiesError?.let { Text(it, color = MaterialTheme.colorScheme.error) }
+            Spacer(Modifier.height(4.dp))
 
-            Spacer(modifier = Modifier.height(16.dp))
+            // Lista de especialidades del backend
+            if (uiState.backendSpecialties.isNotEmpty()) {
+                LazyColumn(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .height(220.dp)
+                ) {
+                    items(
+                        items = uiState.backendSpecialties,
+                        key = { it.id ?: it.name }
+                    ) { spec: EspecialidadDto ->
+                        val checked = uiState.selectedSpecialties.contains(spec.name)
+                        SpecialtyCheckRow(
+                            label = spec.name,
+                            checked = checked,
+                            onToggle = { viewModel.toggleSpecialty(spec.name) }
+                        )
+                        Divider()
+                    }
+                }
+            } else {
+                Text("No hay especialidades registradas aún.", style = MaterialTheme.typography.bodyMedium)
+            }
 
+            // Nuevas especialidades (creadas en la UI)
+            if (uiState.newSpecialties.isNotEmpty()) {
+                Spacer(Modifier.height(12.dp))
+                Text("Nuevas (esta sesión)", style = MaterialTheme.typography.titleSmall, fontWeight = FontWeight.Medium)
+                Spacer(Modifier.height(4.dp))
+                uiState.newSpecialties.forEach { name ->
+                    val checked = uiState.selectedSpecialties.contains(name)
+                    SpecialtyCheckRow(
+                        label = "$name (nueva)",
+                        checked = checked,
+                        onToggle = { viewModel.toggleSpecialty(name) }
+                    )
+                    Divider()
+                }
+            }
+
+            Spacer(Modifier.height(16.dp))
+
+            // --------- Botón Registrar ----------
             Button(
                 onClick = viewModel::registerDoctor,
                 enabled = !uiState.isLoading,
                 modifier = Modifier.fillMaxWidth()
             ) {
                 if (uiState.isLoading) {
-                    CircularProgressIndicator(modifier = Modifier.height(24.dp))
+                    CircularProgressIndicator(modifier = Modifier.height(20.dp), strokeWidth = 2.dp)
                 } else {
                     Text("Registrar Doctor")
                 }
             }
 
+            // Mensajes
             uiState.errorMsg?.let {
-                Text(it, color = MaterialTheme.colorScheme.error, modifier = Modifier.padding(top = 8.dp))
+                Spacer(Modifier.height(8.dp))
+                Text(it, color = MaterialTheme.colorScheme.error)
             }
             if (uiState.registrationSuccess) {
-                Text("¡Doctor registrado con éxito!", color = MaterialTheme.colorScheme.primary, modifier = Modifier.padding(top = 8.dp))
+                Spacer(Modifier.height(8.dp))
+                Text("¡Doctor registrado con éxito!", color = MaterialTheme.colorScheme.primary)
             }
         }
+    }
+
+    // --------- Diálogo: Nueva Especialidad ----------
+    if (uiState.showNewSpecialtyDialog) {
+        AlertDialog(
+            onDismissRequest = { viewModel.closeNewSpecialtyDialog() },
+            title = { Text("Nueva especialidad") },
+            text = {
+                Column {
+                    OutlinedTextField(
+                        value = uiState.newSpecialtyName,
+                        onValueChange = viewModel::onNewSpecialtyNameChange,
+                        label = { Text("Nombre de la especialidad") },
+                        singleLine = true,
+                        modifier = Modifier.fillMaxWidth(),
+                        isError = uiState.newSpecialtyError != null
+                    )
+                    uiState.newSpecialtyError?.let {
+                        Spacer(Modifier.height(6.dp))
+                        Text(it, color = MaterialTheme.colorScheme.error, style = MaterialTheme.typography.bodySmall)
+                    }
+                }
+            },
+            confirmButton = {
+                TextButton(onClick = { viewModel.confirmNewSpecialty() }) {
+                    Text("Guardar")
+                }
+            },
+            dismissButton = {
+                TextButton(onClick = { viewModel.closeNewSpecialtyDialog() }) {
+                    Text("Cancelar")
+                }
+            }
+        )
+    }
+}
+
+@Composable
+private fun SpecialtyCheckRow(
+    label: String,
+    checked: Boolean,
+    onToggle: () -> Unit
+) {
+    Row(
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(vertical = 8.dp),
+        verticalAlignment = Alignment.CenterVertically,
+        horizontalArrangement = Arrangement.SpaceBetween
+    ) {
+        Text(
+            text = label,
+            style = MaterialTheme.typography.bodyLarge,
+            modifier = Modifier.weight(1f)
+        )
+        Checkbox(
+            checked = checked,
+            onCheckedChange = { onToggle() }
+        )
     }
 }

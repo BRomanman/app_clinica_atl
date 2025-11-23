@@ -59,7 +59,9 @@ class MainActivity : ComponentActivity() {
     private val insuranceViewModel: InsuranceViewModel by viewModels { InsuranceViewModelFactory(segurosRepository, userPreferences) }
     private val doctorSearchPatientViewModel: DoctorSearchPatientViewModel by viewModels { DoctorSearchPatientViewModelFactory(usuariosRepository) }
     private val doctorScheduleViewModel: DoctorScheduleViewModel by viewModels { DoctorScheduleViewModelFactory(citasRepository, usuariosRepository) }
-    private val adminManageSpecialtiesViewModel: AdminManageSpecialtiesViewModel by viewModels { AdminManageSpecialtiesViewModelFactory(specialtyRepository) }
+    private val adminManageSpecialtiesViewModel: AdminManageSpecialtiesViewModel by viewModels {
+        AdminManageSpecialtiesViewModelFactory(usuariosRepository)
+    }
     private val adminAddDoctorViewModel: AdminAddDoctorViewModel by viewModels { AdminAddDoctorViewModelFactory(usuariosRepository, specialtyRepository) }
     private val adminViewDoctorsViewModel: AdminViewDoctorsViewModel by viewModels { AdminViewDoctorsViewModelFactory(usuariosRepository) }
     private val doctorPatientProfileViewModel: DoctorPatientProfileViewModel by viewModels {

@@ -1,39 +1,42 @@
 package com.example.app_clinica_atl.data.repository
 
+import com.example.app_clinica_atl.data.remote.RetrofitClient
+import com.example.app_clinica_atl.data.remote.UsuariosApi
 import com.example.app_clinica_atl.data.remote.dto.EspecialidadDto
+import com.example.app_clinica_atl.data.remote.dto.EspecialidadRequestDto
+import com.example.app_clinica_atl.data.remote.dto.EspecialidadResponseDto
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.Flow
-import kotlinx.coroutines.flow.MutableStateFlow
-import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.flow
+import kotlinx.coroutines.withContext
+import retrofit2.HttpException
 
+class SpecialtyRepositoryImpl(
+    private val api: UsuariosApi = RetrofitClient.usuariosApi
+) : SpecialtyRepository {
 
-class SpecialtyRepositoryImpl : SpecialtyRepository {
-
-    private val specialties = MutableStateFlow<List<EspecialidadDto>>(emptyList())
-
-    override fun getAllSpecialties(): Flow<List<EspecialidadDto>> = specialties.asStateFlow()
-
-    override suspend fun addSpecialty(specialty: EspecialidadDto): Result<Unit> {
-        return try {
-            if (specialty.name.isBlank()) {
-                throw IllegalArgumentException("El nombre no puede estar vacío.")
-            }
-            if (specialty.price <= 0) {
-                throw IllegalArgumentException("El precio debe ser mayor a 0.")
-            }
-            val updated = specialties.value + specialty
-            specialties.value = updated
-            Result.success(Unit)
-        } catch (e: Exception) {
-            Result.failure(e)
-        }
+    override fun getAllSpecialties(): Flow<List<EspecialidadDto>> = flow {
+        val resp = api.getAllSpecialties()
+        if (!resp.isSuccessful) throw HttpException(resp)
+        val list: List<EspecialidadResponseDto> = resp.body() ?: emptyList()
+        emit(list.map { it.toUi() })
     }
 
-    override suspend fun deleteSpecialty(specialty: EspecialidadDto): Result<Unit> {
-        return try {
-            specialties.value = specialties.value.filterNot { it.id == specialty.id }
-            Result.success(Unit)
-        } catch (e: Exception) {
-            Result.failure(e)
+    override suspend fun createSpecialty(body: EspecialidadRequestDto): Result<EspecialidadDto> =
+        withContext(Dispatchers.IO) {
+            runCatching<EspecialidadDto> {
+                val resp = api.createSpecialty(body)
+                if (!resp.isSuccessful) throw HttpException(resp)
+                val created: EspecialidadResponseDto =
+                    resp.body() ?: error("Respuesta vacía al crear especialidad")
+                created.toUi()
+            }
         }
-    }
+
+    private fun EspecialidadResponseDto.toUi(): EspecialidadDto =
+        EspecialidadDto(
+            id = this.id ?: 0L,
+            name = this.nombre,
+            price = 0.0
+        )
 }
