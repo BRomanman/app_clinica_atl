@@ -12,6 +12,7 @@ import com.example.app_clinica_atl.data.remote.dto.EspecialidadRequestDto
 import com.example.app_clinica_atl.data.remote.dto.UsuarioDto
 import com.example.app_clinica_atl.data.repository.SpecialtyRepository
 import com.example.app_clinica_atl.data.repository.UsuariosRepository
+import com.example.app_clinica_atl.domain.validation.validateChileanPhoneNumber
 import com.example.app_clinica_atl.ui.screen.AdminAddDoctorScreen
 import com.example.app_clinica_atl.ui.viewmodel.AdminAddDoctorViewModel
 import io.mockk.coEvery
@@ -31,7 +32,7 @@ class AdminAddDoctorScreenTest {
     val composeRule = createAndroidComposeRule<ComponentActivity>()
 
     private fun buildViewModel(
-        specialties: List<EspecialidadDto> = listOf(EspecialidadDto(1, "Cardiología", 0.0)),
+        specialties: List<EspecialidadDto> = listOf(EspecialidadDto(1, "Cardiologia", 0.0)),
         usersRepo: UsuariosRepository = mockk(relaxed = true),
         specialtyRepo: SpecialtyRepository = fakeSpecialtyRepository(specialties)
     ): AdminAddDoctorViewModel = AdminAddDoctorViewModel(usersRepo, specialtyRepo)
@@ -55,9 +56,10 @@ class AdminAddDoctorScreenTest {
 
         composeRule.onNodeWithText("Nombre es requerido.").assertIsDisplayed()
         composeRule.onNodeWithText("Apellido es requerido.").assertIsDisplayed()
+        composeRule.onNodeWithText("Fecha de nacimiento es requerida.").assertIsDisplayed()
         composeRule.onNodeWithText("Email es requerido.").assertIsDisplayed()
-        composeRule.onNodeWithText("Teléfono es requerido.").assertIsDisplayed()
-        composeRule.onNodeWithText("Salario inválido").assertIsDisplayed()
+        composeRule.onNodeWithText(validateChileanPhoneNumber("")!!).assertIsDisplayed()
+        composeRule.onNodeWithText("Salario invalido").assertIsDisplayed()
         composeRule.onNodeWithText("Debe seleccionar al menos una").assertIsDisplayed()
     }
 
@@ -84,10 +86,11 @@ class AdminAddDoctorScreenTest {
 
         composeRule.onNodeWithText("Nombre").performTextInput("Ana")
         composeRule.onNodeWithText("Apellido").performTextInput("Perez")
+        composeRule.onNodeWithText("Fecha de nacimiento (aaaa-mm-dd)").performTextInput("1990-01-01")
         composeRule.onNodeWithText("Email").performTextInput("ana@atl.cl")
-        composeRule.onNodeWithText("Teléfono (+56912345678)").performTextInput("+56912345678")
+        composeRule.onNodeWithText("Telefono (+56912345678)").performTextInput("+56912345678")
         composeRule.onNodeWithText("Salario (Ej: 2500000)").performTextInput("1500000")
-        composeRule.onNodeWithText("Cardiología").performClick()
+        composeRule.onNodeWithText("Cardiologia").performClick()
 
         composeRule.onNodeWithText("Registrar Doctor").performClick()
 
@@ -95,6 +98,7 @@ class AdminAddDoctorScreenTest {
             val state = vm.uiState.value
             assertEquals("", state.firstName)
             assertEquals("", state.lastName)
+            assertEquals("", state.birthDate)
             assertEquals("", state.email)
             assertEquals("", state.phone)
             assertEquals("", state.salary)

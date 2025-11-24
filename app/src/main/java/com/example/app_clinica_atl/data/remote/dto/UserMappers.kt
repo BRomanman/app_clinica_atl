@@ -45,7 +45,8 @@ fun UsuarioResponseDto.toUsuarioDto(): UsuarioDto {
         profileImageUrl = imagenPerfil,
         role = normalizedRole,
         specialty = null,
-        salary = doctor?.sueldo?.toDouble()
+        salary = doctor?.sueldo?.toDouble(),
+        birthDate = fechaNacimiento
     )
 }
 
@@ -63,6 +64,7 @@ fun DoctorDto.toUsuarioDto(): UsuarioDto {
         profileImageUrl = u?.imagenPerfil,
         role = "doctor",
         specialty = especialidad,
-        salary = sueldo?.toDouble()
+        salary = sueldo?.toDouble(),
+        birthDate = u?.fechaNacimiento
     )
 }

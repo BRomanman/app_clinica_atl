@@ -5,6 +5,7 @@ import com.example.app_clinica_atl.data.remote.dto.EspecialidadRequestDto
 import com.example.app_clinica_atl.data.remote.dto.UsuarioDto
 import com.example.app_clinica_atl.data.repository.SpecialtyRepository
 import com.example.app_clinica_atl.data.repository.UsuariosRepository
+import com.example.app_clinica_atl.domain.validation.validateChileanPhoneNumber
 import io.mockk.coEvery
 import io.mockk.mockk
 import kotlinx.coroutines.Dispatchers
@@ -35,7 +36,7 @@ class AdminAddDoctorViewModelTest {
 
     private val usuariosRepository: UsuariosRepository = mockk()
     private fun specialtyRepository(
-        specialties: List<EspecialidadDto> = listOf(EspecialidadDto(1, "Cardiología", 0.0)),
+        specialties: List<EspecialidadDto> = listOf(EspecialidadDto(1, "Cardiologia", 0.0)),
         failName: String? = null
     ): SpecialtyRepository = object : SpecialtyRepository {
         override fun getAllSpecialties(): Flow<List<EspecialidadDto>> = flowOf(specialties)
@@ -51,16 +52,17 @@ class AdminAddDoctorViewModelTest {
     @Test
     fun `registro sin datos marca errores y no avanza`() = runTest {
         val vm = AdminAddDoctorViewModel(usuariosRepository, specialtyRepository())
-        advanceUntilIdle() // espera carga de especialidades inicial
+        advanceUntilIdle()
 
         vm.registerDoctor()
         val state = vm.uiState.value
 
         assertEquals("Nombre es requerido.", state.firstNameError)
         assertEquals("Apellido es requerido.", state.lastNameError)
+        assertEquals("Fecha de nacimiento es requerida.", state.birthDateError)
         assertEquals("Email es requerido.", state.emailError)
-        assertEquals("Teléfono es requerido.", state.phoneError)
-        assertEquals("Salario inválido", state.salaryError)
+        assertEquals(validateChileanPhoneNumber(""), state.phoneError)
+        assertEquals("Salario invalido", state.salaryError)
         assertEquals("Debe seleccionar al menos una", state.specialtiesError)
         assertFalse(state.isLoading)
     }
@@ -77,10 +79,11 @@ class AdminAddDoctorViewModelTest {
 
         vm.onFirstNameChange("Ana")
         vm.onLastNameChange("Perez")
+        vm.onBirthDateChange("1990-01-01")
         vm.onEmailChange("ana@atl.cl")
         vm.onPhoneChange("+56912345678")
         vm.onSalaryChange("1500000")
-        vm.toggleSpecialty("Cardiología")
+        vm.toggleSpecialty("Cardiologia")
 
         vm.registerDoctor()
         advanceUntilIdle()
@@ -90,6 +93,7 @@ class AdminAddDoctorViewModelTest {
         assertEquals("Ana Perez", state.createdDoctorName)
         assertEquals("", state.firstName)
         assertEquals("", state.lastName)
+        assertEquals("", state.birthDate)
         assertEquals("", state.email)
         assertEquals("", state.phone)
         assertEquals("", state.salary)
@@ -104,10 +108,11 @@ class AdminAddDoctorViewModelTest {
 
         vm.onFirstNameChange("Ana")
         vm.onLastNameChange("Perez")
+        vm.onBirthDateChange("1990-01-01")
         vm.onEmailChange("ana@atl.cl")
         vm.onPhoneChange("+56912345678")
         vm.onSalaryChange("1500000")
-        vm.toggleSpecialty("Cardiología")
+        vm.toggleSpecialty("Cardiologia")
 
         vm.registerDoctor()
         advanceUntilIdle()
@@ -129,10 +134,11 @@ class AdminAddDoctorViewModelTest {
 
         vm.onFirstNameChange("Ana")
         vm.onLastNameChange("Perez")
+        vm.onBirthDateChange("1990-01-01")
         vm.onEmailChange("ana@atl.cl")
         vm.onPhoneChange("+56912345678")
         vm.onSalaryChange("1500000")
-        vm.toggleSpecialty("Cardiología")
+        vm.toggleSpecialty("Cardiologia")
 
         vm.registerDoctor()
         advanceUntilIdle()
@@ -154,10 +160,11 @@ class AdminAddDoctorViewModelTest {
 
         vm.onFirstNameChange("Ana")
         vm.onLastNameChange("Perez")
+        vm.onBirthDateChange("1990-01-01")
         vm.onEmailChange("ana@atl.cl")
         vm.onPhoneChange("+56912345678")
         vm.onSalaryChange("1500000")
-        vm.toggleSpecialty("Cardiología")
+        vm.toggleSpecialty("Cardiologia")
         vm.onNewSpecialtyNameChange("Urgencias")
         vm.confirmNewSpecialty()
 
@@ -176,10 +183,11 @@ class AdminAddDoctorViewModelTest {
 
         vm.onFirstNameChange("Ana")
         vm.onLastNameChange("Perez")
+        vm.onBirthDateChange("1990-01-01")
         vm.onEmailChange("ana@atl.cl")
         vm.onPhoneChange("+56912345678")
         vm.onSalaryChange("1500000")
-        vm.toggleSpecialty("Cardiología")
+        vm.toggleSpecialty("Cardiologia")
 
         coEvery { usuariosRepository.register(any()) } returns Result.success(
             UsuarioDto(id = 1, name = "Ana Perez", email = "ana@atl.cl", phone = "+56912345678", password = "x", role = "doctor")

@@ -16,5 +16,6 @@ data class UsuarioDto(
     @SerializedName("imagenPerfil") val profileImageUrl: String? = null,
     @SerializedName("rol") val role: String,
     @SerializedName("especialidad") val specialty: String? = null,
-    @SerializedName("salario") val salary: Double? = null
+    @SerializedName("salario") val salary: Double? = null,
+    @SerializedName("fechaNacimiento") val birthDate: String? = null
 )

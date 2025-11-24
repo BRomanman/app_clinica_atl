@@ -128,6 +128,17 @@ fun AdminAddDoctorScreen(
             Spacer(Modifier.height(8.dp))
 
             OutlinedTextField(
+                value = uiState.birthDate,
+                onValueChange = viewModel::onBirthDateChange,
+                label = { Text("Fecha de nacimiento (aaaa-mm-dd)") },
+                modifier = Modifier.fillMaxWidth(),
+                isError = uiState.birthDateError != null,
+                singleLine = true
+            )
+            uiState.birthDateError?.let { Text(it, color = MaterialTheme.colorScheme.error) }
+            Spacer(Modifier.height(8.dp))
+
+            OutlinedTextField(
                 value = uiState.email,
                 onValueChange = viewModel::onEmailChange,
                 label = { Text("Email") },
@@ -142,7 +153,7 @@ fun AdminAddDoctorScreen(
             OutlinedTextField(
                 value = uiState.phone,
                 onValueChange = viewModel::onPhoneChange,
-                label = { Text("Teléfono (+56912345678)") },
+                label = { Text("Telefono (+56912345678)") },
                 modifier = Modifier.fillMaxWidth(),
                 isError = uiState.phoneError != null,
                 singleLine = true,

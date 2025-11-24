@@ -221,10 +221,11 @@ private fun UsuarioDto.toUpdateRequest(): UsuarioUpdateRequestDto {
     val nombre = parts.getOrElse(0) { "" }.ifBlank { "Usuario" }
     val apellido = parts.getOrElse(1) { "" }.ifBlank { "Paciente" }
     val roleId = roleToId(role)
+    val birth = birthDate?.takeIf { it.isNotBlank() }?.let { "${it}T00:00:00" } ?: "2000-01-01T00:00:00"
     return UsuarioUpdateRequestDto(
         nombre = nombre,
         apellido = apellido,
-        fechaNacimiento = "2000-01-01T00:00:00",
+        fechaNacimiento = birth,
         correo = email,
         telefono = phone,
         contrasena = password,

@@ -21,6 +21,7 @@ import kotlin.random.Random
 data class AdminAddDoctorUiState(
     val firstName: String = "",
     val lastName: String = "",
+    val birthDate: String = "",
     val email: String = "",
     val phone: String = "",
     val salary: String = "",
@@ -35,6 +36,7 @@ data class AdminAddDoctorUiState(
 
     val firstNameError: String? = null,
     val lastNameError: String? = null,
+    val birthDateError: String? = null,
     val emailError: String? = null,
     val phoneError: String? = null,
     val salaryError: String? = null,
@@ -55,7 +57,6 @@ class AdminAddDoctorViewModel(
     val uiState: StateFlow<AdminAddDoctorUiState> = _uiState.asStateFlow()
 
     init {
-        // Cargar especialidades disponibles desde el backend
         viewModelScope.launch {
             specialtyRepository.getAllSpecialties()
                 .catch { e ->
@@ -73,19 +74,22 @@ class AdminAddDoctorViewModel(
         }
     }
 
-    // ---------- Helpers ----------
     private fun sanitizeNumber(raw: String): String =
-        raw.replace("\\s".toRegex(), "") // quita espacios (incluye NBSP)
-            .replace(".", "")            // quita separador de miles con punto
-            .replace(",", "")            // quita separador de miles con coma
+        raw.replace("\\s".toRegex(), "")
+            .replace(".", "")
+            .replace(",", "")
 
     private fun parseSalaryToLong(raw: String): Long? {
         val clean = sanitizeNumber(raw)
         return if (clean.isEmpty()) null else clean.toLongOrNull()
     }
-    // ------------------------------
 
-    // Handlers de formulario
+    private fun validateBirthDate(value: String): String? {
+        if (value.isBlank()) return "Fecha de nacimiento es requerida."
+        val regex = Regex("^\\d{4}-\\d{2}-\\d{2}$")
+        return if (!regex.matches(value)) "Formato invalido (aaaa-mm-dd)." else null
+    }
+
     fun onFirstNameChange(name: String) {
         val limited = name.take(50)
         _uiState.update { it.copy(firstName = limited, firstNameError = validateRequired(limited, "Nombre")) }
@@ -93,6 +97,10 @@ class AdminAddDoctorViewModel(
     fun onLastNameChange(value: String) {
         val limited = value.take(50)
         _uiState.update { it.copy(lastName = limited, lastNameError = validateRequired(limited, "Apellido")) }
+    }
+    fun onBirthDateChange(value: String) {
+        val limited = value.take(10)
+        _uiState.update { it.copy(birthDate = limited, birthDateError = validateBirthDate(limited)) }
     }
     fun onEmailChange(value: String) {
         _uiState.update { it.copy(email = value, emailError = validateEmail(value)) }
@@ -102,10 +110,9 @@ class AdminAddDoctorViewModel(
     }
     fun onSalaryChange(value: String) {
         val isValid = parseSalaryToLong(value) != null
-        _uiState.update { it.copy(salary = value, salaryError = if (isValid) null else "Debe ser un número") }
+        _uiState.update { it.copy(salary = value, salaryError = if (isValid) null else "Debe ser un numero") }
     }
 
-    // Selección múltiple de especialidades (nombres)
     fun toggleSpecialty(name: String) {
         val cur = _uiState.value.selectedSpecialties
         _uiState.update {
@@ -116,7 +123,6 @@ class AdminAddDoctorViewModel(
         }
     }
 
-    // Diálogo para crear especialidad nueva (local, antes de persistir)
     fun openNewSpecialtyDialog() {
         _uiState.update { it.copy(showNewSpecialtyDialog = true, newSpecialtyName = "", newSpecialtyError = null) }
     }
@@ -149,22 +155,22 @@ class AdminAddDoctorViewModel(
 
     fun clearSuccess() { _uiState.update { it.copy(registrationSuccess = false, createdDoctorName = null) } }
 
-    // Registro completo: Usuario -> Doctor -> Especialidades nuevas (con doctorId)
     fun registerDoctor() {
         val s = _uiState.value
 
         val firstError = validateRequired(s.firstName, "Nombre")
         val lastError  = validateRequired(s.lastName,  "Apellido")
+        val birthErr   = validateBirthDate(s.birthDate)
         val emailErr   = validateEmail(s.email)
         val phoneErr   = validateChileanPhoneNumber(s.phone)
         val salaryLong = parseSalaryToLong(s.salary)
-        val salaryErr  = if (salaryLong == null || salaryLong <= 0L) "Salario inválido" else null
+        val salaryErr  = if (salaryLong == null || salaryLong <= 0L) "Salario invalido" else null
         val specErr    = if (s.selectedSpecialties.isEmpty()) "Debe seleccionar al menos una" else null
 
-        if (listOf(firstError, lastError, emailErr, phoneErr, salaryErr, specErr).any { it != null }) {
+        if (listOf(firstError, lastError, birthErr, emailErr, phoneErr, salaryErr, specErr).any { it != null }) {
             _uiState.update {
                 it.copy(
-                    firstNameError = firstError, lastNameError = lastError,
+                    firstNameError = firstError, lastNameError = lastError, birthDateError = birthErr,
                     emailError = emailErr, phoneError = phoneErr,
                     salaryError = salaryErr, specialtiesError = specErr
                 )
@@ -178,13 +184,13 @@ class AdminAddDoctorViewModel(
         val password = "$passPrefix${Random.nextInt(100, 1000)}@"
 
         viewModelScope.launch {
-            // 1) Crear usuario con rol doctor
             val user = UsuarioDto(
                 name = "${s.firstName} ${s.lastName}",
                 email = s.email,
                 phone = s.phone,
                 password = password,
-                role = "doctor"
+                role = "doctor",
+                birthDate = s.birthDate
             )
             val userRes = userRepository.register(user)
             if (userRes.isFailure) {
@@ -196,7 +202,6 @@ class AdminAddDoctorViewModel(
                 return@launch
             }
 
-            // 2) Crear doctor (usa el userId y sueldo)
             val doctorRes = userRepository.createDoctorForUser(userId = userId, salary = salaryLong?.toDouble())
             if (doctorRes.isFailure) {
                 _uiState.update { it.copy(isLoading = false, errorMsg = "Error creando ficha de doctor") }
@@ -204,7 +209,6 @@ class AdminAddDoctorViewModel(
             }
             val doctorId = doctorRes.getOrNull()!!
 
-            // 3) Persistir sólo las especialidades nuevas (regla A)
             for (newName in s.newSpecialties) {
                 val req = EspecialidadRequestDto(nombre = newName.trim(), doctorId = doctorId)
                 val createRes = specialtyRepository.createSpecialty(req)
@@ -219,11 +223,10 @@ class AdminAddDoctorViewModel(
                     isLoading = false,
                     registrationSuccess = true,
                     createdDoctorName = "${s.firstName} ${s.lastName}".trim(),
-                    firstName = "", lastName = "", email = "", phone = "", salary = "",
+                    firstName = "", lastName = "", birthDate = "", email = "", phone = "", salary = "",
                     selectedSpecialties = emptyList(), newSpecialties = emptyList()
                 )
             }
         }
     }
-
 }
