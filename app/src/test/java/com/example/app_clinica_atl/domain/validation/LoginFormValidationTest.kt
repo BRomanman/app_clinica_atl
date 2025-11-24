@@ -12,7 +12,7 @@ class LoginFormValidationTest {
     @Test
     fun `email requerido e invalido`() {
         assertEquals("Email es requerido.", validateEmail(""))
-        assertEquals("Email no es valido.", validateEmail("correo@"))
+        assertEquals("Email no es válido.", validateEmail("correo@"))
     }
 
     @Test

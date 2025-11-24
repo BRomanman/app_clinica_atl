@@ -3,6 +3,7 @@ package com.example.app_clinica_atl.ui.viewmodel
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.example.app_clinica_atl.data.remote.dto.UsuarioDto
+import com.example.app_clinica_atl.data.remote.dto.roleToId
 import com.example.app_clinica_atl.data.repository.UsuariosRepository
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -58,6 +59,14 @@ class DoctorSearchPatientViewModel(
             _uiState.update {
                 if (result.isSuccess) {
                     val patient = result.getOrNull()
+                    if (patient != null && roleToId(patient.role) != 1L) {
+                        return@update it.copy(
+                            isLoading = false,
+                            patients = emptyList(),
+                            errorMsg = "Solo puedes buscar pacientes (rol 1)."
+                        )
+                    }
+
                     it.copy(
                         isLoading = false,
                         patients = patient?.let { listOf(it) } ?: emptyList(),

@@ -79,7 +79,7 @@ fun validateEmail(email: String): String? {
         return "Email es requerido."
     }
     if (!SIMPLE_EMAIL_REGEX.matcher(email).matches()) {
-        return "Email no es valido."
+        return "Email no es válido."
     }
     return null
 }
@@ -124,14 +124,14 @@ fun validateRegisterPassword(password: String, confirm: String): Result<Unit> {
     return Result.success(Unit)
 }
 
-/**
- * Valida que un número de teléfono siga el formato chileno (+569xxxxxxxx).
- */
 fun validateChileanPhoneNumber(phone: String): String? {
     val phoneRegex = Regex("^\\+569\\d{8}$")
 
     if (phone.isBlank()) {
         return "Teléfono es requerido."
+    }
+    if (phone.length > 12) {
+        return "Teléfono debe tener 12 caracteres (+569########)."
     }
     if (!phone.matches(phoneRegex)) {
         return "Formato no válido. (Ej: +56912345678)"

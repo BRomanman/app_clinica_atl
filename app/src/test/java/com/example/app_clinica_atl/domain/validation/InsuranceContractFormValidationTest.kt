@@ -15,7 +15,7 @@ class InsuranceContractFormValidationTest {
     @Test
     fun `datos de contacto requieren email y telefono validos`() {
         assertEquals("Email es requerido.", validateEmail(""))
-        assertEquals("Email no es valido.", validateEmail("correo@"))
+        assertEquals("Email no es válido.", validateEmail("correo@"))
         assertNull(validateEmail("contacto@atl.cl"))
 
         assertEquals("Teléfono es requerido.", validateChileanPhoneNumber(""))

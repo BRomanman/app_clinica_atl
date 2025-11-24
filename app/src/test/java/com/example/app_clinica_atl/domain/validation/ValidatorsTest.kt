@@ -16,7 +16,7 @@ class ValidatorsTest {
     @Test
     fun `validateEmail detects missing and invalid`() {
         assertEquals("Email es requerido.", validateEmail(""))
-        assertEquals("Email no es valido.", validateEmail("sadolksdm"))
+        assertEquals("Email no es válido.", validateEmail("sadolksdm"))
         assertNull(validateEmail("user@example.com"))
     }
 
@@ -40,6 +40,7 @@ class ValidatorsTest {
     fun `validateChileanPhoneNumber enforces format`() {
         assertEquals("Teléfono es requerido.", validateChileanPhoneNumber(""))
         assertEquals("Formato no válido. (Ej: +56912345678)", validateChileanPhoneNumber("+123"))
+        assertEquals("Teléfono debe tener 12 caracteres (+569########).", validateChileanPhoneNumber("+569123456789"))
         assertNull(validateChileanPhoneNumber("+56912345678"))
     }
 
