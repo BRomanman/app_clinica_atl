@@ -67,7 +67,8 @@ class AdminAddDoctorViewModel(
                     }
                 }
                 .collect { specialties ->
-                    _uiState.update { it.copy(isLoading = false, backendSpecialties = specialties) }
+                    val distinct = specialties.distinctBy { it.name.lowercase() }
+                    _uiState.update { it.copy(isLoading = false, backendSpecialties = distinct) }
                 }
         }
     }
@@ -86,10 +87,12 @@ class AdminAddDoctorViewModel(
 
     // Handlers de formulario
     fun onFirstNameChange(name: String) {
-        _uiState.update { it.copy(firstName = name, firstNameError = validateRequired(name, "Nombre")) }
+        val limited = name.take(50)
+        _uiState.update { it.copy(firstName = limited, firstNameError = validateRequired(limited, "Nombre")) }
     }
     fun onLastNameChange(value: String) {
-        _uiState.update { it.copy(lastName = value, lastNameError = validateRequired(value, "Apellido")) }
+        val limited = value.take(50)
+        _uiState.update { it.copy(lastName = limited, lastNameError = validateRequired(limited, "Apellido")) }
     }
     fun onEmailChange(value: String) {
         _uiState.update { it.copy(email = value, emailError = validateEmail(value)) }
@@ -107,7 +110,7 @@ class AdminAddDoctorViewModel(
         val cur = _uiState.value.selectedSpecialties
         _uiState.update {
             it.copy(
-                selectedSpecialties = if (name in cur) cur - name else cur + name,
+                selectedSpecialties = if (name in cur) emptyList() else listOf(name),
                 specialtiesError = null
             )
         }
@@ -138,7 +141,7 @@ class AdminAddDoctorViewModel(
         _uiState.update {
             it.copy(
                 newSpecialties = it.newSpecialties + name,
-                selectedSpecialties = it.selectedSpecialties + name,
+                selectedSpecialties = listOf(name),
                 showNewSpecialtyDialog = false
             )
         }
