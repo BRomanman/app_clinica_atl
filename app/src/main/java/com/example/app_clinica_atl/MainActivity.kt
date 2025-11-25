@@ -46,10 +46,11 @@ class MainActivity : ComponentActivity() {
     private val specialtyRepository: SpecialtyRepository by lazy { SpecialtyRepositoryImpl() }
     private val segurosRepository: SegurosRepository by lazy { SegurosRepositoryImpl() }
     private val historialRepository: HistorialRepository by lazy { HistorialRepository() }
+    private val weatherRepository by lazy { WeatherRepository() }
 
     // --- ViewModels (sin cambios) ---
     private val authViewModel: AuthViewModel by viewModels { AuthViewModelFactory(usuariosRepository, userPreferences) }
-    private val homeViewModel: HomeViewModel by viewModels { HomeViewModelFactory(usuariosRepository, userPreferences) }
+    private val homeViewModel: HomeViewModel by viewModels { HomeViewModelFactory(usuariosRepository, userPreferences, weatherRepository) }
     private val patientViewModel: PatientViewModel by viewModels { PatientViewModelFactory(application, usuariosRepository, userPreferences, segurosRepository, citasRepository) }
     private val doctorSearchViewModel: DoctorSearchViewModel by viewModels { DoctorSearchViewModelFactory(doctorRepository) }
     private val doctorProfileViewModel: DoctorProfileViewModel by viewModels {

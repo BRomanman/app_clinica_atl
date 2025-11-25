@@ -40,6 +40,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.example.app_clinica_atl.data.remote.dto.UsuarioDto
+import com.example.app_clinica_atl.data.repository.WeatherInfo
 import com.example.app_clinica_atl.ui.viewmodel.HomeViewModel
 
 @Composable
@@ -51,6 +52,7 @@ fun HomeScreen(
     modifier: Modifier = Modifier
 ) {
     val uiState by viewModel.uiState.collectAsState()
+    val weather = uiState.weather
     val gradient = Brush.verticalGradient(
         listOf(
             MaterialTheme.colorScheme.primaryContainer,
@@ -73,6 +75,14 @@ fun HomeScreen(
                 onBookAppointmentClick = onBookAppointmentClick,
                 onProfileClick = onProfileClick,
                 onInsuranceClick = onInsuranceClick
+            )
+        }
+
+        item {
+            WeatherCard(
+                weather = weather,
+                isLoading = uiState.isWeatherLoading,
+                error = uiState.weatherError
             )
         }
 
@@ -339,4 +349,92 @@ private fun PillTag(text: String) {
             )
             .padding(horizontal = 12.dp, vertical = 6.dp)
     )
+}
+
+@Composable
+private fun WeatherCard(
+    weather: WeatherInfo?,
+    isLoading: Boolean,
+    error: String?
+) {
+    Card(
+        modifier = Modifier
+            .fillMaxWidth(),
+        shape = RoundedCornerShape(20.dp),
+        elevation = CardDefaults.cardElevation(8.dp)
+    ) {
+        Box(
+            modifier = Modifier
+                .background(
+                    Brush.linearGradient(
+                        listOf(
+                            MaterialTheme.colorScheme.primaryContainer,
+                            MaterialTheme.colorScheme.surface
+                        )
+                    )
+                )
+                .padding(16.dp)
+        ) {
+            when {
+                isLoading -> {
+                    Text(
+                        text = "Cargando clima...",
+                        style = MaterialTheme.typography.bodyLarge
+                    )
+                }
+
+                error != null -> {
+                    Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
+                        Text(
+                            text = "No pudimos obtener el clima.",
+                            style = MaterialTheme.typography.bodyLarge
+                        )
+                        Text(
+                            text = error,
+                            style = MaterialTheme.typography.bodySmall
+                        )
+                    }
+                }
+
+                weather != null -> {
+                    Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                        Text(
+                            text = "Clima en ${weather.locationLabel}",
+                            style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold)
+                        )
+                        Row(
+                            modifier = Modifier.fillMaxWidth(),
+                            horizontalArrangement = Arrangement.SpaceBetween,
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
+                                Text(
+                                    text = "${weather.temperatureC}°C",
+                                    style = MaterialTheme.typography.headlineMedium.copy(fontWeight = FontWeight.Bold)
+                                )
+                                Text(
+                                    text = weather.description,
+                                    style = MaterialTheme.typography.bodyMedium
+                                )
+                                Text(
+                                    text = "Viento: ${weather.windKmh} km/h",
+                                    style = MaterialTheme.typography.bodySmall
+                                )
+                            }
+                            Text(
+                                text = "Ten un muy buen dia \uD83D\uDE0E",
+                                style = MaterialTheme.typography.bodyLarge,
+                                modifier = Modifier
+                                    .background(
+                                        color = MaterialTheme.colorScheme.primary.copy(alpha = 0.1f),
+                                        shape = RoundedCornerShape(12.dp)
+                                    )
+                                    .padding(horizontal = 12.dp, vertical = 10.dp)
+                            )
+                        }
+                    }
+                }
+            }
+        }
+    }
 }

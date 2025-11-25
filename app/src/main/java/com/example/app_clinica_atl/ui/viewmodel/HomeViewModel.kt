@@ -3,6 +3,9 @@ package com.example.app_clinica_atl.ui.viewmodel
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.example.app_clinica_atl.data.local.storage.UserPreferences
+import com.example.app_clinica_atl.data.remote.dto.UsuarioDto
+import com.example.app_clinica_atl.data.repository.WeatherInfo
+import com.example.app_clinica_atl.data.repository.WeatherRepository
 import com.example.app_clinica_atl.data.repository.UsuariosRepository
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -16,37 +19,52 @@ import kotlinx.coroutines.flow.flowOf
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
 
-// --- ¡¡ESTADO DE UI ACTUALIZADO!! ---
 data class HomeUiState(
     val userName: String = "",
     val debugInfo: String? = null,
-    val profileImageUrl: String? = null, // <-- ¡¡CAMPO AÑADIDO!!
-    val popularDoctors: List<com.example.app_clinica_atl.data.remote.dto.UsuarioDto> = emptyList()
+    val profileImageUrl: String? = null,
+    val popularDoctors: List<UsuarioDto> = emptyList(),
+    val weather: WeatherInfo? = null,
+    val isWeatherLoading: Boolean = true,
+    val weatherError: String? = null
 )
 
 class HomeViewModel(
     private val userRepository: UsuariosRepository,
-    private val userPreferences: UserPreferences
+    private val userPreferences: UserPreferences,
+    private val weatherRepository: WeatherRepository
 ) : ViewModel() {
 
-    // Estado auxiliar para depurar un llamado manual a datos de usuario (botón "Probar API")
     private val _debugUserInfo = MutableStateFlow<String?>(null)
     val debugUserInfo: StateFlow<String?> = _debugUserInfo.asStateFlow()
 
-    // --- ¡¡LÓGICA ACTUALIZADA!! ---
-    // Ya no usamos 'init'.
-    // 'uiState' ahora es un Flow que reacciona a los cambios en 'userIdFlow' y lista de doctores.
+    private val _weatherInfo = MutableStateFlow<WeatherInfo?>(null)
+    private val _weatherError = MutableStateFlow<String?>(null)
+    private val _isWeatherLoading = MutableStateFlow(true)
+
+    private val doctorsFlow = userRepository.getAllDoctors().catch { emit(emptyList<UsuarioDto>()) }
+
+    private val weatherStateFlow = combine(
+        _weatherInfo,
+        _weatherError,
+        _isWeatherLoading
+    ) { weather, weatherError, isWeatherLoading ->
+        Triple(weather, weatherError, isWeatherLoading)
+    }
+
     @OptIn(ExperimentalCoroutinesApi::class)
     private val currentUserFlow = userPreferences.userIdFlow.flatMapLatest { userId ->
-        if (userId == null) flowOf(null) else userRepository.getUserByIdAsFlow(userId)
+        if (userId == null) flowOf<UsuarioDto?>(null) else userRepository.getUserByIdAsFlow(userId)
     }
 
     @OptIn(ExperimentalCoroutinesApi::class)
     val uiState: StateFlow<HomeUiState> = combine(
         currentUserFlow,
-        userRepository.getAllDoctors().catch { emit(emptyList()) },
-        _debugUserInfo
-    ) { user, doctors, debug ->
+        doctorsFlow,
+        _debugUserInfo,
+        weatherStateFlow
+    ) { user: UsuarioDto?, doctors: List<UsuarioDto>, debug: String?, weatherTriple: Triple<WeatherInfo?, String?, Boolean> ->
+        val (weather, weatherError, isWeatherLoading) = weatherTriple
         val popular = doctors
             .filter { it.role.equals("doctor", true) }
             .take(6)
@@ -54,7 +72,10 @@ class HomeViewModel(
             userName = user?.name ?: "Usuario",
             debugInfo = debug,
             profileImageUrl = user?.profileImageUrl,
-            popularDoctors = popular
+            popularDoctors = popular,
+            weather = weather,
+            isWeatherLoading = isWeatherLoading,
+            weatherError = weatherError
         )
     }.stateIn(
         scope = viewModelScope,
@@ -62,6 +83,23 @@ class HomeViewModel(
         initialValue = HomeUiState(userName = "Cargando...")
     )
 
+    init {
+        fetchWeather()
+    }
+
+    fun fetchWeather() {
+        viewModelScope.launch {
+            _isWeatherLoading.value = true
+            val result = weatherRepository.getCurrentWeather()
+            result.onSuccess {
+                _weatherInfo.value = it
+                _weatherError.value = null
+            }.onFailure { error ->
+                _weatherError.value = error.message ?: "No pudimos obtener el clima."
+            }
+            _isWeatherLoading.value = false
+        }
+    }
 
     fun fetchDebugUser(userId: Long) {
         viewModelScope.launch {
@@ -77,9 +115,6 @@ class HomeViewModel(
                 },
                 onFailure = { error -> "Error: ${error.message ?: "desconocido"}" }
             )
-            // Refresca el uiState para reflejar el valor de debug actual
-            // (stateIn reemitirá el último valor cuando cambie el flow base).
-            // No se hace nada más porque uiState lee _debugUserInfo.value en el map.
         }
     }
 }
