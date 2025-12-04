@@ -1,4 +1,4 @@
-package com.example.app_clinica_atl.ui.screen
+package com.example.app_clinica_atl.ui.screen.Doctor
 
 import android.os.Build
 import androidx.annotation.RequiresApi

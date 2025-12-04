@@ -1,4 +1,4 @@
-package com.example.app_clinica_atl.ui.screen
+package com.example.app_clinica_atl.ui.screen.Doctor
 
 import android.Manifest
 import android.content.Context
@@ -64,6 +64,7 @@ import androidx.compose.ui.text.input.VisualTransformation
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
+import androidx.core.content.FileProvider
 import coil.compose.AsyncImage
 import com.example.app_clinica_atl.R
 import com.example.app_clinica_atl.data.remote.dto.DoctorMonthlyStatDto
@@ -621,7 +622,7 @@ private fun createImageUri(context: Context): Uri {
     val timeStamp = SimpleDateFormat("yyyyMMdd_HHmmss", Locale.getDefault()).format(Date())
     val imageFile = File(imageCacheFolder, "JPEG_${timeStamp}_.jpg")
     val authority = "${context.packageName}.fileprovider"
-    return androidx.core.content.FileProvider.getUriForFile(
+    return FileProvider.getUriForFile(
         Objects.requireNonNull(context),
         authority,
         imageFile

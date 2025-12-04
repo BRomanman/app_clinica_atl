@@ -1,4 +1,4 @@
-package com.example.app_clinica_atl.ui.screen
+package com.example.app_clinica_atl.ui.screen.Admin
 
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState

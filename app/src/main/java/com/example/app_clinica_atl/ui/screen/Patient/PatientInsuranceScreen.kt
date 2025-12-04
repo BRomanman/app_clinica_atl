@@ -1,8 +1,9 @@
-package com.example.app_clinica_atl.ui.screen
+package com.example.app_clinica_atl.ui.screen.Patient
 
 import android.app.NotificationChannel
 import android.app.NotificationManager
 import android.content.Context
+import android.os.Build
 import androidx.core.app.NotificationCompat
 import androidx.core.app.NotificationManagerCompat
 import androidx.compose.foundation.Image
@@ -17,12 +18,9 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
-import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.CircularProgressIndicator
@@ -31,7 +29,6 @@ import androidx.compose.material3.Scaffold
 import androidx.compose.material3.SnackbarHost
 import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.Text
-import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
@@ -50,7 +47,6 @@ import androidx.compose.ui.unit.sp
 import com.example.app_clinica_atl.R
 import com.example.app_clinica_atl.data.remote.dto.SeguroDto
 import com.example.app_clinica_atl.ui.viewmodel.InsuranceViewModel
-import kotlinx.coroutines.delay
 
 @Composable
  fun SegurosScreen(
@@ -234,7 +230,7 @@ private fun EmptyState(text: String) {
 private fun showInsuranceNotification(context: Context, message: String) {
     val channelId = "insurance_channel"
     val manager = NotificationManagerCompat.from(context)
-    if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.O) {
+    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
         val channel = NotificationChannel(
             channelId,
             "Seguros",

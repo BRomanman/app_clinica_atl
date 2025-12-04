@@ -1,4 +1,4 @@
-package com.example.app_clinica_atl.ui.screen
+package com.example.app_clinica_atl.ui.screen.Admin
 
 import android.Manifest
 import android.content.Context
@@ -47,6 +47,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
 import androidx.core.content.ContextCompat
+import com.example.app_clinica_atl.R
 import com.example.app_clinica_atl.data.remote.dto.EspecialidadDto
 import com.example.app_clinica_atl.notifications.NotificationHelper
 import com.example.app_clinica_atl.ui.viewmodel.AdminAddDoctorViewModel
@@ -77,7 +78,7 @@ fun AdminAddDoctorScreen(
             )
             Toast.makeText(
                 context,
-                context.getString(com.example.app_clinica_atl.R.string.admin_doctor_created_toast),
+                context.getString(R.string.admin_doctor_created_toast),
                 Toast.LENGTH_LONG
             ).show()
             viewModel.clearSuccess()

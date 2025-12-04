@@ -1,12 +1,10 @@
-package com.example.app_clinica_atl.ui.screen
+package com.example.app_clinica_atl.ui.screen.Patient
 
 import android.os.Build
 import androidx.annotation.RequiresApi
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.ArrowDropDown
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
@@ -31,8 +29,10 @@ import androidx.compose.ui.text.input.TextFieldValue
 import androidx.compose.ui.platform.LocalContext
 import android.app.NotificationChannel
 import android.app.NotificationManager
+import android.content.Context
 import androidx.core.app.NotificationCompat
 import androidx.core.app.NotificationManagerCompat
+import com.example.app_clinica_atl.R
 
 data class BeneficiarioForm(
     val nombre: String = "",
@@ -430,10 +430,10 @@ private fun formatDateInput(input: String): String {
     return sb.toString()
 }
 
-private fun showInsuranceNotification(context: android.content.Context, message: String) {
+private fun showInsuranceNotification(context: Context, message: String) {
     val channelId = "insurance_channel"
     val manager = NotificationManagerCompat.from(context)
-    if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.O) {
+    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
         val channel = NotificationChannel(
             channelId,
             "Seguros",
@@ -442,7 +442,7 @@ private fun showInsuranceNotification(context: android.content.Context, message:
         manager.createNotificationChannel(channel)
     }
     val notification = NotificationCompat.Builder(context, channelId)
-        .setSmallIcon(com.example.app_clinica_atl.R.drawable.logo)
+        .setSmallIcon(R.drawable.logo)
         .setContentTitle("Contrato de seguro")
         .setContentText(message)
         .setAutoCancel(true)

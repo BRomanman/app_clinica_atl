@@ -1,4 +1,4 @@
-package com.example.app_clinica_atl.ui.screen
+package com.example.app_clinica_atl.ui.screen.Patient
 
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background

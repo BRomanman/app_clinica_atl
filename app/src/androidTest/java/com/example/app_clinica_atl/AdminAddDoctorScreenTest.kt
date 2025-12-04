@@ -13,10 +13,9 @@ import com.example.app_clinica_atl.data.remote.dto.UsuarioDto
 import com.example.app_clinica_atl.data.repository.SpecialtyRepository
 import com.example.app_clinica_atl.data.repository.UsuariosRepository
 import com.example.app_clinica_atl.domain.validation.validateChileanPhoneNumber
-import com.example.app_clinica_atl.ui.screen.AdminAddDoctorScreen
+import com.example.app_clinica_atl.ui.screen.Admin.AdminAddDoctorScreen
 import com.example.app_clinica_atl.ui.viewmodel.AdminAddDoctorViewModel
 import io.mockk.coEvery
-import io.mockk.every
 import io.mockk.mockk
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.flowOf

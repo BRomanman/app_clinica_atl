@@ -1,4 +1,4 @@
-package com.example.app_clinica_atl.ui.screen
+package com.example.app_clinica_atl.ui.screen.Patient
 
 import android.Manifest
 import android.content.Context
@@ -10,7 +10,6 @@ import androidx.compose.foundation.clickable
 import androidx.compose.ui.platform.LocalContext
 import androidx.core.content.FileProvider
 import coil.compose.AsyncImage
-import androidx.compose.foundation.Image
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column

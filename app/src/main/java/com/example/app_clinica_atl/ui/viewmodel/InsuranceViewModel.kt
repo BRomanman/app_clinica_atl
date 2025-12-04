@@ -6,7 +6,7 @@ import com.example.app_clinica_atl.data.local.storage.UserPreferences
 import com.example.app_clinica_atl.data.remote.dto.ContratoSeguroDto
 import com.example.app_clinica_atl.data.remote.dto.SeguroDto
 import com.example.app_clinica_atl.data.repository.SegurosRepository
-import com.example.app_clinica_atl.ui.screen.BeneficiarioForm
+import com.example.app_clinica_atl.ui.screen.Patient.BeneficiarioForm
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow

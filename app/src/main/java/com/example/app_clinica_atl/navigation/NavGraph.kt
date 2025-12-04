@@ -31,6 +31,22 @@ import com.example.app_clinica_atl.ui.viewmodel.AdminProfileViewModelFactory
 import com.example.app_clinica_atl.ui.viewmodel.AdminViewDoctorsViewModelFactory
 import com.example.app_clinica_atl.ui.viewmodel.AdminEditDoctorViewModelFactory
 import androidx.compose.runtime.collectAsState
+import com.example.app_clinica_atl.ui.screen.Admin.AdminAddDoctorScreen
+import com.example.app_clinica_atl.ui.screen.Admin.AdminEditDoctorScreen
+import com.example.app_clinica_atl.ui.screen.Admin.AdminManageSpecialtiesScreen
+import com.example.app_clinica_atl.ui.screen.Admin.AdminMenuScreen
+import com.example.app_clinica_atl.ui.screen.Admin.AdminProfileScreen
+import com.example.app_clinica_atl.ui.screen.Admin.AdminViewDoctorsScreen
+import com.example.app_clinica_atl.ui.screen.Doctor.DoctorMenuScreen
+import com.example.app_clinica_atl.ui.screen.Doctor.DoctorPatientProfileScreen
+import com.example.app_clinica_atl.ui.screen.Doctor.DoctorProfileScreen
+import com.example.app_clinica_atl.ui.screen.Doctor.DoctorScheduleScreen
+import com.example.app_clinica_atl.ui.screen.Doctor.DoctorSearchPatientScreen
+import com.example.app_clinica_atl.ui.screen.Patient.BookAppointmentScreen
+import com.example.app_clinica_atl.ui.screen.Patient.ContratarSeguroScreen
+import com.example.app_clinica_atl.ui.screen.Patient.HomeScreen
+import com.example.app_clinica_atl.ui.screen.Patient.PatientProfileScreen
+import com.example.app_clinica_atl.ui.screen.Patient.SegurosScreen
 
 @RequiresApi(Build.VERSION_CODES.O)
 @Composable
@@ -161,7 +177,13 @@ fun AppNavGraph(
         composable(Route.BookAppointment.path) {
             BookAppointmentScreen(
                 viewModel = bookAppointmentViewModel,
-                onViewProfile = { doctorId -> navController.navigate(Route.DoctorPreview.createRoute(doctorId)) },
+                onViewProfile = { doctorId ->
+                    navController.navigate(
+                        Route.DoctorPreview.createRoute(
+                            doctorId
+                        )
+                    )
+                },
                 onBookingSuccess = {
                     navController.navigate(Route.PatientProfile.path) {
                         popUpTo(Route.Home.path)

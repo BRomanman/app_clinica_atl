@@ -1,4 +1,4 @@
-package com.example.app_clinica_atl.ui.screen
+package com.example.app_clinica_atl.ui.screen.Doctor
 
 import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.background

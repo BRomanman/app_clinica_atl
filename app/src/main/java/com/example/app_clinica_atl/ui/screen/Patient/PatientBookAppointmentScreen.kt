@@ -1,13 +1,15 @@
-package com.example.app_clinica_atl.ui.screen
+package com.example.app_clinica_atl.ui.screen.Patient
 
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
 import android.Manifest
+import android.content.Context
 import android.content.pm.PackageManager
 import android.os.Build
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
-import androidx.compose.foundation.clickable
+import androidx.annotation.RequiresApi
+import androidx.annotation.RequiresPermission
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -45,7 +47,6 @@ import androidx.compose.material3.SelectableDates
 import androidx.compose.material3.rememberDatePickerState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
-import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -56,7 +57,6 @@ import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
-import com.example.app_clinica_atl.R
 import com.example.app_clinica_atl.notifications.NotificationHelper
 import java.text.SimpleDateFormat
 import java.util.Calendar
@@ -70,8 +70,10 @@ import androidx.core.content.ContextCompat
 import java.time.LocalDate
 import java.time.LocalTime
 import androidx.compose.material3.ButtonDefaults
+import com.example.app_clinica_atl.ui.viewmodel.BookAppointmentUiState
 
 
+@RequiresApi(Build.VERSION_CODES.O)
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun BookAppointmentScreen(
@@ -85,7 +87,7 @@ fun BookAppointmentScreen(
     val context = LocalContext.current
     val notificationPermissionLauncher = rememberLauncherForActivityResult(
         contract = ActivityResultContracts.RequestPermission()
-    ) { granted ->
+    ) @RequiresPermission(Manifest.permission.POST_NOTIFICATIONS) { granted ->
         if (granted) {
             sendAppointmentNotification(context, state.selectedDoctorName, state.selectedDate, state.selectedTime)
         } else {
@@ -109,7 +111,10 @@ fun BookAppointmentScreen(
 
     // --- Lógica del Calendario ---
     val calendar = Calendar.getInstance()
-    calendar.add(Calendar.DAY_OF_YEAR, 1)
+
+    // Agregar 2 días a la fecha actual
+    calendar.add(Calendar.DAY_OF_YEAR, 2)
+
     calendar.set(Calendar.HOUR_OF_DAY, 0)
     calendar.set(Calendar.MINUTE, 0)
     calendar.set(Calendar.SECOND, 0)
@@ -419,8 +424,8 @@ private fun DropdownMenuField(
 }
 
 private fun maybeSendNotification(
-    context: android.content.Context,
-    state: com.example.app_clinica_atl.ui.viewmodel.BookAppointmentUiState,
+    context: Context,
+    state: BookAppointmentUiState,
     requestPermission: (String) -> Unit
 ) {
     if (!state.bookingSuccess || state.selectedDate.isBlank() || state.selectedTime.isBlank()) return
@@ -437,8 +442,10 @@ private fun maybeSendNotification(
     }
 }
 
+@RequiresApi(Build.VERSION_CODES.O)
+@RequiresPermission(Manifest.permission.POST_NOTIFICATIONS)
 private fun sendAppointmentNotification(
-    context: android.content.Context,
+    context: Context,
     doctorName: String,
     dateStr: String,
     timeStr: String
