@@ -95,6 +95,7 @@ class MainActivity : ComponentActivity() {
                     val currentRoute = navBackStackEntry?.destination?.route
                     val userRole by authViewModel.userRoleFlow.collectAsStateWithLifecycle(initialValue = null)
                     val userId by userPreferences.userIdFlow.collectAsStateWithLifecycle(initialValue = null)
+                    val userDoctorId by authViewModel.userDoctorIdFlow.collectAsStateWithLifecycle(initialValue = null)
 
                     // --- ¡¡LÓGICA DE REINICIO (SOLUCIÓN NUCLEAR)!! ---
                     LaunchedEffect(currentRoute) {
@@ -149,7 +150,8 @@ class MainActivity : ComponentActivity() {
                                 vm = authViewModel, currentRoute = currentRoute,
                                 onGoToPatientProfile = { navController.navigate(Route.PatientProfile.path); scope.launch { drawerState.close() } },
                                 onGoToDoctorProfile = {
-                                    userId?.let {
+                                    val doctorTarget = userDoctorId ?: userId
+                                    doctorTarget?.let {
                                         navController.navigate(Route.DoctorProfile.createRoute(it))
                                         scope.launch { drawerState.close() }
                                     }
@@ -189,7 +191,7 @@ class MainActivity : ComponentActivity() {
                                 doctorSearchPatientViewModel = doctorSearchPatientViewModel,
                                 doctorPatientProfileViewModel = doctorPatientProfileViewModel,
                                 adminViewDoctorsViewModel = adminViewDoctorsViewModel,
-                                currentDoctorId = userId
+                                currentDoctorId = userDoctorId
                             )
                         }
                     }

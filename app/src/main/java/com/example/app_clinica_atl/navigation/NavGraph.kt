@@ -67,7 +67,7 @@ fun AppNavGraph(
         composable(Route.Login.path) {
             LoginScreenVm(
                 authViewModel = authViewModel,
-                onLoginSuccessNavigate = { role ->
+                onLoginSuccessNavigate = { role, _ ->
                     val destination = when (normalizeRole(role)) {
                         "administrador" -> Route.AdminMenu.path
                         "doctor" -> Route.DoctorMenu.path

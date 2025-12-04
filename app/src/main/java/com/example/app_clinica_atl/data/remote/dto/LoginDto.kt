@@ -35,6 +35,7 @@ fun LoginResponseDto.toUsuarioDtoFromLogin(plainPassword: String): UsuarioDto {
         profileImageUrl = null,
         role = normalizedRole,
         specialty = null,
-        salary = null
+        salary = null,
+        doctorId = doctorId
     )
 }

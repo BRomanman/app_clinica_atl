@@ -55,22 +55,23 @@ import com.example.app_clinica_atl.ui.viewmodel.AuthViewModel
 @Composable
 fun LoginScreenVm(
     authViewModel: AuthViewModel,
-    onLoginSuccessNavigate: (role: String) -> Unit,
+    onLoginSuccessNavigate: (role: String, doctorId: Long?) -> Unit,
     onGoRegister: () -> Unit
 ) {
     val uiState by authViewModel.loginUiState.collectAsState()
     val storedRole by authViewModel.userRoleFlow.collectAsState(initial = null)
+    val storedDoctorId by authViewModel.userDoctorIdFlow.collectAsState(initial = null)
     val context = LocalContext.current
 
-    LaunchedEffect(uiState.loginSuccess, uiState.userRole) {
+    LaunchedEffect(uiState.loginSuccess, uiState.userRole, uiState.userDoctorId) {
         if (uiState.loginSuccess && uiState.userRole != null) {
-            onLoginSuccessNavigate(uiState.userRole!!)
+            onLoginSuccessNavigate(uiState.userRole!!, uiState.userDoctorId)
         }
     }
-    LaunchedEffect(storedRole) {
+    LaunchedEffect(storedRole, storedDoctorId) {
         val role = storedRole?.let { normalizeRole(it) }
         if (role != null && !uiState.loginSuccess) {
-            onLoginSuccessNavigate(role)
+            onLoginSuccessNavigate(role, storedDoctorId)
         }
     }
     LaunchedEffect(uiState.weakPasswordWarning) {

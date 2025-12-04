@@ -46,7 +46,8 @@ fun UsuarioResponseDto.toUsuarioDto(): UsuarioDto {
         role = normalizedRole,
         specialty = null,
         salary = doctor?.sueldo?.toDouble(),
-        birthDate = fechaNacimiento
+        birthDate = fechaNacimiento,
+        doctorId = doctor?.id
     )
 }
 
@@ -65,6 +66,7 @@ fun DoctorDto.toUsuarioDto(): UsuarioDto {
         role = "doctor",
         specialty = especialidad,
         salary = sueldo?.toDouble(),
-        birthDate = u?.fechaNacimiento
+        birthDate = u?.fechaNacimiento,
+        doctorId = this.id ?: u?.doctor?.id
     )
 }

@@ -29,6 +29,7 @@ class UserPreferences(context: Context) {
     private object PreferencesKeys {
         val USER_ID = longPreferencesKey("user_id")
         val USER_ROLE = stringPreferencesKey("user_role")
+        val USER_DOCTOR_ID = longPreferencesKey("user_doctor_id")
         // --- ¡¡LLAVE AÑADIDA!! ---
         val THEME_PREFERENCE = stringPreferencesKey("theme_preference")
     }
@@ -50,6 +51,13 @@ class UserPreferences(context: Context) {
             preferences[PreferencesKeys.USER_ROLE]
         }
 
+    val userDoctorIdFlow: Flow<Long?> = dataStore.data
+        .catch { exception ->
+            if (exception is IOException) { emit(emptyPreferences()) } else { throw exception }
+        }.map { preferences ->
+            preferences[PreferencesKeys.USER_DOCTOR_ID]
+        }
+
     // --- ¡¡FLUJO AÑADIDO PARA EL TEMA!! ---
     /**
      * Devuelve la preferencia de tema guardada (ej: "LIGHT", "DARK", "SYSTEM").
@@ -64,10 +72,15 @@ class UserPreferences(context: Context) {
 
     // --- Funciones de guardado ---
 
-    suspend fun saveUserSession(id: Long, role: String) {
+    suspend fun saveUserSession(id: Long, role: String, doctorId: Long? = null) {
         dataStore.edit { preferences ->
             preferences[PreferencesKeys.USER_ID] = id
             preferences[PreferencesKeys.USER_ROLE] = role
+            if (doctorId != null) {
+                preferences[PreferencesKeys.USER_DOCTOR_ID] = doctorId
+            } else {
+                preferences.remove(PreferencesKeys.USER_DOCTOR_ID)
+            }
         }
     }
 
@@ -75,6 +88,7 @@ class UserPreferences(context: Context) {
         dataStore.edit { preferences ->
             preferences.remove(PreferencesKeys.USER_ID)
             preferences.remove(PreferencesKeys.USER_ROLE)
+            preferences.remove(PreferencesKeys.USER_DOCTOR_ID)
         }
     }
 

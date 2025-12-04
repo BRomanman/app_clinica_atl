@@ -26,6 +26,7 @@ data class LoginUiState(
     val loginError: String? = null,
     val loginSuccess: Boolean = false,
     val userRole: String? = null,
+    val userDoctorId: Long? = null,
     val weakPasswordWarning: String? = null,
     val isResetDialogOpen: Boolean = false,
     val resetEmail: String = "",
@@ -66,6 +67,7 @@ class AuthViewModel(
     val registerUiState: StateFlow<RegisterUiState> = _registerUiState.asStateFlow()
 
     val userRoleFlow = userPreferences.userRoleFlow
+    val userDoctorIdFlow = userPreferences.userDoctorIdFlow
 
     // --- Handlers de Login (con validación en tiempo real) ---
     fun onLoginEmailChange(email: String) {
@@ -133,13 +135,14 @@ class AuthViewModel(
             val result = userRepository.login(_loginUiState.value.email, _loginUiState.value.password)
             if (result.isSuccess) {
                 val user = result.getOrNull()!!
-                userPreferences.saveUserSession(user.id, user.role)
+                userPreferences.saveUserSession(user.id, user.role, user.doctorId)
                 val weakPass = isWeakDoctorPassword(user.role, user.name, _loginUiState.value.password)
                 _loginUiState.update {
                     it.copy(
                         isLoading = false,
                         loginSuccess = true,
                         userRole = user.role,
+                        userDoctorId = user.doctorId,
                         weakPasswordWarning = if (weakPass) "Tu contraseña es débil (contiene tu nombre y año). Cámbiala cuanto antes." else null
                     )
                 }
@@ -264,7 +267,7 @@ class AuthViewModel(
             val result = userRepository.register(newUser)
             if (result.isSuccess) {
                 val registeredUser = result.getOrNull()!!
-                userPreferences.saveUserSession(registeredUser.id, registeredUser.role)
+                userPreferences.saveUserSession(registeredUser.id, registeredUser.role, registeredUser.doctorId)
                 _registerUiState.update { it.copy(isLoading = false, registerSuccess = true) }
             } else {
                 _registerUiState.update { it.copy(isLoading = false, registerError = result.exceptionOrNull()?.message ?: "Error desconocido") }

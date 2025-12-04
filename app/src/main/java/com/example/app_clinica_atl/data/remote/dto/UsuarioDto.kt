@@ -17,5 +17,6 @@ data class UsuarioDto(
     @SerializedName("rol") val role: String,
     @SerializedName("especialidad") val specialty: String? = null,
     @SerializedName("salario") val salary: Double? = null,
-    @SerializedName("fechaNacimiento") val birthDate: String? = null
+    @SerializedName("fechaNacimiento") val birthDate: String? = null,
+    @SerializedName(value = "doctorId", alternate = ["idDoctor"]) val doctorId: Long? = null
 )
