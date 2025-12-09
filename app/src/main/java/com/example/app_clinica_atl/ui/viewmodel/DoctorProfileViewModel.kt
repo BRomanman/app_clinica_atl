@@ -5,10 +5,10 @@ import android.os.Build
 import androidx.annotation.RequiresApi
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import com.example.app_clinica_atl.data.remote.dto.CitaDto
+import com.example.app_clinica_atl.data.remote.CitaDto
 import com.example.app_clinica_atl.data.remote.dto.DoctorMonthlyStatDto
 import com.example.app_clinica_atl.data.remote.dto.HistorialDto
-import com.example.app_clinica_atl.data.remote.dto.UsuarioResponseDto
+import com.example.app_clinica_atl.data.remote.dto.DoctorDto
 import com.example.app_clinica_atl.data.repository.CitasRepository
 import com.example.app_clinica_atl.data.repository.DoctorProfileRepository
 import com.example.app_clinica_atl.data.repository.HistorialRepository
@@ -77,15 +77,16 @@ class DoctorProfileViewModel(
     private var specialtiesJob: Job? = null
 
     @RequiresApi(Build.VERSION_CODES.O)
-    fun loadDoctorProfile(userId: Long) {
-        currentUserId = userId
+    fun loadDoctorProfile(doctorId: Long) {
+        currentUserId = doctorId
         viewModelScope.launch {
             _uiState.update { it.copy(isLoading = true, errorMsg = null) }
-            val result = doctorProfileRepository.getDoctorProfile(userId)
+            val result = doctorProfileRepository.getDoctorProfile(doctorId)
             if (result.isSuccess) {
                 val dto = result.getOrNull()!!
                 val info = dto.toDoctorProfileInfo(_uiState.value.doctor?.profileImageUrl)
                 currentDoctorId = info.doctorId
+                currentUserId = dto.usuario?.id ?: doctorId
                 _uiState.update {
                     it.copy(
                         isLoading = false,
@@ -94,7 +95,7 @@ class DoctorProfileViewModel(
                         errorMsg = null
                     )
                 }
-                val doctorKey = info.doctorId ?: userId
+                val doctorKey = info.doctorId ?: doctorId
                 if (doctorKey != null) {
                     observeStats(doctorKey)
                     observeSpecialties(doctorKey)
@@ -368,20 +369,24 @@ class DoctorProfileViewModel(
     }
 }
 
-private fun UsuarioResponseDto.toDoctorProfileInfo(existingImage: String?): DoctorProfileInfo {
-    val displayName = listOfNotNull(nombre, apellido).joinToString(" ").trim().ifBlank { correo.orEmpty() }
-    val specialtyText = "Especialidad no disponible"
+private fun DoctorDto.toDoctorProfileInfo(existingImage: String?): DoctorProfileInfo {
+    val user = usuario
+    val displayName = listOfNotNull(user?.nombre, user?.apellido)
+        .joinToString(" ")
+        .trim()
+        .ifBlank { user?.correo.orEmpty() }
+    val specialtyText = especialidad?.takeIf { it.isNotBlank() } ?: "Especialidad no disponible"
     return DoctorProfileInfo(
-        userId = id,
-        doctorId = doctor?.id,
+        userId = user?.id ?: (id ?: -1L),
+        doctorId = id,
         name = displayName,
-        email = correo.orEmpty(),
+        email = user?.correo.orEmpty(),
         specialty = specialtyText,
-        phone = telefono ?: "",
-        role = rol,
-        bono = doctor?.bono,
-        sueldo = doctor?.sueldo,
-        tarifaConsulta = doctor?.tarifaConsulta,
-        profileImageUrl = existingImage
+        phone = user?.telefono ?: "",
+        role = user?.rol,
+        bono = bono,
+        sueldo = sueldo,
+        tarifaConsulta = tarifaConsulta,
+        profileImageUrl = existingImage ?: user?.imagenPerfil
     )
 }

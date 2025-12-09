@@ -1,15 +1,16 @@
 package com.example.app_clinica_atl.ui.screen.Patient
 
-import androidx.compose.foundation.BorderStroke
-import androidx.compose.foundation.background
 import android.Manifest
+import android.annotation.SuppressLint
+import android.app.NotificationChannel
+import android.app.NotificationManager
 import android.content.Context
 import android.content.pm.PackageManager
 import android.os.Build
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
-import androidx.annotation.RequiresApi
-import androidx.annotation.RequiresPermission
+import androidx.compose.foundation.BorderStroke
+import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -21,12 +22,15 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.CalendarToday
+import androidx.compose.material3.Button
+import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
-import androidx.compose.material3.Button
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.DatePicker
 import androidx.compose.material3.DatePickerDialog
@@ -39,11 +43,11 @@ import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Scaffold
+import androidx.compose.material3.SelectableDates
 import androidx.compose.material3.SnackbarHost
 import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
-import androidx.compose.material3.SelectableDates
 import androidx.compose.material3.rememberDatePickerState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
@@ -55,25 +59,19 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
+import androidx.core.app.NotificationCompat
+import androidx.core.app.NotificationManagerCompat
+import androidx.core.content.ContextCompat
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
-import com.example.app_clinica_atl.notifications.NotificationHelper
+import com.example.app_clinica_atl.R
+import com.example.app_clinica_atl.ui.viewmodel.BookAppointmentViewModel
 import java.text.SimpleDateFormat
 import java.util.Calendar
 import java.util.Date
 import java.util.Locale
-import com.example.app_clinica_atl.ui.viewmodel.BookAppointmentViewModel
-import androidx.compose.foundation.shape.CircleShape
-import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.ui.platform.LocalContext
-import androidx.core.content.ContextCompat
-import java.time.LocalDate
-import java.time.LocalTime
-import androidx.compose.material3.ButtonDefaults
-import com.example.app_clinica_atl.ui.viewmodel.BookAppointmentUiState
 
-
-@RequiresApi(Build.VERSION_CODES.O)
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun BookAppointmentScreen(
@@ -83,27 +81,72 @@ fun BookAppointmentScreen(
     modifier: Modifier = Modifier
 ) {
     val state by viewModel.uiState.collectAsStateWithLifecycle()
+
+    // ✅ ahora la fecha se habilita si hay doctor backend O al menos userId de doctor
+    val canSelectDate =
+        state.selectedDoctorBackendId != null || state.selectedDoctorUserId != null
+
     val snackbarHostState = remember { SnackbarHostState() }
     val context = LocalContext.current
+    var pendingNotificationData by remember { mutableStateOf<PendingAppointmentNotification?>(null) }
+
     val notificationPermissionLauncher = rememberLauncherForActivityResult(
         contract = ActivityResultContracts.RequestPermission()
-    ) @RequiresPermission(Manifest.permission.POST_NOTIFICATIONS) { granted ->
+    ) { granted ->
         if (granted) {
-            sendAppointmentNotification(context, state.selectedDoctorName, state.selectedDate, state.selectedTime)
+            pendingNotificationData?.let {
+                sendAppointmentNotification(context, it.doctorName, it.date, it.time)
+            }
+            pendingNotificationData = null
         } else {
             snackbarHostState.currentSnackbarData?.dismiss()
         }
     }
 
+    fun requestNotificationPermissionIfNeeded(doctorName: String, date: String, time: String) {
+        if (doctorName.isBlank() || date.isBlank()) return
+        val details = PendingAppointmentNotification(
+            doctorName = doctorName,
+            date = date,
+            time = time
+        )
+        pendingNotificationData = details
+
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+            val hasPermission = ContextCompat.checkSelfPermission(
+                context,
+                Manifest.permission.POST_NOTIFICATIONS
+            ) == PackageManager.PERMISSION_GRANTED
+
+            if (hasPermission) {
+                sendAppointmentNotification(context, details.doctorName, details.date, details.time)
+                pendingNotificationData = null
+            } else {
+                notificationPermissionLauncher.launch(Manifest.permission.POST_NOTIFICATIONS)
+            }
+        } else {
+            sendAppointmentNotification(context, details.doctorName, details.date, details.time)
+            pendingNotificationData = null
+        }
+    }
+
     LaunchedEffect(state.bookingSuccess) {
         if (state.bookingSuccess) {
-            maybeSendNotification(context, state, notificationPermissionLauncher::launch)
+            val selectedSlot = state.slots.firstOrNull { it.id == state.selectedSlotId }
+            val slotTime = selectedSlot?.horaInicio.orEmpty()
+            snackbarHostState.showSnackbar(message = "Cita reservada con éxito")
+            requestNotificationPermissionIfNeeded(
+                doctorName = state.selectedDoctorName,
+                date = state.selectedDate,
+                time = slotTime
+            )
             onBookingSuccess()
             viewModel.onBookingSuccessHandled()
         }
     }
-    LaunchedEffect(state.errorMsg) {
-        state.errorMsg?.let {
+
+    LaunchedEffect(state.errorMessage) {
+        state.errorMessage?.let {
             snackbarHostState.showSnackbar(it)
             viewModel.clearMessages()
         }
@@ -111,10 +154,7 @@ fun BookAppointmentScreen(
 
     // --- Lógica del Calendario ---
     val calendar = Calendar.getInstance()
-
-    // Agregar 2 días a la fecha actual
     calendar.add(Calendar.DAY_OF_YEAR, 2)
-
     calendar.set(Calendar.HOUR_OF_DAY, 0)
     calendar.set(Calendar.MINUTE, 0)
     calendar.set(Calendar.SECOND, 0)
@@ -157,7 +197,6 @@ fun BookAppointmentScreen(
     // --- Fin Lógica Calendario ---
 
     val cs = MaterialTheme.colorScheme
-
     val backgroundGradient = remember(
         cs.primaryContainer,
         cs.tertiaryContainer,
@@ -171,7 +210,6 @@ fun BookAppointmentScreen(
             )
         )
     }
-
 
     Scaffold(
         snackbarHost = { SnackbarHost(snackbarHostState) },
@@ -288,21 +326,21 @@ fun BookAppointmentScreen(
                     }
                     Spacer(Modifier.height(12.dp))
 
-                    // --- Campo de Fecha ---
+                    // 3. Campo de Fecha
                     OutlinedTextField(
                         value = state.selectedDate,
                         onValueChange = {},
                         label = { Text("Fecha (YYYY-MM-DD)") },
                         placeholder = { Text("Seleccione una fecha") },
                         modifier = Modifier.fillMaxWidth(),
-                        enabled = state.selectedDoctorBackendId != null,
+                        enabled = canSelectDate,          // ✅ antes revisaba solo selectedDoctorBackendId
                         readOnly = true,
                         isError = state.dateError != null,
                         shape = RoundedCornerShape(12.dp),
                         trailingIcon = {
                             IconButton(
                                 onClick = { viewModel.showDatePicker() },
-                                enabled = state.selectedDoctorBackendId != null
+                                enabled = canSelectDate    // ✅
                             ) {
                                 Icon(
                                     imageVector = Icons.Default.CalendarToday,
@@ -312,36 +350,61 @@ fun BookAppointmentScreen(
                         }
                     )
                     state.dateError?.let {
-                        Text(it, color = MaterialTheme.colorScheme.error, style = MaterialTheme.typography.labelSmall)
+                        Text(
+                            it,
+                            color = MaterialTheme.colorScheme.error,
+                            style = MaterialTheme.typography.labelSmall
+                        )
                     }
                     Spacer(Modifier.height(12.dp))
 
                     // 4. Dropdown de Horas
+                    val slotOptions = state.slots.map { it.displayLabel }
+                    val selectedSlotLabel = state.slots
+                        .firstOrNull { it.id == state.selectedSlotId }
+                        ?.displayLabel
+                        .orEmpty()
+
                     DropdownMenuField(
                         label = "Hora",
-                        options = state.availableTimes,
-                        selectedOptionText = state.selectedTime,
-                        onOptionSelected = viewModel::onTimeChange,
-                        enabled = !state.isBooking && state.availableTimes.isNotEmpty(),
-                        isLoading = state.isLoadingTimes,
-                        isError = state.timeError != null
+                        options = slotOptions,
+                        selectedOptionText = selectedSlotLabel,
+                        onOptionSelected = { label ->
+                            state.slots.firstOrNull { it.displayLabel == label }
+                                ?.let { viewModel.onSlotSelected(it.id) }
+                        },
+                        enabled = !state.isBooking && slotOptions.isNotEmpty(),
+                        isLoading = state.isLoadingSlots,
+                        isError = state.slotError != null
                     )
-                    if (!state.isLoadingTimes && state.selectedDate.isNotBlank() && state.availableTimes.isEmpty()) {
+
+                    // ✅ condición ajustada para usar canSelectDate
+                    if (
+                        !state.isLoadingSlots &&
+                        state.selectedDate.isNotBlank() &&
+                        canSelectDate &&
+                        slotOptions.isEmpty()
+                    ) {
                         Text(
                             text = "No hay horarios disponibles para la fecha seleccionada.",
                             style = MaterialTheme.typography.bodyMedium,
                             color = MaterialTheme.colorScheme.error
                         )
                     }
-                    state.timeError?.let {
-                        Text(it, color = MaterialTheme.colorScheme.error, style = MaterialTheme.typography.labelSmall)
+
+                    state.slotError?.let {
+                        Text(
+                            it,
+                            color = MaterialTheme.colorScheme.error,
+                            style = MaterialTheme.typography.labelSmall
+                        )
                     }
                     Spacer(Modifier.height(16.dp))
 
                     // 5. Botón de Enviar
                     Button(
-                        onClick = viewModel::submitBooking,
-                        enabled = !state.isBooking && state.selectedTime.isNotBlank(),
+                        onClick = viewModel::onConfirmBooking,
+                        enabled = !state.isBooking && state.selectedSlotId != null,
                         modifier = Modifier.fillMaxWidth(),
                         colors = ButtonDefaults.buttonColors(
                             containerColor = MaterialTheme.colorScheme.primary,
@@ -350,7 +413,10 @@ fun BookAppointmentScreen(
                         shape = RoundedCornerShape(14.dp)
                     ) {
                         if (state.isBooking) {
-                            CircularProgressIndicator(strokeWidth = 2.dp, modifier = Modifier.size(18.dp))
+                            CircularProgressIndicator(
+                                strokeWidth = 2.dp,
+                                modifier = Modifier.size(18.dp)
+                            )
                             Spacer(Modifier.width(8.dp))
                             Text("Agendando...")
                         } else {
@@ -362,7 +428,6 @@ fun BookAppointmentScreen(
         }
     }
 }
-
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -413,8 +478,7 @@ private fun DropdownMenuField(
                 DropdownMenuItem(
                     text = { Text(selectionOption) },
                     onClick = {
-                        // --- ¡¡AQUÍ ESTÁ LA CORRECCIÓN!! ---
-                        onOptionSelected(selectionOption) // Era selectionD
+                        onOptionSelected(selectionOption)
                         expanded = false
                     }
                 )
@@ -423,39 +487,38 @@ private fun DropdownMenuField(
     }
 }
 
-private fun maybeSendNotification(
-    context: Context,
-    state: BookAppointmentUiState,
-    requestPermission: (String) -> Unit
-) {
-    if (!state.bookingSuccess || state.selectedDate.isBlank() || state.selectedTime.isBlank()) return
-    if (Build.VERSION.SDK_INT < Build.VERSION_CODES.O) return
-
-    NotificationHelper.createNotificationChannel(context)
-    val needsPermission = Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU &&
-            ContextCompat.checkSelfPermission(context, Manifest.permission.POST_NOTIFICATIONS) != PackageManager.PERMISSION_GRANTED
-
-    if (needsPermission) {
-        requestPermission(Manifest.permission.POST_NOTIFICATIONS)
-    } else {
-        sendAppointmentNotification(context, state.selectedDoctorName, state.selectedDate, state.selectedTime)
-    }
-}
-
-@RequiresApi(Build.VERSION_CODES.O)
-@RequiresPermission(Manifest.permission.POST_NOTIFICATIONS)
+@SuppressLint("MissingPermission")
 private fun sendAppointmentNotification(
     context: Context,
     doctorName: String,
-    dateStr: String,
-    timeStr: String
+    date: String,
+    time: String
 ) {
-    val date = runCatching { LocalDate.parse(dateStr) }.getOrNull() ?: return
-    val time = runCatching { LocalTime.parse(timeStr) }.getOrNull() ?: return
-    NotificationHelper.showAppointmentConfirmation(
-        context = context,
-        doctorName = doctorName.ifBlank { "Tu doctor" },
-        date = date,
-        time = time
-    )
+    val channelId = "appointments_channel"
+
+    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+        val channel = NotificationChannel(
+            channelId,
+            "Recordatorios de citas",
+            NotificationManager.IMPORTANCE_DEFAULT
+        )
+        val manager = context.getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
+        manager.createNotificationChannel(channel)
+    }
+
+    val displayDoctor = doctorName.ifBlank { "Tu doctor" }
+    val notification = NotificationCompat.Builder(context, channelId)
+        .setSmallIcon(R.drawable.logo_clean)
+        .setContentTitle("Cita reservada")
+        .setContentText("Con $displayDoctor el $date a las $time")
+        .setAutoCancel(true)
+        .build()
+
+    NotificationManagerCompat.from(context).notify(1001, notification)
 }
+
+private data class PendingAppointmentNotification(
+    val doctorName: String,
+    val date: String,
+    val time: String
+)

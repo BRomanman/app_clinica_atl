@@ -3,9 +3,9 @@ package com.example.app_clinica_atl.data.repository
 import com.example.app_clinica_atl.data.remote.CitasApi
 import com.example.app_clinica_atl.data.remote.RetrofitClient
 import com.example.app_clinica_atl.data.remote.UsuariosApi
-import com.example.app_clinica_atl.data.remote.dto.CitaDto
+import com.example.app_clinica_atl.data.remote.CitaDto
 import com.example.app_clinica_atl.data.remote.dto.EspecialidadResponseDto
-import com.example.app_clinica_atl.data.remote.dto.UsuarioResponseDto
+import com.example.app_clinica_atl.data.remote.dto.DoctorDto
 import retrofit2.HttpException
 
 class DoctorProfileRepository(
@@ -13,9 +13,9 @@ class DoctorProfileRepository(
     private val citasApi: CitasApi = RetrofitClient.citasApi
 ) {
 
-    suspend fun getDoctorProfile(userId: Long): Result<UsuarioResponseDto> {
+    suspend fun getDoctorProfile(doctorId: Long): Result<DoctorDto> {
         return try {
-            Result.success(usuariosApi.getUserById(userId))
+            Result.success(usuariosApi.getDocById(doctorId))
         } catch (e: HttpException) {
             val message = when (e.code()) {
                 404 -> "Doctor no encontrado."
@@ -29,14 +29,12 @@ class DoctorProfileRepository(
 
     suspend fun getAppointmentsForDoctor(doctorId: Long): Result<List<CitaDto>> {
         return try {
-            val response = citasApi.getAppointments()
-            if (response.isSuccessful) {
-                val appointments = response.body().orEmpty().filter { it.doctorId == doctorId }
-                Result.success(appointments)
-            } else if (response.code() == 204) {
+            Result.success(citasApi.getProximasCitasDoctor(doctorId))
+        } catch (e: HttpException) {
+            if (e.code() == 204) {
                 Result.success(emptyList())
             } else {
-                Result.failure(HttpException(response))
+                Result.failure(e)
             }
         } catch (e: Exception) {
             Result.failure(e)

@@ -19,8 +19,8 @@ import kotlinx.coroutines.launch
 
 // --- Imports de Datos ---
 import com.example.app_clinica_atl.data.local.storage.UserPreferences
-import com.example.app_clinica_atl.data.repository.UsuariosRepository
 import com.example.app_clinica_atl.data.remote.dto.normalizeRole
+import com.example.app_clinica_atl.data.repository.UsuariosRepository
 
 // --- Imports de Pantallas y ViewModels ---
 import com.example.app_clinica_atl.ui.screen.*
@@ -65,6 +65,7 @@ fun AppNavGraph(
     insuranceViewModel: InsuranceViewModel,
     doctorSearchPatientViewModel: DoctorSearchPatientViewModel,
     doctorPatientProfileViewModel: DoctorPatientProfileViewModel,
+    usuariosRepository: UsuariosRepository,
     // adminViewDoctorsViewModel lo creamos dentro, no hace falta pasarlo
     adminViewDoctorsViewModel: AdminViewDoctorsViewModel?,
     currentDoctorId: Long?
@@ -262,8 +263,7 @@ fun AppNavGraph(
 
         // --- LISTA DE DOCTORES ---
         composable(Route.AdminViewDoctors.path) {
-            val repo = UsuariosRepository()
-            val factory = AdminViewDoctorsViewModelFactory(repo)
+            val factory = AdminViewDoctorsViewModelFactory(usuariosRepository)
             val viewModel: AdminViewDoctorsViewModel = viewModel(factory = factory)
 
             AdminViewDoctorsScreen(
@@ -280,10 +280,9 @@ fun AppNavGraph(
         composable(Route.AdminProfile.path) {
             val context = LocalContext.current
             val userPrefs = UserPreferences(context)
-            val repo = UsuariosRepository()
 
             // Factory limpia: Solo Repositorio y Preferencias (sin Context extra para cámara)
-            val factory = AdminProfileViewModelFactory(repo, userPrefs)
+            val factory = AdminProfileViewModelFactory(usuariosRepository, userPrefs)
             val viewModel: AdminProfileViewModel = viewModel(factory = factory)
 
             AdminProfileScreen(
@@ -298,10 +297,8 @@ fun AppNavGraph(
             arguments = listOf(navArgument("doctorId") { type = NavType.LongType })
         ) { backStackEntry ->
             val doctorId = backStackEntry.arguments?.getLong("doctorId") ?: return@composable
-            val repo = UsuariosRepository()
-
             // Asegúrate de tener AdminEditDoctorViewModel y su Factory creados como vimos antes
-            val factory = AdminEditDoctorViewModelFactory(repo, doctorId)
+            val factory = AdminEditDoctorViewModelFactory(usuariosRepository, doctorId)
             val viewModel: AdminEditDoctorViewModel = viewModel(factory = factory)
 
             // Asegúrate de tener AdminEditDoctorScreen creada

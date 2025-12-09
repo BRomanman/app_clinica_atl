@@ -16,8 +16,8 @@ data class UsuarioResponseDto(
 
 data class DoctorInfoDto(
     @SerializedName("id") val id: Long?,
-    @SerializedName("tarifaConsulta") val tarifaConsulta: Int?,
-    @SerializedName("sueldo") val sueldo: Long?,
+    @SerializedName(value = "tarifaConsulta", alternate = ["tarifa_consulta"]) val tarifaConsulta: Int?,
+    @SerializedName(value = "sueldo", alternate = ["salario"]) val sueldo: Long?,
     @SerializedName("bono") val bono: Long?
 )
 

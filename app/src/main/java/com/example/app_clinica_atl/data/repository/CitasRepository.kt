@@ -1,7 +1,7 @@
 package com.example.app_clinica_atl.data.repository
 
+import com.example.app_clinica_atl.data.remote.CitaDto
 import com.example.app_clinica_atl.data.remote.dto.CitaDetalleDto
-import com.example.app_clinica_atl.data.remote.dto.CitaDto
 import kotlinx.coroutines.flow.Flow
 
 /**
@@ -10,20 +10,19 @@ import kotlinx.coroutines.flow.Flow
 interface CitasRepository {
 
     /**
-     * Intenta agendar una nueva cita vía API.
+     * Lista las citas de un paciente.
      */
-    suspend fun bookAppointment(appointment: CitaDto): Result<CitaDto>
+    suspend fun getCitasUsuario(idUsuario: Long): List<CitaDto>
 
     /**
-     * Obtiene una lista de las horas (Strings) que YA están reservadas
-     * para un doctor específico en una fecha específica (citas no disponibles).
+     * Devuelve los horarios disponibles de un doctor para una fecha dada.
      */
-    suspend fun getBookedTimes(doctorId: Long, date: String): Result<List<String>>
+    suspend fun getHorariosDisponibles(doctorId: Long, date: String): List<CitaDto>
 
     /**
-     * Obtiene los bloques disponibles (disponible=true) de un doctor en una fecha específica.
+     * Reserva un horario existente para un paciente.
      */
-    suspend fun getAvailableSlots(doctorId: Long, date: String): Result<List<String>>
+    suspend fun reservarCita(idCita: Long, idUsuario: Long): CitaDto
 
     /**
      * Obtiene un Flow con todas las citas activas de un paciente.
@@ -36,12 +35,12 @@ interface CitasRepository {
     suspend fun getAppointmentsForPatientOnce(patientId: Long): Result<List<CitaDto>>
 
     /**
-     * Obtiene las próximas citas de un doctor en una sola consulta.
+     * Obtiene las citas actuales de un doctor.
      */
     suspend fun getAppointmentsForDoctorOnce(doctorId: Long): Result<List<CitaDto>>
 
     /**
-     * Obtiene solo las citas próximas de un paciente (endpoint dedicado).
+     * Obtiene las prИximas citas de un paciente (puede filtrar localmente).
      */
     suspend fun getUpcomingAppointmentsForPatient(patientId: Long): Result<List<CitaDto>>
 
@@ -49,4 +48,29 @@ interface CitasRepository {
      * Cancela una cita.
      */
     suspend fun cancelAppointment(appointmentId: Long): Result<Unit>
+
+    /**
+     * Obtiene las prИximas citas de un paciente directamente.
+     */
+    suspend fun getProximasCitasByUsuario(userId: Long): List<CitaDto>
+
+    /**
+     * Obtiene las prИximas citas de un doctor directamente.
+     */
+    suspend fun getProximasCitasDoctor(doctorId: Long): List<CitaDto>
+
+    /**
+     * Obtiene las prИximas citas de un paciente que pertenecen a un doctor determinado.
+     */
+    suspend fun getProximasCitasPacienteConDoctor(pacienteId: Long, doctorId: Long): List<CitaDto>
+
+    /**
+     * Cancela una cita usando el nuevo endpoint.
+     */
+    suspend fun cancelarCita(citaId: Long): Result<Unit>
+
+    /**
+     * Marca una cita como realizada.
+     */
+    suspend fun finalizarCita(citaId: Long): Result<CitaDto>
 }

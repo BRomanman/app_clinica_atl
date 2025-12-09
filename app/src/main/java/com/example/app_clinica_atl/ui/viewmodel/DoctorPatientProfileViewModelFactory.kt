@@ -2,6 +2,7 @@ package com.example.app_clinica_atl.ui.viewmodel
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.ViewModelProvider
+import com.example.app_clinica_atl.data.local.storage.UserPreferences
 import com.example.app_clinica_atl.data.repository.CitasRepository
 import com.example.app_clinica_atl.data.repository.HistorialRepository
 import com.example.app_clinica_atl.data.repository.SegurosRepository
@@ -11,7 +12,8 @@ class DoctorPatientProfileViewModelFactory(
     private val usuariosRepository: UsuariosRepository,
     private val citasRepository: CitasRepository,
     private val segurosRepository: SegurosRepository,
-    private val historialRepository: HistorialRepository
+    private val historialRepository: HistorialRepository,
+    private val userPreferences: UserPreferences
 ) : ViewModelProvider.Factory {
     @Suppress("UNCHECKED_CAST")
     override fun <T : ViewModel> create(modelClass: Class<T>): T {
@@ -20,7 +22,8 @@ class DoctorPatientProfileViewModelFactory(
                 usuariosRepository,
                 citasRepository,
                 segurosRepository,
-                historialRepository
+                historialRepository,
+                userPreferences
             ) as T
         }
         throw IllegalArgumentException("Unknown ViewModel class")

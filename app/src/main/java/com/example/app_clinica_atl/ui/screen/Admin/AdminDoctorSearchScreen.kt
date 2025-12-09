@@ -186,11 +186,9 @@ private fun DoctorCard(
 @Composable
 private fun getDoctorImageResource(specialty: String?): Int {
     return when (specialty) {
-        "Cardiología" -> R.drawable.doctor_cardio_1
-        "Dermatología" -> R.drawable.doctor_derma_1
+        "Cardiologia" -> R.drawable.doctor_cardio_1
+        "Dermatologia" -> R.drawable.doctor_derma_1
         "Medicina General" -> R.drawable.doctor_medgen_1
-        "Pediatría" -> R.drawable.doctor_pedi_1
-        "Psicología" -> R.drawable.doctor_psico_1
         else -> R.drawable.logo_clean
     }
 }

@@ -29,6 +29,7 @@ data class AdminAddDoctorUiState(
     val backendSpecialties: List<EspecialidadDto> = emptyList(),
     val newSpecialties: List<String> = emptyList(),
     val selectedSpecialties: List<String> = emptyList(),
+    val selectedSpecialtyId: Long? = null,
 
     val showNewSpecialtyDialog: Boolean = false,
     val newSpecialtyName: String = "",
@@ -118,6 +119,19 @@ class AdminAddDoctorViewModel(
         _uiState.update {
             it.copy(
                 selectedSpecialties = if (name in cur) emptyList() else listOf(name),
+                specialtiesError = null,
+                selectedSpecialtyId = null
+            )
+        }
+    }
+
+    fun toggleBackendSpecialty(spec: EspecialidadDto) {
+        val cur = _uiState.value.selectedSpecialties
+        val isSelected = cur.contains(spec.name)
+        _uiState.update {
+            it.copy(
+                selectedSpecialties = if (isSelected) emptyList() else listOf(spec.name),
+                selectedSpecialtyId = if (isSelected) null else spec.id,
                 specialtiesError = null
             )
         }
@@ -148,6 +162,7 @@ class AdminAddDoctorViewModel(
             it.copy(
                 newSpecialties = it.newSpecialties + name,
                 selectedSpecialties = listOf(name),
+                selectedSpecialtyId = null,
                 showNewSpecialtyDialog = false
             )
         }
@@ -209,11 +224,26 @@ class AdminAddDoctorViewModel(
             }
             val doctorId = doctorRes.getOrNull()!!
 
-            for (newName in s.newSpecialties) {
-                val req = EspecialidadRequestDto(nombre = newName.trim(), doctorId = doctorId)
+            val assignments = mutableListOf<EspecialidadRequestDto>()
+            s.selectedSpecialtyId?.takeIf { it > 0 }?.let { id ->
+                val canonicalName = s.backendSpecialties.firstOrNull { it.id == id }?.name
+                    ?: s.selectedSpecialties.firstOrNull()
+                canonicalName?.let { name ->
+                    assignments += EspecialidadRequestDto(
+                        nombre = name.trim(),
+                        doctorId = doctorId,
+                        idEspecialidad = id
+                    )
+                }
+            }
+            assignments += s.newSpecialties.map { name ->
+                EspecialidadRequestDto(nombre = name.trim(), doctorId = doctorId)
+            }
+
+            for (req in assignments) {
                 val createRes = specialtyRepository.createSpecialty(req)
                 if (createRes.isFailure) {
-                    _uiState.update { it.copy(isLoading = false, errorMsg = "Error creando especialidad: $newName") }
+                    _uiState.update { it.copy(isLoading = false, errorMsg = "Error creando especialidad: ${req.nombre}") }
                     return@launch
                 }
             }
@@ -224,7 +254,9 @@ class AdminAddDoctorViewModel(
                     registrationSuccess = true,
                     createdDoctorName = "${s.firstName} ${s.lastName}".trim(),
                     firstName = "", lastName = "", birthDate = "", email = "", phone = "", salary = "",
-                    selectedSpecialties = emptyList(), newSpecialties = emptyList()
+                    selectedSpecialties = emptyList(),
+                    newSpecialties = emptyList(),
+                    selectedSpecialtyId = null
                 )
             }
         }

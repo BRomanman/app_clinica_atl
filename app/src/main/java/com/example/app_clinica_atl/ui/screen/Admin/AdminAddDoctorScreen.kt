@@ -199,13 +199,13 @@ fun AdminAddDoctorScreen(
                 ) {
                     items(
                         items = uiState.backendSpecialties,
-                        key = { it.id ?: it.name }
+                        key = { it.id }
                     ) { spec: EspecialidadDto ->
                         val checked = uiState.selectedSpecialties.contains(spec.name)
                         SpecialtyCheckRow(
                             label = spec.name,
                             checked = checked,
-                            onToggle = { viewModel.toggleSpecialty(spec.name) }
+                            onToggle = { viewModel.toggleBackendSpecialty(spec) }
                         )
                         Divider()
                     }

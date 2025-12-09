@@ -5,6 +5,7 @@ import com.example.app_clinica_atl.data.remote.UsuariosApi
 import com.example.app_clinica_atl.data.remote.dto.EspecialidadDto
 import com.example.app_clinica_atl.data.remote.dto.EspecialidadRequestDto
 import com.example.app_clinica_atl.data.remote.dto.EspecialidadResponseDto
+import com.example.app_clinica_atl.domain.specialty.SpecialtyCatalog
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.flow
@@ -35,11 +36,12 @@ class SpecialtyRepositoryImpl(
 
     private fun EspecialidadResponseDto.toUiOrNull(): EspecialidadDto? {
         val cleanName = nombre?.trim().orEmpty()
-        if (cleanName.isBlank()) return null
+        if (cleanName.isBlank() || !SpecialtyCatalog.isOfficial(cleanName)) return null
+        val canonicalName = SpecialtyCatalog.canonicalName(cleanName) ?: cleanName
 
         return EspecialidadDto(
             id = this.id ?: 0L,
-            name = cleanName,
+            name = canonicalName,
             price = 0.0
         )
     }

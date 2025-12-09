@@ -1,6 +1,7 @@
 package com.example.app_clinica_atl.data.remote.dto
 
 import com.google.gson.annotations.SerializedName
+import com.example.app_clinica_atl.data.remote.dto.normalizeRole
 
 data class LoginRequestDto(
     @SerializedName("correo") val correo: String,
@@ -8,34 +9,36 @@ data class LoginRequestDto(
 )
 
 data class LoginResponseDto(
-    @SerializedName(value = "userId", alternate = ["id", "idUsuario"]) val userId: Long?,
-    @SerializedName(value = "role", alternate = ["rol", "idRol"]) val role: String?,
-    @SerializedName(value = "doctorId", alternate = ["idDoctor"]) val doctorId: Long?,
-    @SerializedName("nombre") val nombre: String?,
-    @SerializedName("apellido") val apellido: String?,
-    @SerializedName("correo") val correo: String?
+    @SerializedName("userId") val userId: Long,
+    @SerializedName("role") val role: String,
+    @SerializedName("doctorId") val doctorId: Long?,
+    @SerializedName("nombre") val nombre: String,
+    @SerializedName("apellido") val apellido: String,
+    @SerializedName("correo") val correo: String,
+    @SerializedName("token") val token: String?
 )
 
 
 
 
-fun LoginResponseDto.toUsuarioDtoFromLogin(plainPassword: String): UsuarioDto {
+fun LoginResponseDto.toUsuarioDtoFromLogin(): UsuarioDto {
     val normalizedRole = normalizeRole(role)
 
-    val fullName = listOfNotNull(nombre, apellido)
+    val displayName = listOfNotNull(nombre.takeIf { it.isNotBlank() }, apellido.takeIf { it.isNotBlank() })
         .joinToString(" ")
-        .ifBlank { correo.orEmpty() }
+        .ifBlank { correo }
 
     return UsuarioDto(
-        id = userId ?: 0L,
-        name = fullName,
-        email = correo.orEmpty(),
+        id = userId,
+        name = displayName,
+        email = correo,
         phone = "",
-        password = plainPassword,
+        password = "",
         profileImageUrl = null,
         role = normalizedRole,
         specialty = null,
         salary = null,
+        birthDate = null,
         doctorId = doctorId
     )
 }

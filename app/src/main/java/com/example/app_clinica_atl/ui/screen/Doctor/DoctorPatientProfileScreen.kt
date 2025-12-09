@@ -2,6 +2,7 @@ package com.example.app_clinica_atl.ui.screen.Doctor
 
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
@@ -32,7 +33,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
-import com.example.app_clinica_atl.data.remote.dto.CitaDto
+import com.example.app_clinica_atl.data.remote.CitaDto
 import com.example.app_clinica_atl.data.remote.dto.HistorialDto
 import com.example.app_clinica_atl.data.remote.dto.SeguroDto
 import com.example.app_clinica_atl.data.remote.dto.UsuarioDto
@@ -95,21 +96,23 @@ fun DoctorPatientProfileScreen(
                 item { PersonalInfoCard(patient) }
             }
 
-            item { SectionTitle("Citas Próximas") }
+            item { SectionTitle("Citas del paciente") }
             when {
                 uiState.appointments.isNotEmpty() -> {
                     items(uiState.appointments) { cita ->
                         AppointmentRow(
                             cita = cita,
                             isCancelling = uiState.isCancellingId == cita.id,
-                            onCancel = { cita.id?.let(viewModel::cancelAppointment) }
+                            isFinishing = uiState.isFinishingId == cita.id,
+                            onCancel = { cita.id?.let(viewModel::cancelAppointment) },
+                            onFinish = { cita.id?.let(viewModel::finalizeAppointment) }
                         )
                     }
                 }
                 uiState.errorMsg?.contains("citas", true) == true -> {
-                    item { EmptyState(uiState.errorMsg ?: "No fue posible cargar las próximas citas.") }
+                    item { EmptyState(uiState.errorMsg ?: "No fue posible cargar las citas del paciente.") }
                 }
-                else -> item { EmptyState("Este paciente no tiene citas próximas registradas.") }
+                else -> item { EmptyState("Este paciente no tiene citas programadas con este doctor.") }
             }
 
             item { SectionTitle("Seguros") }
@@ -177,23 +180,69 @@ private fun PersonalInfoCard(patient: UsuarioDto) {
 }
 
 @Composable
-private fun AppointmentRow(cita: CitaDto, isCancelling: Boolean, onCancel: () -> Unit) {
+private fun AppointmentRow(
+    cita: CitaDto,
+    isCancelling: Boolean,
+    isFinishing: Boolean,
+    onCancel: () -> Unit,
+    onFinish: () -> Unit
+) {
+    val statusNormalized = cita.estado.uppercase()
+    val isRealizada = statusNormalized == "REALIZADA"
+    val isCancelada = statusNormalized == "CANCELADA"
+    val showActions = !isRealizada && !isCancelada
+    val containerColor = if (isRealizada) {
+        MaterialTheme.colorScheme.secondaryContainer
+    } else {
+        MaterialTheme.colorScheme.surface
+    }
+    val statusColor = when {
+        isRealizada -> MaterialTheme.colorScheme.secondary
+        isCancelada -> MaterialTheme.colorScheme.error
+        else -> MaterialTheme.colorScheme.primary
+    }
+
     Card(
         modifier = Modifier.fillMaxWidth(),
-        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface)
+        colors = CardDefaults.cardColors(containerColor = containerColor)
     ) {
         Column(modifier = Modifier.padding(12.dp)) {
-            Text("Fecha: ${cita.date}", style = MaterialTheme.typography.bodyLarge, fontWeight = FontWeight.SemiBold)
-            Text("Hora: ${cita.time}", style = MaterialTheme.typography.bodyMedium)
-            Text("Doctor ID: ${cita.doctorId}", style = MaterialTheme.typography.bodyMedium)
-            Text("Estado: ${cita.status}", style = MaterialTheme.typography.bodyMedium)
-            Spacer(modifier = Modifier.height(8.dp))
-            Button(
-                onClick = onCancel,
-                enabled = !isCancelling,
-                colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.error)
-            ) {
-                Text(if (isCancelling) "Cancelando..." else "Cancelar cita")
+            Text(
+                text = "Fecha: ${cita.date}",
+                style = MaterialTheme.typography.bodyLarge,
+                fontWeight = FontWeight.SemiBold
+            )
+            Text(
+                text = "Hora: ${cita.time}",
+                style = MaterialTheme.typography.bodyMedium
+            )
+            Text(
+                text = "Doctor ID: ${cita.doctorId}",
+                style = MaterialTheme.typography.bodyMedium
+            )
+            Text(
+                text = "Estado: ${cita.estado}",
+                style = MaterialTheme.typography.bodyMedium,
+                color = statusColor
+            )
+            if (showActions) {
+                Spacer(modifier = Modifier.height(8.dp))
+                Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                    Button(
+                        onClick = onCancel,
+                        enabled = !isCancelling && !isFinishing,
+                        colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.error)
+                    ) {
+                        Text(if (isCancelling) "Cancelando..." else "Cancelar cita")
+                    }
+                    Button(
+                        onClick = onFinish,
+                        enabled = !isFinishing && !isCancelling,
+                        colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.primary)
+                    ) {
+                        Text(if (isFinishing) "Finalizando..." else "Finalizar cita")
+                    }
+                }
             }
         }
     }

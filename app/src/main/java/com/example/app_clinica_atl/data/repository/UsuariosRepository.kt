@@ -1,5 +1,6 @@
 package com.example.app_clinica_atl.data.repository
 
+import com.example.app_clinica_atl.data.local.storage.UserPreferences
 import com.example.app_clinica_atl.data.remote.RetrofitClient
 import com.example.app_clinica_atl.data.remote.UsuariosApi
 import com.example.app_clinica_atl.data.remote.dto.DoctorCreateRequestDto // <-- IMPORT AÑADIDO
@@ -21,6 +22,7 @@ import kotlinx.coroutines.withContext
 import retrofit2.HttpException
 
 class UsuariosRepository(
+    private val userPreferences: UserPreferences,
     private val usuariosApi: UsuariosApi = RetrofitClient.usuariosApi
 ) {
 
@@ -118,7 +120,16 @@ class UsuariosRepository(
         try {
             val loginRequest = LoginRequestDto(correo = email, contrasena = pass)
             val loggedUser = usuariosApi.login(loginRequest)
-            Result.success(loggedUser.toUsuarioDtoFromLogin(pass))
+            userPreferences.saveUserSession(
+                id = loggedUser.userId,
+                role = loggedUser.role,
+                doctorId = loggedUser.doctorId,
+                nombre = loggedUser.nombre,
+                apellido = loggedUser.apellido,
+                correo = loggedUser.correo,
+                token = loggedUser.token
+            )
+            Result.success(loggedUser.toUsuarioDtoFromLogin())
         } catch (e: HttpException) {
             val message = if (e.code() == 401) "Credenciales inválidas." else e.message()
             Result.failure(Exception(message ?: "Error HTTP ${e.code()}", e))

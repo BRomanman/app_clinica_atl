@@ -1,13 +1,12 @@
 package com.example.app_clinica_atl.data.repository
 
-import android.os.Build
-import androidx.annotation.RequiresApi
 import com.example.app_clinica_atl.data.remote.CitasApi
 import com.example.app_clinica_atl.data.remote.RetrofitClient
-import com.example.app_clinica_atl.data.remote.RetrofitClient.usuariosApi
-import com.example.app_clinica_atl.data.remote.UsuariosApi
+import com.example.app_clinica_atl.data.remote.CitaDto
 import com.example.app_clinica_atl.data.remote.dto.CitaDetalleDto
-import com.example.app_clinica_atl.data.remote.dto.CitaDto
+import com.example.app_clinica_atl.data.remote.dto.ReservarCitaRequest
+import com.example.app_clinica_atl.data.remote.citas.CitasApiService
+import com.example.app_clinica_atl.data.remote.citas.UpdateCitaEstadoRequest
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.flow
@@ -17,51 +16,46 @@ import java.time.LocalDate
 import java.time.LocalDateTime
 import java.time.LocalTime
 
-/**
- * Implementación del repositorio de Citas basada en Retrofit.
- */
 class CitasRepositoryImpl(
     private val citasApi: CitasApi = RetrofitClient.citasApi,
-    private val usuariosApi: UsuariosApi = RetrofitClient.usuariosApi
+    private val citasApiService: CitasApiService = RetrofitClient.createCitasApiService()
 ) : CitasRepository {
 
-    override suspend fun bookAppointment(appointment: CitaDto): Result<CitaDto> = withContext(Dispatchers.IO) {
-        return@withContext try {
-            val response = citasApi.createAppointment(appointment)
-            val created = response.bodyOrThrow("Cuerpo vacío al crear la cita.")
-            Result.success(created)
-        } catch (e: Exception) {
-            Result.failure(e)
+    override suspend fun getCitasUsuario(idUsuario: Long): List<CitaDto> = withContext(Dispatchers.IO) {
+        citasApi.getCitasByUsuario(idUsuario)
+    }
+
+    override suspend fun getHorariosDisponibles(doctorId: Long, date: String): List<CitaDto> =
+        withContext(Dispatchers.IO) {
+            val response = citasApi.getCitasPorDoctorYFecha(doctorId, date)
+            if (!response.isSuccessful) throw HttpException(response)
+            response.body()
+                .orEmpty()
+                .filter { it.isOpenSlot() }
+        }
+
+    override suspend fun reservarCita(idCita: Long, idUsuario: Long): CitaDto = withContext(Dispatchers.IO) {
+        val response = citasApi.reservarCita(idCita, ReservarCitaRequest(idUsuario = idUsuario))
+        if (response.isSuccessful) {
+            return@withContext response.body()
+                ?: throw IllegalStateException("No se recibió la información de la cita confirmada.")
+        }
+        when (response.code()) {
+            409 -> throw SlotAlreadyTakenException()
+            404 -> throw CitaNotFoundException()
+            else -> throw HttpException(response)
         }
     }
 
-    override suspend fun getBookedTimes(doctorId: Long, date: String): Result<List<String>> = withContext(Dispatchers.IO) {
-        return@withContext try {
-            val bookedTimes = citasApi.getAppointmentsByDoctorAndDate(doctorId, date)
-                .bodyOrEmpty()
-                // Solo consideramos como tomadas las citas no disponibles o con estado distinto de "Disponible"
-                .filter { it.available == false || !it.status.equals("Disponible", ignoreCase = true) }
-                .map { it.time }
-            Result.success(bookedTimes)
-        } catch (e: Exception) {
-            Result.failure(e)
-        }
-    }
-
-    @RequiresApi(Build.VERSION_CODES.O)
     override fun getAppointmentsForPatient(patientId: Long): Flow<List<CitaDetalleDto>> = flow {
         try {
-            val doctorCache = mutableMapOf<Long, DoctorBrief>()
-
             val appointments = withContext(Dispatchers.IO) {
-                citasApi.getAppointmentsByUser(patientId).bodyOrEmpty()
+                citasApi.getCitasByUsuario(patientId)
             }
 
+            val doctorCache = mutableMapOf<Long, DoctorBrief>()
             val mapped = appointments
-                .filter { cita ->
-                    !cita.status.equals("cancelado", true) &&
-                            !cita.status.equals("disponible", true)
-                }
+                .filter { cita -> !cita.status.contains("cancel", ignoreCase = true) && !cita.status.equals("disponible", ignoreCase = true) }
                 .sortedBy { parseDateTime(it) ?: LocalDateTime.MAX }
                 .map { cita ->
                     val doctorInfo = doctorCache.getOrPut(cita.doctorId) { fetchDoctorBrief(cita.doctorId) }
@@ -78,41 +72,17 @@ class CitasRepositoryImpl(
     }
 
     override suspend fun getAppointmentsForPatientOnce(patientId: Long): Result<List<CitaDto>> = withContext(Dispatchers.IO) {
-        return@withContext try {
-            val appointments = citasApi.getAppointmentsByUser(patientId).bodyOrEmpty()
+        try {
+            val appointments = citasApi.getCitasByUsuario(patientId)
             Result.success(appointments)
         } catch (e: Exception) {
             Result.failure(e)
         }
     }
 
-    override suspend fun getAvailableSlots(doctorId: Long, date: String): Result<List<String>> = withContext(Dispatchers.IO) {
-        return@withContext try {
-            val response = citasApi.getAppointmentsByDoctorAndDate(doctorId, date)
-            val slots = when {
-                response.code() == 204 -> emptyList()
-                response.isSuccessful -> response.body().orEmpty()
-                else -> throw HttpException(response)
-            }
-                .filter { cita ->
-                    cita.available &&
-                            cita.status.equals("DISPONIBLE", true) &&
-                            cita.date.equals(date, true)
-                }
-                .map { it.startTime.ifBlank { it.time } }
-                .map { time -> time.take(5) }
-                .distinct()
-                .sorted()
-            Result.success(slots)
-        } catch (e: Exception) {
-            Result.failure(e)
-        }
-    }
-
     override suspend fun getAppointmentsForDoctorOnce(doctorId: Long): Result<List<CitaDto>> = withContext(Dispatchers.IO) {
-        return@withContext try {
-            val appointments = citasApi.getUpcomingAppointmentsByDoctor(doctorId)
-                .bodyOrEmpty()
+        try {
+            val appointments = citasApi.getProximasCitasDoctor(doctorId)
             Result.success(appointments)
         } catch (e: Exception) {
             Result.failure(e)
@@ -120,45 +90,53 @@ class CitasRepositoryImpl(
     }
 
     override suspend fun getUpcomingAppointmentsForPatient(patientId: Long): Result<List<CitaDto>> = withContext(Dispatchers.IO) {
-        return@withContext try {
-            val appointments = citasApi.getUpcomingAppointmentsByUser(patientId).bodyOrEmpty()
+        try {
+            val appointments = citasApi.getProximasCitasUsuario(patientId)
             Result.success(appointments)
         } catch (e: Exception) {
             Result.failure(e)
         }
     }
 
-    override suspend fun cancelAppointment(appointmentId: Long): Result<Unit> = withContext(Dispatchers.IO) {
-        return@withContext try {
-            val current = citasApi.getAppointmentById(appointmentId).bodyOrThrow("Cita no encontrada.")
-            val updateResponse = citasApi.updateAppointment(
-                appointmentId,
-                current.copy(status = "Cancelada", available = false)
+    override suspend fun getProximasCitasDoctor(doctorId: Long): List<CitaDto> = withContext(Dispatchers.IO) {
+        citasApiService.getProximasCitasByDoctor(doctorId)
+    }
+
+    override suspend fun getProximasCitasPacienteConDoctor(pacienteId: Long, doctorId: Long): List<CitaDto> =
+        withContext(Dispatchers.IO) {
+            citasApiService.getProximasCitasByUsuario(pacienteId)
+                .filter { it.doctorId == doctorId }
+        }
+
+    override suspend fun cancelAppointment(appointmentId: Long): Result<Unit> {
+        return cancelarCita(appointmentId)
+    }
+
+    override suspend fun getProximasCitasByUsuario(userId: Long): List<CitaDto> = withContext(Dispatchers.IO) {
+        citasApiService.getProximasCitasByUsuario(userId)
+    }
+
+    override suspend fun cancelarCita(citaId: Long): Result<Unit> = withContext(Dispatchers.IO) {
+        try {
+            citasApiService.cancelarCita(citaId)
+            Result.success(Unit)
+        } catch (e: Exception) {
+            Result.failure(e)
+        }
+    }
+
+    override suspend fun finalizarCita(citaId: Long): Result<CitaDto> = withContext(Dispatchers.IO) {
+        try {
+            val updated = citasApiService.actualizarCita(
+                citaId,
+                UpdateCitaEstadoRequest(estado = "REALIZADA")
             )
-            if (updateResponse.isSuccessful) {
-                Result.success(Unit)
-            } else {
-                Result.failure(HttpException(updateResponse))
-            }
+            Result.success(updated)
         } catch (e: Exception) {
             Result.failure(e)
         }
     }
 }
-
-private fun <T> retrofit2.Response<List<T>>.bodyOrEmpty(): List<T> {
-    if (isSuccessful) return body().orEmpty()
-    throw HttpException(this)
-}
-
-private fun <T> retrofit2.Response<T>.bodyOrThrow(emptyMessage: String): T {
-    if (isSuccessful) {
-        return body() ?: throw IllegalStateException(emptyMessage)
-    }
-    throw HttpException(this)
-}
-
-private data class DoctorBrief(val name: String, val specialty: String)
 
 private fun CitaDto.toDetalleDto(doctorName: String, doctorSpecialty: String): CitaDetalleDto {
     return CitaDetalleDto(
@@ -171,24 +149,25 @@ private fun CitaDto.toDetalleDto(doctorName: String, doctorSpecialty: String): C
     )
 }
 
-@RequiresApi(Build.VERSION_CODES.O)
+private fun CitaDto.isOpenSlot(): Boolean {
+    return available || status.equals("Disponible", ignoreCase = true)
+ }
+
 private fun parseDateTime(cita: CitaDto): LocalDateTime? {
-    val datePart = cita.date.ifBlank { cita.dateTime.substringBefore('T', "") }
+    val datePart = cita.date.ifBlank { "" }
     if (datePart.isBlank()) return null
 
-    val timePart = cita.time
-        .ifBlank { cita.startTime.take(5) }
-        .ifBlank { cita.dateTime.substringAfter('T', "").take(5) }
-        .ifBlank { "00:00" }
-
+    val start = cita.startTime.ifBlank { cita.time }
     val parsedDate = runCatching { LocalDate.parse(datePart) }.getOrNull() ?: return null
-    val parsedTime = runCatching { LocalTime.parse(timePart) }.getOrDefault(LocalTime.MIDNIGHT)
+    val parsedTime = runCatching { LocalTime.parse(start) }.getOrDefault(LocalTime.MIDNIGHT)
     return LocalDateTime.of(parsedDate, parsedTime)
 }
 
+private data class DoctorBrief(val name: String, val specialty: String)
+
 private suspend fun fetchDoctorBrief(doctorId: Long): DoctorBrief = withContext(Dispatchers.IO) {
     runCatching {
-        val doctorDto = usuariosApi.getDocById(doctorId)
+        val doctorDto = RetrofitClient.usuariosApi.getDocById(doctorId)
         val user = doctorDto.usuario
         val fullName = listOfNotNull(user?.nombre, user?.apellido)
             .joinToString(" ")

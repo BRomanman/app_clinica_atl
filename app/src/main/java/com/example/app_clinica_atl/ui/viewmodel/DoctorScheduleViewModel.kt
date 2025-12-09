@@ -4,7 +4,7 @@ import android.os.Build
 import androidx.annotation.RequiresApi
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import com.example.app_clinica_atl.data.remote.dto.CitaDto
+import com.example.app_clinica_atl.data.remote.CitaDto
 import com.example.app_clinica_atl.data.repository.CitasRepository
 import com.example.app_clinica_atl.data.repository.UsuariosRepository
 import java.time.LocalDate
@@ -58,16 +58,16 @@ class DoctorScheduleViewModel(
                 }
             cachedDoctorId = doctorId
 
-            val result = citasRepository.getAppointmentsForDoctorOnce(doctorId)
-            if (result.isFailure) {
+            val citasResult = runCatching { citasRepository.getProximasCitasDoctor(doctorId) }
+            if (citasResult.isFailure) {
                 _uiState.value = DoctorScheduleUiState(
                     isLoading = false,
-                    errorMsg = result.exceptionOrNull()?.message ?: "No se pudieron cargar las citas."
+                    errorMsg = citasResult.exceptionOrNull()?.message ?: "No se pudieron cargar las citas."
                 )
                 return@launch
             }
 
-            val upcoming = result.getOrNull().orEmpty().filter { (it.patientId != null || !it.available) && isUpcoming(it) }
+            val upcoming = citasResult.getOrNull().orEmpty().filter { (it.patientId != null || !it.available) && isUpcoming(it) }
             val patients = fetchPatientNames(upcoming)
             val mapped = upcoming
                 .sortedWith(compareBy({ it.date }, { it.startTime }))

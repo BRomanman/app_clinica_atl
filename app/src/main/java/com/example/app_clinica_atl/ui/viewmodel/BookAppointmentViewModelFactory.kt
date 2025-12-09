@@ -3,18 +3,14 @@ package com.example.app_clinica_atl.ui.viewmodel
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.ViewModelProvider
 import com.example.app_clinica_atl.data.local.storage.UserPreferences
-import com.example.app_clinica_atl.data.repository.CitasRepository
+import com.example.app_clinica_atl.data.remote.citas.CitasApiService
 import com.example.app_clinica_atl.data.repository.DoctorRepository
 import com.example.app_clinica_atl.data.repository.UsuariosRepository
 
-/**
- * Factory manual para crear BookAppointmentViewModel.
- * Ahora inyecta TODAS las dependencias necesarias.
- */
 class BookAppointmentViewModelFactory(
     private val doctorRepository: DoctorRepository,
-    private val appointmentRepository: CitasRepository,
-    private val userPreferences: UserPreferences, // <-- Dependencia añadida
+    private val citasApiService: CitasApiService,
+    private val userPreferences: UserPreferences,
     private val usuariosRepository: UsuariosRepository
 ) : ViewModelProvider.Factory {
 
@@ -23,8 +19,8 @@ class BookAppointmentViewModelFactory(
         if (modelClass.isAssignableFrom(BookAppointmentViewModel::class.java)) {
             return BookAppointmentViewModel(
                 doctorRepository,
-                appointmentRepository,
-                userPreferences, // <-- Se la pasamos al ViewModel
+                citasApiService,
+                userPreferences,
                 usuariosRepository
             ) as T
         }

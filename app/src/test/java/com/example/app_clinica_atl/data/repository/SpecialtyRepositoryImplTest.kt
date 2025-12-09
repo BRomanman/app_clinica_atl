@@ -28,14 +28,13 @@ class SpecialtyRepositoryImplTest {
             listOf(
                 EspecialidadResponseDto(id = 1, nombre = "Cardiologia"),
                 EspecialidadResponseDto(id = 2, nombre = "  "), // debe filtrarse
-                EspecialidadResponseDto(id = 3, nombre = "Traumatologia")
+                EspecialidadResponseDto(id = 3, nombre = "Medicina General")
             )
         )
-
         val repo = SpecialtyRepositoryImpl(api)
         val result = repo.getAllSpecialties().first()
 
-        assertEquals(listOf("Cardiologia", "Traumatologia"), result.map { it.name })
+        assertEquals(listOf("Cardiologia", "Medicina General"), result.map { it.name })
     }
 
     @Test(expected = HttpException::class)

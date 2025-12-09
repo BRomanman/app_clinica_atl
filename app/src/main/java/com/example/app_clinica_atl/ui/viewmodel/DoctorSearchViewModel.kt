@@ -4,6 +4,7 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.example.app_clinica_atl.data.remote.dto.UsuarioDto
 import com.example.app_clinica_atl.data.repository.DoctorRepository
+import com.example.app_clinica_atl.domain.specialty.SpecialtyCatalog
 // NO MÁS IMPORTS DE HILT
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -13,7 +14,7 @@ import kotlinx.coroutines.launch
 
 // Estado de la UI
 data class DoctorSearchUiState(
-    val selectedSpecialty: String = "Cardiología",
+    val selectedSpecialty: String = SpecialtyCatalog.officialSpecialties.firstOrNull().orEmpty(),
     val doctors: List<UsuarioDto> = emptyList(),
     val isLoading: Boolean = false,
     val errorMsg: String? = null
@@ -27,13 +28,7 @@ class DoctorSearchViewModel( // <-- Constructor normal
     private val _uiState = MutableStateFlow(DoctorSearchUiState())
     val uiState: StateFlow<DoctorSearchUiState> = _uiState.asStateFlow()
 
-    val specialties = listOf(
-        "Cardiología",
-        "Dermatología",
-        "Medicina General",
-        "Pediatría",
-        "Psicología"
-    )
+    val specialties = SpecialtyCatalog.officialSpecialties
 
     init {
         loadDoctorsBySpecialty(_uiState.value.selectedSpecialty)

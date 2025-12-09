@@ -83,7 +83,7 @@ class AdminAddDoctorViewModelTest {
         vm.onEmailChange("ana@atl.cl")
         vm.onPhoneChange("+56912345678")
         vm.onSalaryChange("1500000")
-        vm.toggleSpecialty("Cardiologia")
+        vm.selectFirstBackendSpecialty()
 
         vm.registerDoctor()
         advanceUntilIdle()
@@ -112,7 +112,7 @@ class AdminAddDoctorViewModelTest {
         vm.onEmailChange("ana@atl.cl")
         vm.onPhoneChange("+56912345678")
         vm.onSalaryChange("1500000")
-        vm.toggleSpecialty("Cardiologia")
+        vm.selectFirstBackendSpecialty()
 
         vm.registerDoctor()
         advanceUntilIdle()
@@ -138,7 +138,7 @@ class AdminAddDoctorViewModelTest {
         vm.onEmailChange("ana@atl.cl")
         vm.onPhoneChange("+56912345678")
         vm.onSalaryChange("1500000")
-        vm.toggleSpecialty("Cardiologia")
+        vm.selectFirstBackendSpecialty()
 
         vm.registerDoctor()
         advanceUntilIdle()
@@ -164,7 +164,7 @@ class AdminAddDoctorViewModelTest {
         vm.onEmailChange("ana@atl.cl")
         vm.onPhoneChange("+56912345678")
         vm.onSalaryChange("1500000")
-        vm.toggleSpecialty("Cardiologia")
+        vm.selectFirstBackendSpecialty()
         vm.onNewSpecialtyNameChange("Urgencias")
         vm.confirmNewSpecialty()
 
@@ -187,7 +187,7 @@ class AdminAddDoctorViewModelTest {
         vm.onEmailChange("ana@atl.cl")
         vm.onPhoneChange("+56912345678")
         vm.onSalaryChange("1500000")
-        vm.toggleSpecialty("Cardiologia")
+        vm.selectFirstBackendSpecialty()
 
         coEvery { usuariosRepository.register(any()) } returns Result.success(
             UsuarioDto(id = 1, name = "Ana Perez", email = "ana@atl.cl", phone = "+56912345678", password = "x", role = "doctor")
@@ -202,6 +202,11 @@ class AdminAddDoctorViewModelTest {
         assertFalse(state.registrationSuccess)
         assertNull(state.createdDoctorName)
     }
+}
+
+private fun AdminAddDoctorViewModel.selectFirstBackendSpecialty() {
+    val specialty = uiState.value.backendSpecialties.firstOrNull() ?: return
+    toggleBackendSpecialty(specialty)
 }
 
 @OptIn(ExperimentalCoroutinesApi::class)

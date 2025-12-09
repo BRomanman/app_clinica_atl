@@ -38,11 +38,14 @@ import java.lang.Runtime // <-- ¡¡IMPORT AÑADIDO!!
 class MainActivity : ComponentActivity() {
 
     // --- Dependencias (sin cambios) ---
-    private val userPreferences by lazy { UserPreferences(this) }
-    private val usuariosRepository by lazy { UsuariosRepository() }
+    private val userPreferences by lazy {
+        UserPreferences(this).also { RetrofitClient.initialize(it) }
+    }
+    private val usuariosRepository by lazy { UsuariosRepository(userPreferences) }
     private val doctorRepository: DoctorRepository by lazy { DoctorRepositoryImpl() }
     private val doctorProfileRepository by lazy { DoctorProfileRepository() }
     private val citasRepository: CitasRepository by lazy { CitasRepositoryImpl() }
+    private val citasApiService by lazy { RetrofitClient.createCitasApiService() }
     private val specialtyRepository: SpecialtyRepository by lazy { SpecialtyRepositoryImpl() }
     private val segurosRepository: SegurosRepository by lazy { SegurosRepositoryImpl() }
     private val historialRepository: HistorialRepository by lazy { HistorialRepository() }
@@ -56,7 +59,9 @@ class MainActivity : ComponentActivity() {
     private val doctorProfileViewModel: DoctorProfileViewModel by viewModels {
         DoctorProfileViewModelFactory(doctorProfileRepository, usuariosRepository, historialRepository, citasRepository)
     }
-    private val bookAppointmentViewModel: BookAppointmentViewModel by viewModels { BookAppointmentViewModelFactory(doctorRepository, citasRepository, userPreferences, usuariosRepository) }
+    private val bookAppointmentViewModel: BookAppointmentViewModel by viewModels {
+        BookAppointmentViewModelFactory(doctorRepository, citasApiService, userPreferences, usuariosRepository)
+    }
     private val insuranceViewModel: InsuranceViewModel by viewModels { InsuranceViewModelFactory(segurosRepository, userPreferences) }
     private val doctorSearchPatientViewModel: DoctorSearchPatientViewModel by viewModels { DoctorSearchPatientViewModelFactory(usuariosRepository) }
     private val doctorScheduleViewModel: DoctorScheduleViewModel by viewModels { DoctorScheduleViewModelFactory(citasRepository, usuariosRepository) }
@@ -66,7 +71,7 @@ class MainActivity : ComponentActivity() {
     private val adminAddDoctorViewModel: AdminAddDoctorViewModel by viewModels { AdminAddDoctorViewModelFactory(usuariosRepository, specialtyRepository) }
     private val adminViewDoctorsViewModel: AdminViewDoctorsViewModel by viewModels { AdminViewDoctorsViewModelFactory(usuariosRepository) }
     private val doctorPatientProfileViewModel: DoctorPatientProfileViewModel by viewModels {
-        DoctorPatientProfileViewModelFactory(usuariosRepository, citasRepository, segurosRepository, historialRepository)
+        DoctorPatientProfileViewModelFactory(usuariosRepository, citasRepository, segurosRepository, historialRepository, userPreferences)
     }
     private val themeViewModel: ThemeViewModel by viewModels { ThemeViewModelFactory(userPreferences) }
 
@@ -190,6 +195,7 @@ class MainActivity : ComponentActivity() {
                                 insuranceViewModel = insuranceViewModel,
                                 doctorSearchPatientViewModel = doctorSearchPatientViewModel,
                                 doctorPatientProfileViewModel = doctorPatientProfileViewModel,
+                                usuariosRepository = usuariosRepository,
                                 adminViewDoctorsViewModel = adminViewDoctorsViewModel,
                                 currentDoctorId = userDoctorId
                             )

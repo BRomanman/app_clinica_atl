@@ -486,7 +486,7 @@ private fun PasswordEditorCard(
         colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface)
     ) {
         Column(modifier = Modifier.padding(16.dp)) {
-            Text("Seguridad", style = MaterialTheme.typography.titleMedium)
+            Text("Seguridad (Contraseña por defecto nombre + año de nacimiento)", style = MaterialTheme.typography.titleMedium)
             Spacer(modifier = Modifier.height(12.dp))
             OutlinedTextField(
                 value = passwordInput,

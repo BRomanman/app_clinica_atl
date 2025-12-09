@@ -2,7 +2,8 @@ package com.example.app_clinica_atl.ui.viewmodel
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import com.example.app_clinica_atl.data.remote.dto.CitaDto
+import com.example.app_clinica_atl.data.local.storage.UserPreferences
+import com.example.app_clinica_atl.data.remote.CitaDto
 import com.example.app_clinica_atl.data.remote.dto.HistorialDto
 import com.example.app_clinica_atl.data.remote.dto.SeguroDto
 import com.example.app_clinica_atl.data.remote.dto.UsuarioDto
@@ -13,9 +14,8 @@ import com.example.app_clinica_atl.data.repository.UsuariosRepository
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
-import kotlinx.coroutines.async
+import kotlinx.coroutines.flow.firstOrNull
 import kotlinx.coroutines.launch
-import kotlinx.coroutines.supervisorScope
 
 data class DoctorPatientProfileUiState(
     val isLoading: Boolean = true,
@@ -24,24 +24,35 @@ data class DoctorPatientProfileUiState(
     val insurances: List<SeguroDto> = emptyList(),
     val histories: List<HistorialDto> = emptyList(),
     val errorMsg: String? = null,
-    val isCancellingId: Long? = null
+    val isCancellingId: Long? = null,
+    val isFinishingId: Long? = null
 )
 
 class DoctorPatientProfileViewModel(
     private val usuariosRepository: UsuariosRepository,
     private val citasRepository: CitasRepository,
     private val segurosRepository: SegurosRepository,
-    private val historialRepository: HistorialRepository
+    private val historialRepository: HistorialRepository,
+    private val userPreferences: UserPreferences
 ) : ViewModel() {
 
     private var currentPatientId: Long? = null
+    private var currentDoctorId: Long? = null
     private val _uiState = MutableStateFlow(DoctorPatientProfileUiState())
     val uiState: StateFlow<DoctorPatientProfileUiState> = _uiState.asStateFlow()
 
     fun loadPatient(patientId: Long) {
-        if (currentPatientId == patientId && uiState.value.patient != null) return
-        currentPatientId = patientId
         viewModelScope.launch {
+            val doctorId = resolveDoctorId()
+            if (doctorId == null) {
+                _uiState.value = _uiState.value.copy(
+                    isLoading = false,
+                    errorMsg = "No se pudo identificar al doctor."
+                )
+                return@launch
+            }
+            if (currentPatientId == patientId && _uiState.value.patient != null) return@launch
+            currentPatientId = patientId
             _uiState.value = _uiState.value.copy(isLoading = true, errorMsg = null)
 
             val userResult = usuariosRepository.getUserById(patientId)
@@ -55,26 +66,11 @@ class DoctorPatientProfileViewModel(
 
             val patient = userResult.getOrNull()
 
-            val (appointmentsResult, historyResult, insurancesResult) = supervisorScope {
-                val appointmentsDeferred = async {
-                    runCatching { citasRepository.getUpcomingAppointmentsForPatient(patientId) }
-                        .getOrElse { Result.failure(it) }
-                }
-                val historyDeferred = async {
-                    runCatching { historialRepository.getHistorialForUser(patientId) }
-                        .getOrElse { Result.failure(it) }
-                }
-                val insurancesDeferred = async {
-                    runCatching { segurosRepository.getInsurancesForPatient(patientId) }
-                        .getOrElse { Result.failure(it) }
-                }
-
-                Triple(
-                    appointmentsDeferred.await(),
-                    historyDeferred.await(),
-                    insurancesDeferred.await()
-                )
+            val appointmentsResult = runCatching {
+                citasRepository.getProximasCitasPacienteConDoctor(patientId, doctorId)
             }
+            val historyResult = historialRepository.getHistorialForUser(patientId)
+            val insurancesResult = segurosRepository.getInsurancesForPatient(patientId)
 
             val loadingErrors = buildList {
                 appointmentsResult.exceptionOrNull()?.let { add("No se pudieron cargar las próximas citas.") }
@@ -88,7 +84,7 @@ class DoctorPatientProfileViewModel(
                 appointments = appointmentsResult.getOrElse { emptyList() },
                 histories = historyResult.getOrElse { emptyList() },
                 insurances = insurancesResult.getOrElse { emptyList() },
-                errorMsg = loadingErrors // No bloqueamos la UI si alguna sección falla
+                errorMsg = loadingErrors
             )
         }
     }
@@ -96,18 +92,54 @@ class DoctorPatientProfileViewModel(
     fun cancelAppointment(appointmentId: Long) {
         viewModelScope.launch {
             _uiState.value = _uiState.value.copy(isCancellingId = appointmentId, errorMsg = null)
-            val result = citasRepository.cancelAppointment(appointmentId)
-            _uiState.value = if (result.isSuccess) {
-                _uiState.value.copy(
+            val patientId = currentPatientId
+            val doctorId = resolveDoctorId()
+            if (patientId == null || doctorId == null) {
+                _uiState.value = _uiState.value.copy(
                     isCancellingId = null,
-                    appointments = _uiState.value.appointments.filterNot { it.id == appointmentId }
+                    errorMsg = "No se pudo cancelar la cita."
                 )
+                return@launch
+            }
+            val result = citasRepository.cancelarCita(appointmentId)
+            _uiState.value = _uiState.value.copy(isCancellingId = null)
+            if (result.isSuccess) {
+                loadPatient(patientId)
             } else {
-                _uiState.value.copy(
-                    isCancellingId = null,
+                _uiState.value = _uiState.value.copy(
                     errorMsg = result.exceptionOrNull()?.message ?: "No se pudo cancelar la cita."
                 )
             }
         }
+    }
+
+    fun finalizeAppointment(appointmentId: Long) {
+        viewModelScope.launch {
+            _uiState.value = _uiState.value.copy(isFinishingId = appointmentId, errorMsg = null)
+            val patientId = currentPatientId
+            val doctorId = resolveDoctorId()
+            val cita = _uiState.value.appointments.firstOrNull { it.id == appointmentId }
+            if (patientId == null || doctorId == null || cita == null) {
+                _uiState.value = _uiState.value.copy(
+                    isFinishingId = null,
+                    errorMsg = "No se pudo finalizar la cita."
+                )
+                return@launch
+            }
+            val result = citasRepository.finalizarCita(appointmentId)
+            _uiState.value = _uiState.value.copy(isFinishingId = null)
+            if (result.isSuccess) {
+                loadPatient(patientId)
+            } else {
+                _uiState.value = _uiState.value.copy(
+                    errorMsg = result.exceptionOrNull()?.message ?: "No se pudo finalizar la cita."
+                )
+            }
+        }
+    }
+
+    private suspend fun resolveDoctorId(): Long? {
+        currentDoctorId?.let { return it }
+        return userPreferences.userDoctorIdFlow.firstOrNull().also { currentDoctorId = it }
     }
 }

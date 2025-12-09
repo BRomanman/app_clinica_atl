@@ -1,42 +1,48 @@
 package com.example.app_clinica_atl.data.remote
 
-import com.example.app_clinica_atl.data.remote.dto.CitaDto
+import com.example.app_clinica_atl.data.remote.dto.ReservarCitaRequest
 import retrofit2.Response
 import retrofit2.http.Body
 import retrofit2.http.GET
-import retrofit2.http.POST
-import retrofit2.http.PUT
+import retrofit2.http.PATCH
 import retrofit2.http.Path
 
 interface CitasApi {
 
-    @GET("citas")
-    suspend fun getAppointments(): Response<List<CitaDto>>
+    @GET("api/v1/citas/{id}")
+    suspend fun getCitaById(
+        @Path("id") id: Long
+    ): CitaDto
 
-    @GET("citas/{id}")
-    suspend fun getAppointmentById(@Path("id") id: Long): Response<CitaDto>
+    @GET("api/v1/citas/usuario/{idUsuario}")
+    suspend fun getCitasByUsuario(
+        @Path("idUsuario") idUsuario: Long
+    ): List<CitaDto>
 
-    @GET("citas/usuario/{idUsuario}")
-    suspend fun getAppointmentsByUser(@Path("idUsuario") userId: Long): Response<List<CitaDto>>
+    @GET("api/v1/citas/usuario/{idUsuario}/proximas")
+    suspend fun getProximasCitasUsuario(
+        @Path("idUsuario") idUsuario: Long
+    ): List<CitaDto>
 
-    @GET("citas/usuario/{idUsuario}/proximas")
-    suspend fun getUpcomingAppointmentsByUser(@Path("idUsuario") userId: Long): Response<List<CitaDto>>
+    @GET("api/v1/citas/doctor/{idDoctor}/proximas")
+    suspend fun getProximasCitasDoctor(
+        @Path("idDoctor") idDoctor: Long
+    ): List<CitaDto>
 
-    @GET("citas/doctor/{idDoctor}/proximas")
-    suspend fun getUpcomingAppointmentsByDoctor(@Path("idDoctor") doctorId: Long): Response<List<CitaDto>>
-
-    @GET("citas/doctor/{idDoctor}/fecha/{fecha}")
-    suspend fun getAppointmentsByDoctorAndDate(
-        @Path("idDoctor") doctorId: Long,
-        @Path("fecha") dateIso: String
+    @GET("/api/v1/citas/doctor/{idDoctor}/fecha/{fecha}")
+    suspend fun getCitasPorDoctorYFecha(
+        @Path("idDoctor") idDoctor: Long,
+        @Path("fecha") fecha: String // formato yyyy-MM-dd
     ): Response<List<CitaDto>>
 
-    @POST("citas")
-    suspend fun createAppointment(@Body cita: CitaDto): Response<CitaDto>
+    @PATCH("/api/v1/citas/{id}/cancelar")
+    suspend fun cancelarCita(
+        @Path("id") id: Long
+    ): Response<CitaDto>
 
-    @PUT("citas/{id}")
-    suspend fun updateAppointment(
+    @PATCH("/api/v1/citas/{id}/reservar")
+    suspend fun reservarCita(
         @Path("id") id: Long,
-        @Body cita: CitaDto
+        @Body request: ReservarCitaRequest
     ): Response<CitaDto>
 }
