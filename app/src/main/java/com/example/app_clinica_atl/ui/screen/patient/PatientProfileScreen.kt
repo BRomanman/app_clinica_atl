@@ -6,6 +6,7 @@ import android.net.Uri
 import android.widget.Toast
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
+import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.clickable
 import androidx.compose.ui.platform.LocalContext
 import androidx.core.content.FileProvider
@@ -24,18 +25,27 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardOptions
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Email
+import androidx.compose.material.icons.filled.Lock
+import androidx.compose.material.icons.filled.Person
+import androidx.compose.material.icons.filled.Phone
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.HorizontalDivider
+import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.SnackbarHost
 import androidx.compose.material3.SnackbarHostState
+import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
@@ -50,11 +60,11 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.text.input.PasswordVisualTransformation
 import com.example.app_clinica_atl.R
 import com.example.app_clinica_atl.data.remote.dto.CitaDetalleDto
 import com.example.app_clinica_atl.data.remote.dto.SeguroDto
@@ -69,6 +79,7 @@ import java.util.Objects
 @Composable
 fun PatientProfileScreen(
     onGoToSeguros: () -> Unit,
+    onGoToChangePassword: () -> Unit,
     onLogout: () -> Unit,
     viewModel: PatientViewModel,
     modifier: Modifier = Modifier
@@ -151,14 +162,10 @@ fun PatientProfileScreen(
                         phoneInput = uiState.phoneInput,
                         phoneError = uiState.phoneError,
                         isSavingPhone = uiState.isSavingPhone,
-                        passwordInput = uiState.passwordInput,
-                        confirmPasswordInput = uiState.confirmPasswordInput,
-                        passwordError = uiState.passwordError,
-                        confirmPasswordError = uiState.confirmPasswordError,
-                        isSavingPassword = uiState.isSavingPassword,
                         onCancelInsurance = viewModel::cancelSubscription,
                         onCancelAppointment = viewModel::cancelAppointment,
                         onGoToSeguros = onGoToSeguros,
+                        onGoToChangePassword = onGoToChangePassword,
                         onLogout = onLogout,
                         onFirstNameChange = viewModel::onFirstNameChange,
                         onLastNameChange = viewModel::onLastNameChange,
@@ -166,9 +173,6 @@ fun PatientProfileScreen(
                         onSavePersonalData = viewModel::savePersonalData,
                         onPhoneChange = viewModel::onPhoneChange,
                         onSavePhone = viewModel::savePhone,
-                        onPasswordChange = viewModel::onPasswordChange,
-                        onConfirmPasswordChange = viewModel::onConfirmPasswordChange,
-                        onSavePassword = viewModel::savePassword,
                         onProfileImageClick = {
                             // Pide permiso de cámara al hacer clic
                             permissionLauncher.launch(Manifest.permission.CAMERA)
@@ -214,14 +218,10 @@ private fun PatientProfileContent(
     phoneInput: String,
     phoneError: String?,
     isSavingPhone: Boolean,
-    passwordInput: String,
-    confirmPasswordInput: String,
-    passwordError: String?,
-    confirmPasswordError: String?,
-    isSavingPassword: Boolean,
     onCancelInsurance: () -> Unit,
     onCancelAppointment: (Long) -> Unit,
     onGoToSeguros: () -> Unit,
+    onGoToChangePassword: () -> Unit,
     onLogout: () -> Unit,
     onFirstNameChange: (String) -> Unit,
     onLastNameChange: (String) -> Unit,
@@ -229,9 +229,6 @@ private fun PatientProfileContent(
     onSavePersonalData: () -> Unit,
     onPhoneChange: (String) -> Unit,
     onSavePhone: () -> Unit,
-    onPasswordChange: (String) -> Unit,
-    onConfirmPasswordChange: (String) -> Unit,
-    onSavePassword: () -> Unit,
     onProfileImageClick: () -> Unit
 ) {
     LazyColumn(
@@ -263,44 +260,31 @@ private fun PatientProfileContent(
                 style = MaterialTheme.typography.titleMedium,
                 color = MaterialTheme.colorScheme.primary
             )
-            Spacer(modifier = Modifier.height(24.dp))
-            InfoRow(label = "Email", value = patient.email)
-            InfoRow(label = "Teléfono", value = patient.phone)
-            Spacer(modifier = Modifier.height(12.dp))
+            Text(
+                text = patient.email,
+                style = MaterialTheme.typography.bodyMedium
+            )
 
-            PersonalDataEditorCard(
+            Spacer(modifier = Modifier.height(16.dp))
+
+            ProfileEditorCard(
                 firstName = firstNameInput,
                 lastName = lastNameInput,
                 email = emailInput,
+                phoneInput = phoneInput,
                 firstNameError = firstNameError,
                 lastNameError = lastNameError,
                 emailError = emailError,
-                isSaving = isSavingPersonalData,
+                phoneError = phoneError,
+                isSavingPersonalData = isSavingPersonalData,
+                isSavingPhone = isSavingPhone,
+                onGoToChangePassword = onGoToChangePassword,
                 onFirstNameChange = onFirstNameChange,
                 onLastNameChange = onLastNameChange,
                 onEmailChange = onEmailChange,
-                onSave = onSavePersonalData
-            )
-            Spacer(modifier = Modifier.height(12.dp))
-
-            PatientPhoneEditorCard(
-                phoneInput = phoneInput,
-                phoneError = phoneError,
-                isSaving = isSavingPhone,
                 onPhoneChange = onPhoneChange,
+                onSavePersonalData = onSavePersonalData,
                 onSavePhone = onSavePhone
-            )
-
-            Spacer(modifier = Modifier.height(12.dp))
-            PasswordEditorCard(
-                passwordInput = passwordInput,
-                confirmPasswordInput = confirmPasswordInput,
-                passwordError = passwordError,
-                confirmPasswordError = confirmPasswordError,
-                isSaving = isSavingPassword,
-                onPasswordChange = onPasswordChange,
-                onConfirmPasswordChange = onConfirmPasswordChange,
-                onSavePassword = onSavePassword
             )
             Spacer(modifier = Modifier.height(16.dp))
             HorizontalDivider()
@@ -368,7 +352,6 @@ private fun PatientProfileContent(
     }
 }
 
-// ... (AppointmentCard, InsuranceInfoCard, InfoRow no cambian) ...
 @Composable
 private fun AppointmentCard(
     appointment: CitaDetalleDto,
@@ -483,181 +466,194 @@ private fun InsuranceInfoCard(
 }
 
 @Composable
-private fun PersonalDataEditorCard(
+private fun ProfileEditorCard(
     firstName: String,
     lastName: String,
     email: String,
+    phoneInput: String,
     firstNameError: String?,
     lastNameError: String?,
     emailError: String?,
-    isSaving: Boolean,
+    phoneError: String?,
+    isSavingPersonalData: Boolean,
+    isSavingPhone: Boolean,
+    onGoToChangePassword: () -> Unit,
     onFirstNameChange: (String) -> Unit,
     onLastNameChange: (String) -> Unit,
     onEmailChange: (String) -> Unit,
-    onSave: () -> Unit
-) {
-    Card(
-        modifier = Modifier.fillMaxWidth(),
-        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant)
-    ) {
-        Column(
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(16.dp),
-            verticalArrangement = Arrangement.spacedBy(8.dp)
-        ) {
-            Text("Datos personales", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold)
-            OutlinedTextField(
-                value = firstName,
-                onValueChange = onFirstNameChange,
-                label = { Text("Nombre") },
-                modifier = Modifier.fillMaxWidth(),
-                isError = firstNameError != null,
-                singleLine = true
-            )
-            firstNameError?.let {
-                Text(it, color = MaterialTheme.colorScheme.error, style = MaterialTheme.typography.labelSmall)
-            }
-            OutlinedTextField(
-                value = lastName,
-                onValueChange = onLastNameChange,
-                label = { Text("Apellido") },
-                modifier = Modifier.fillMaxWidth(),
-                isError = lastNameError != null,
-                singleLine = true
-            )
-            lastNameError?.let {
-                Text(it, color = MaterialTheme.colorScheme.error, style = MaterialTheme.typography.labelSmall)
-            }
-            OutlinedTextField(
-                value = email,
-                onValueChange = onEmailChange,
-                label = { Text("Correo electrónico") },
-                modifier = Modifier.fillMaxWidth(),
-                isError = emailError != null,
-                singleLine = true,
-                keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Email)
-            )
-            emailError?.let {
-                Text(it, color = MaterialTheme.colorScheme.error, style = MaterialTheme.typography.labelSmall)
-            }
-            Button(
-                onClick = onSave,
-                enabled = !isSaving,
-                modifier = Modifier.fillMaxWidth()
-            ) {
-                if (isSaving) {
-                    CircularProgressIndicator(modifier = Modifier.size(18.dp), strokeWidth = 2.dp)
-                    Spacer(modifier = Modifier.width(8.dp))
-                }
-                Text(if (isSaving) "Guardando..." else "Guardar cambios")
-            }
-        }
-    }
-}
-
-@Composable
-private fun PatientPhoneEditorCard(
-    phoneInput: String,
-    phoneError: String?,
-    isSaving: Boolean,
     onPhoneChange: (String) -> Unit,
+    onSavePersonalData: () -> Unit,
     onSavePhone: () -> Unit
 ) {
     Card(
         modifier = Modifier.fillMaxWidth(),
-        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant)
+        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
+        elevation = CardDefaults.cardElevation(defaultElevation = 4.dp),
+        border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant)
     ) {
         Column(
             modifier = Modifier
                 .fillMaxWidth()
-                .padding(16.dp),
-            verticalArrangement = Arrangement.spacedBy(8.dp)
+                .padding(20.dp),
+            verticalArrangement = Arrangement.spacedBy(20.dp)
         ) {
-            Text("Actualizar teléfono", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold)
-            OutlinedTextField(
-                value = phoneInput,
-                onValueChange = onPhoneChange,
-                label = { Text("Teléfono (+569...)") },
-                modifier = Modifier.fillMaxWidth(),
-                isError = phoneError != null,
-                singleLine = true,
-                keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number)
-            )
-            phoneError?.let {
-                Text(it, color = MaterialTheme.colorScheme.error, style = MaterialTheme.typography.labelSmall)
-            }
-            Button(
-                onClick = onSavePhone,
-                enabled = !isSaving,
-                modifier = Modifier.fillMaxWidth()
-            ) {
-                if (isSaving) {
-                    CircularProgressIndicator(modifier = Modifier.size(18.dp), strokeWidth = 2.dp)
-                    Spacer(modifier = Modifier.width(8.dp))
+            Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
+                Row {
+                    Icon(
+                    imageVector = Icons.Filled.Person,
+                    contentDescription = null,
+                    tint = MaterialTheme.colorScheme.primary
+                )
+
+                    Text(
+                        text = "Datos personales",
+                        style = MaterialTheme.typography.titleMedium,
+                        fontWeight = FontWeight.Bold
+                    )
                 }
-                Text(if (isSaving) "Guardando..." else "Guardar teléfono")
+            }
+
+            Surface(
+                color = MaterialTheme.colorScheme.surfaceVariant,
+                shape = RoundedCornerShape(16.dp),
+                tonalElevation = 1.dp
+            ) {
+                Column(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(16.dp),
+                    verticalArrangement = Arrangement.spacedBy(12.dp)
+                ) {
+                    Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
+                        Column {
+                            FieldTitle(icon = Icons.Filled.Person, text = "Nombre")
+                            OutlinedTextField(
+                                value = firstName,
+                                onValueChange = onFirstNameChange,
+                                modifier = Modifier.fillMaxWidth(),
+                                isError = firstNameError != null,
+                                singleLine = true
+                            )
+                            firstNameError?.let {
+                                Text(it, color = MaterialTheme.colorScheme.error, style = MaterialTheme.typography.labelSmall)
+                            }
+                        }
+                        Column {
+                            FieldTitle(icon = Icons.Filled.Person, text = "Apellido")
+                            OutlinedTextField(
+                                value = lastName,
+                                onValueChange = onLastNameChange,
+                                modifier = Modifier.fillMaxWidth(),
+                                isError = lastNameError != null,
+                                singleLine = true
+                            )
+                            lastNameError?.let {
+                                Text(it, color = MaterialTheme.colorScheme.error, style = MaterialTheme.typography.labelSmall)
+                            }
+                        }
+                    }
+                    Column {
+                        FieldTitle(icon = Icons.Filled.Email, text = "Correo electrónico")
+                        OutlinedTextField(
+                            value = email,
+                            onValueChange = onEmailChange,
+                            modifier = Modifier.fillMaxWidth(),
+                            isError = emailError != null,
+                            singleLine = true,
+                            keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Email)
+                        )
+                        emailError?.let {
+                            Text(it, color = MaterialTheme.colorScheme.error, style = MaterialTheme.typography.labelSmall)
+                        }
+                    }
+                    Column {
+                        FieldTitle(icon = Icons.Filled.Phone, text = "Teléfono (+569...)")
+                        OutlinedTextField(
+                            value = phoneInput,
+                            onValueChange = onPhoneChange,
+                            modifier = Modifier.fillMaxWidth(),
+                            isError = phoneError != null,
+                            singleLine = true,
+                            keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number)
+                        )
+                        phoneError?.let {
+                            Text(it, color = MaterialTheme.colorScheme.error, style = MaterialTheme.typography.labelSmall)
+                        }
+                    }
+                    val isSavingPersonalOrPhone = isSavingPersonalData || isSavingPhone
+                    Button(
+                        onClick = {
+                            onSavePersonalData()
+                            onSavePhone()
+                        },
+                        enabled = !isSavingPersonalOrPhone,
+                        modifier = Modifier.fillMaxWidth()
+                    ) {
+                        if (isSavingPersonalOrPhone) {
+                            CircularProgressIndicator(modifier = Modifier.size(18.dp), strokeWidth = 2.dp)
+                            Spacer(modifier = Modifier.width(8.dp))
+                        }
+                        Text(if (isSavingPersonalOrPhone) "Guardando..." else "Guardar datos")
+                    }
+                }
+            }
+
+
+            //cambio de contraseña
+            Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
+                Row(
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.spacedBy(8.dp)
+                ) {
+                    Icon(
+                        imageVector = Icons.Filled.Lock,
+                        contentDescription = null,
+                        tint = MaterialTheme.colorScheme.primary
+                    )
+                    Column {
+                        Text(
+                            text = "Seguridad",
+                            style = MaterialTheme.typography.labelLarge,
+                            fontWeight = FontWeight.SemiBold,
+                            color = MaterialTheme.colorScheme.primary
+                        )
+                        Text(
+                            text = "Gestiona tu contraseña en un flujo dedicado.",
+                            style = MaterialTheme.typography.bodySmall,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                        )
+                    }
+                }
+                Button(
+                    onClick = onGoToChangePassword,
+                    modifier = Modifier.fillMaxWidth(),
+                    colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.primary)
+                ) {
+                    Text("Cambiar contraseña")
+                }
             }
         }
     }
 }
 
 @Composable
-private fun PasswordEditorCard(
-    passwordInput: String,
-    confirmPasswordInput: String,
-    passwordError: String?,
-    confirmPasswordError: String?,
-    isSaving: Boolean,
-    onPasswordChange: (String) -> Unit,
-    onConfirmPasswordChange: (String) -> Unit,
-    onSavePassword: () -> Unit
-) {
-    Card(
-        modifier = Modifier.fillMaxWidth(),
-        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant)
+private fun FieldTitle(icon: ImageVector, text: String) {
+    Row(
+        verticalAlignment = Alignment.CenterVertically,
+        horizontalArrangement = Arrangement.spacedBy(6.dp)
     ) {
-        Column(
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(16.dp),
-            verticalArrangement = Arrangement.spacedBy(8.dp)
-        ) {
-            Text("Cambiar contraseña", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold)
-            OutlinedTextField(
-                value = passwordInput,
-                onValueChange = onPasswordChange,
-                label = { Text("Nueva contraseña") },
-                singleLine = true,
-                isError = passwordError != null,
-                visualTransformation = PasswordVisualTransformation()
-            )
-            passwordError?.let {
-                Text(it, color = MaterialTheme.colorScheme.error, style = MaterialTheme.typography.labelSmall)
-            }
-            OutlinedTextField(
-                value = confirmPasswordInput,
-                onValueChange = onConfirmPasswordChange,
-                label = { Text("Confirmar contraseña") },
-                singleLine = true,
-                isError = confirmPasswordError != null,
-                visualTransformation = PasswordVisualTransformation()
-            )
-            confirmPasswordError?.let {
-                Text(it, color = MaterialTheme.colorScheme.error, style = MaterialTheme.typography.labelSmall)
-            }
-            Button(
-                onClick = onSavePassword,
-                enabled = !isSaving,
-                modifier = Modifier.fillMaxWidth()
-            ) {
-                if (isSaving) {
-                    CircularProgressIndicator(modifier = Modifier.size(18.dp), strokeWidth = 2.dp)
-                    Spacer(modifier = Modifier.width(8.dp))
-                }
-                Text(if (isSaving) "Guardando..." else "Actualizar contraseña")
-            }
-        }
+        Icon(
+            imageVector = icon,
+            contentDescription = null,
+            tint = MaterialTheme.colorScheme.primary,
+            modifier = Modifier.size(18.dp)
+        )
+        Text(
+            text = text,
+            style = MaterialTheme.typography.labelMedium,
+            fontWeight = FontWeight.SemiBold,
+            color = MaterialTheme.colorScheme.onSurface
+        )
     }
 }
 

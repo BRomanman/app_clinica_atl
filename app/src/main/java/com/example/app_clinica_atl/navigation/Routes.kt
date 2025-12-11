@@ -3,8 +3,11 @@ package com.example.app_clinica_atl.navigation
 sealed class Route(val path: String) {
     object Login : Route("login")
     object Register : Route("register")
+    object PasswordRecoveryVerify : Route("password_recovery_verify")
+    object PasswordRecoveryChange : Route("password_recovery_change")
     object Home : Route("home")
     object PatientProfile : Route("patient_profile")
+    object PatientChangePassword : Route("patient_change_password")
     object Seguros : Route("seguros")
     data object ContratarSeguro : Route("contratarSeguro/{id}") {
         fun create(id: Long) = "contratarSeguro/$id"

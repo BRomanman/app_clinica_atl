@@ -180,7 +180,7 @@ fun BookAppointmentScreen(
 
 
     // todo logica del calendario para evitar citas al pasado
-    
+
     val zoneId = ZoneId.systemDefault()
     val utcZone = ZoneOffset.UTC
     val minDate = LocalDate.now(utcZone).plusDays(1) // no permitir hoy ni fechas pasadas
@@ -371,17 +371,17 @@ fun BookAppointmentScreen(
                     OutlinedTextField(
                         value = state.selectedDate,
                         onValueChange = {},
-                        label = { Text("Fecha (YYYY-MM-DD)") },
+                        label = { Text("Selecciona una fecha del calendario") },
                         placeholder = { Text("Seleccione una fecha") },
                         modifier = Modifier.fillMaxWidth(),
-                        enabled = canSelectDate,          // ✅ antes revisaba solo selectedDoctorBackendId
+                        enabled = canSelectDate,
                         readOnly = true,
                         isError = state.dateError != null,
                         shape = RoundedCornerShape(12.dp),
                         trailingIcon = {
                             IconButton(
                                 onClick = { viewModel.showDatePicker() },
-                                enabled = canSelectDate    // ✅
+                                enabled = canSelectDate
                             ) {
                                 Icon(
                                     imageVector = Icons.Default.CalendarToday,

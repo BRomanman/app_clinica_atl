@@ -225,6 +225,10 @@ class MainActivity : ComponentActivity() {
                                 currentRoute == Route.DoctorPreview.path ||
                                 currentRoute?.startsWith("doctor_patient_profile") == true -> false
 
+                        // Recuperación de contraseña sin menú ni topbar
+                        currentRoute == Route.PasswordRecoveryVerify.path ||
+                                currentRoute == Route.PasswordRecoveryChange.path -> false
+
                         // Otras
                         currentRoute == Route.LogoutConfirmation.path -> false
                         currentRoute == Route.Restart.path -> false

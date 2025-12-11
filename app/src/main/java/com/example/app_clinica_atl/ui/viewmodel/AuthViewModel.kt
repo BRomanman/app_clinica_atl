@@ -33,7 +33,21 @@ data class LoginUiState(
     val resetEmailError: String? = null,
     val resetError: String? = null,
     val isSendingReset: Boolean = false,
-    val resetSuccessMessage: String? = null
+    val resetSuccessMessage: String? = null,
+    val recoveryEmail: String = "",
+    val recoveryEmailError: String? = null,
+    val recoveryBirthDate: String = "",
+    val recoveryBirthDateError: String? = null,
+    val recoveryVerificationError: String? = null,
+    val isVerifyingRecovery: Boolean = false,
+    val recoveryIdentityPassed: Boolean = false,
+    val recoveryUserId: Long? = null,
+    val recoveryPassword: String = "",
+    val recoveryConfirmPassword: String = "",
+    val recoveryPasswordError: String? = null,
+    val recoveryConfirmPasswordError: String? = null,
+    val isUpdatingRecoveryPassword: Boolean = false,
+    val recoverySuccessMessage: String? = null
 )
 
 // --- Estados de UI para Registro ---
@@ -231,6 +245,170 @@ class AuthViewModel(
     fun clearResetMessage() {
         _loginUiState.update { it.copy(resetSuccessMessage = null) }
     }
+
+    // --- Recuperación con verificación de datos personales ---
+    fun onRecoveryEmailChange(email: String) {
+        val emailError = validateEmail(email)
+        _loginUiState.update {
+            it.copy(
+                recoveryEmail = email,
+                recoveryEmailError = emailError,
+                recoveryVerificationError = null,
+                recoveryIdentityPassed = false
+            )
+        }
+    }
+
+    fun onRecoveryBirthDateChange(birthDate: String) {
+        val formatted = formatBirthDateInput(birthDate)
+        val birthError = validateBirthDateInput(formatted)
+        _loginUiState.update {
+            it.copy(
+                recoveryBirthDate = formatted,
+                recoveryBirthDateError = birthError,
+                recoveryVerificationError = null,
+                recoveryIdentityPassed = false
+            )
+        }
+    }
+
+    fun verifyRecoveryIdentity() {
+        val current = _loginUiState.value
+        val email = current.recoveryEmail.ifBlank { current.email }
+        val emailError = validateEmail(email)
+        val birthError = validateBirthDateInput(current.recoveryBirthDate)
+        if (emailError != null || birthError != null) {
+            _loginUiState.update {
+                it.copy(
+                    recoveryEmail = email,
+                    recoveryEmailError = emailError,
+                    recoveryBirthDateError = birthError
+                )
+            }
+            return
+        }
+        _loginUiState.update {
+            it.copy(
+                recoveryEmail = email,
+                isVerifyingRecovery = true,
+                recoveryVerificationError = null,
+                recoveryEmailError = null,
+                recoveryBirthDateError = null
+            )
+        }
+        viewModelScope.launch {
+            val result = userRepository.verifyUserIdentity(email, current.recoveryBirthDate)
+            _loginUiState.update {
+                if (result.isSuccess) {
+                    it.copy(
+                        isVerifyingRecovery = false,
+                        recoveryIdentityPassed = true,
+                        recoveryUserId = result.getOrNull(),
+                        recoveryVerificationError = null
+                    )
+                } else {
+                    it.copy(
+                        isVerifyingRecovery = false,
+                        recoveryIdentityPassed = false,
+                        recoveryUserId = null,
+                        recoveryVerificationError = result.exceptionOrNull()?.message
+                            ?: "No pudimos verificar tus datos."
+                    )
+                }
+            }
+        }
+    }
+
+    fun consumeRecoveryIdentityFlag() {
+        _loginUiState.update { it.copy(recoveryIdentityPassed = false) }
+    }
+
+    fun clearRecoverySuccessMessage() {
+        _loginUiState.update { it.copy(recoverySuccessMessage = null) }
+    }
+
+    fun onRecoveryPasswordChange(password: String) {
+        val validation = validateRegisterPassword(password, _loginUiState.value.recoveryConfirmPassword)
+        _loginUiState.update {
+            it.copy(
+                recoveryPassword = password,
+                recoveryPasswordError = validation.exceptionOrNull()?.message?.takeIf { msg -> "débil" in msg },
+                recoveryConfirmPasswordError = validation.exceptionOrNull()?.message?.takeIf { msg -> "coinciden" in msg },
+                recoverySuccessMessage = null
+            )
+        }
+    }
+
+    fun onRecoveryConfirmPasswordChange(password: String) {
+        val validation = validateRegisterPassword(_loginUiState.value.recoveryPassword, password)
+        _loginUiState.update {
+            it.copy(
+                recoveryConfirmPassword = password,
+                recoveryPasswordError = validation.exceptionOrNull()?.message?.takeIf { msg -> "débil" in msg },
+                recoveryConfirmPasswordError = validation.exceptionOrNull()?.message?.takeIf { msg -> "coinciden" in msg },
+                recoverySuccessMessage = null
+            )
+        }
+    }
+
+    fun updateRecoveredPassword() {
+        val current = _loginUiState.value
+        val validation = validateRegisterPassword(current.recoveryPassword, current.recoveryConfirmPassword)
+        if (validation.isFailure) {
+            _loginUiState.update {
+                it.copy(
+                    recoveryPasswordError = validation.exceptionOrNull()?.message?.takeIf { msg -> "débil" in msg },
+                    recoveryConfirmPasswordError = validation.exceptionOrNull()?.message?.takeIf { msg -> "coinciden" in msg }
+                )
+            }
+            return
+        }
+        val targetUserId = current.recoveryUserId
+        if (targetUserId == null) {
+            _loginUiState.update {
+                it.copy(recoveryVerificationError = "Debes verificar tus datos antes de cambiar la contraseña.")
+            }
+            return
+        }
+        _loginUiState.update { it.copy(isUpdatingRecoveryPassword = true, recoveryVerificationError = null) }
+        viewModelScope.launch {
+            val result = userRepository.updatePassword(targetUserId, current.recoveryPassword)
+            _loginUiState.update {
+                if (result.isSuccess) {
+                    it.copy(
+                        isUpdatingRecoveryPassword = false,
+                        recoverySuccessMessage = "Contraseña actualizada. Inicia sesión con tu nueva clave.",
+                        recoveryPassword = "",
+                        recoveryConfirmPassword = "",
+                        recoveryPasswordError = null,
+                        recoveryConfirmPasswordError = null
+                    )
+                } else {
+                    it.copy(
+                        isUpdatingRecoveryPassword = false,
+                        recoveryVerificationError = result.exceptionOrNull()?.message ?: "No se pudo actualizar la contraseña."
+                    )
+                }
+            }
+        }
+    }
+
+    private fun validateBirthDateInput(birthDate: String): String? {
+        if (birthDate.isBlank()) return "Ingresa tu fecha de nacimiento."
+        val regex = Regex("^\\d{2}-\\d{2}-\\d{4}\$")
+        return if (regex.matches(birthDate.trim())) null else "Usa el formato DD-MM-AAAA."
+    }
+
+    private fun formatBirthDateInput(raw: String): String {
+        val digits = raw.filter { it.isDigit() }.take(8)
+        val builder = StringBuilder()
+        digits.forEachIndexed { index, c ->
+            builder.append(c)
+            if (index == 1 || index == 3) builder.append("-")
+        }
+        return builder.toString()
+    }
+
     fun registerUser() {
         // ... (Validación final)
         val s = _registerUiState.value

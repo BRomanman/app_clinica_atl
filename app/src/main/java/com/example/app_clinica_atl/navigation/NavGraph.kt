@@ -84,7 +84,8 @@ fun AppNavGraph(
                     }
                     navController.navigate(destination) { popUpTo(Route.Login.path) { inclusive = true } }
                 },
-                onGoRegister = { navController.navigate(Route.Register.path) }
+                onGoRegister = { navController.navigate(Route.Register.path) },
+                onForgotPassword = { navController.navigate(Route.PasswordRecoveryVerify.path) }
             )
         }
 
@@ -132,7 +133,30 @@ fun AppNavGraph(
             PatientProfileScreen(
                 viewModel = patientViewModel,
                 onGoToSeguros = { navController.navigate(Route.Seguros.path) },
+                onGoToChangePassword = { navController.navigate(Route.PatientChangePassword.path) },
                 onLogout = { navController.navigate(Route.LogoutConfirmation.path) }
+            )
+        }
+
+        composable(Route.PasswordRecoveryVerify.path) {
+            PasswordRecoveryVerificationScreen(
+                viewModel = authViewModel,
+                onBack = { navController.popBackStack() },
+                onVerified = {
+                    navController.navigate(Route.PasswordRecoveryChange.path)
+                }
+            )
+        }
+
+        composable(Route.PasswordRecoveryChange.path) {
+            PasswordRecoveryChangeScreen(
+                viewModel = authViewModel,
+                onBack = { navController.popBackStack(Route.Login.path, inclusive = false) },
+                onDone = {
+                    navController.navigate(Route.Login.path) {
+                        popUpTo(Route.Login.path) { inclusive = true }
+                    }
+                }
             )
         }
         composable(Route.Seguros.path) {
@@ -166,6 +190,12 @@ fun AppNavGraph(
                     onBack = { navController.popBackStack() }
                 )
             }
+        }
+        composable(Route.PatientChangePassword.path) {
+            PatientChangePasswordScreen(
+                viewModel = patientViewModel,
+                onBack = { navController.popBackStack() }
+            )
         }
         composable(Route.BookAppointment.path) {
             BookAppointmentScreen(

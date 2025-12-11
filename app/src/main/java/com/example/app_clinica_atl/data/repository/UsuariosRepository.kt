@@ -149,6 +149,23 @@ class UsuariosRepository(
         }
     }
 
+    suspend fun verifyUserIdentity(email: String, birthDate: String): Result<Long> = withContext(Dispatchers.IO) {
+        try {
+            val users = usuariosApi.getUsers()
+            val target = users.firstOrNull { it.correo.equals(email, true) }
+                ?: return@withContext Result.failure(Exception("No encontramos una cuenta con ese correo."))
+            val storedBirth = target.fechaNacimiento?.takeIf { it.isNotBlank() }?.take(10)
+            val storedIso = normalizeDateToIso(storedBirth)
+            val inputIso = normalizeDateToIso(birthDate)
+            if (storedIso == null || inputIso == null || storedIso != inputIso) {
+                return@withContext Result.failure(Exception("Los datos personales no coinciden."))
+            }
+            Result.success(target.id)
+        } catch (e: Exception) {
+            Result.failure(e)
+        }
+    }
+
     suspend fun updateProfileImageUrl(userId: Long, imageUrl: String): Result<Unit> = Result.success(Unit)
 
     suspend fun updatePhoneNumber(userId: Long, phone: String): Result<Unit> = withContext(Dispatchers.IO) {
@@ -237,6 +254,21 @@ class UsuariosRepository(
         }
     }
     // --- FIN DEL CÓDIGO ACTUALIZADO ---
+
+    private fun normalizeDateToIso(date: String?): String? {
+        if (date.isNullOrBlank()) return null
+        val trimmed = date.trim().take(10)
+        val ddmmyyyy = Regex("^(\\d{2})-(\\d{2})-(\\d{4})$")
+        val yyyymmdd = Regex("^(\\d{4})-(\\d{2})-(\\d{2})$")
+        return when {
+            ddmmyyyy.matches(trimmed) -> {
+                val (dd, mm, yyyy) = ddmmyyyy.find(trimmed)!!.destructured
+                "$yyyy-$mm-$dd"
+            }
+            yyyymmdd.matches(trimmed) -> trimmed
+            else -> null
+        }
+    }
 }
 
 // --- Helper para /api/v1/usuarios ---

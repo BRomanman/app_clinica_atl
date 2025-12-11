@@ -20,7 +20,6 @@ import androidx.compose.foundation.text.KeyboardOptions // <-- ¡IMPORT AÑADIDO
 import androidx.compose.material.icons.Icons // <-- ¡IMPORT AÑADIDO!
 import androidx.compose.material.icons.filled.Visibility
 import androidx.compose.material.icons.filled.VisibilityOff
-import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.CircularProgressIndicator
@@ -29,7 +28,6 @@ import androidx.compose.material3.IconButton // <-- ¡IMPORT AÑADIDO!
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Text
-import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
@@ -56,7 +54,8 @@ import com.example.app_clinica_atl.ui.viewmodel.AuthViewModel
 fun LoginScreenVm(
     authViewModel: AuthViewModel,
     onLoginSuccessNavigate: (role: String, doctorId: Long?) -> Unit,
-    onGoRegister: () -> Unit
+    onGoRegister: () -> Unit,
+    onForgotPassword: () -> Unit
 ) {
     val uiState by authViewModel.loginUiState.collectAsState()
     val storedRole by authViewModel.userRoleFlow.collectAsState(initial = null)
@@ -77,12 +76,6 @@ fun LoginScreenVm(
     LaunchedEffect(uiState.weakPasswordWarning) {
         uiState.weakPasswordWarning?.let { Toast.makeText(context, it, Toast.LENGTH_SHORT).show() }
     }
-    LaunchedEffect(uiState.resetSuccessMessage) {
-        uiState.resetSuccessMessage?.let {
-            Toast.makeText(context, it, Toast.LENGTH_SHORT).show()
-            authViewModel.clearResetMessage()
-        }
-    }
 
     LoginScreen(
         email = uiState.email,
@@ -93,15 +86,7 @@ fun LoginScreenVm(
         passwordError = uiState.passwordError,
         onLoginClick = authViewModel::loginUser,
         onGoRegisterClick = onGoRegister,
-        onForgotPasswordClick = authViewModel::openResetDialog,
-        isResetDialogOpen = uiState.isResetDialogOpen,
-        resetEmail = uiState.resetEmail.ifBlank { uiState.email },
-        resetEmailError = uiState.resetEmailError,
-        resetError = uiState.resetError,
-        onResetEmailChange = authViewModel::onResetEmailChange,
-        onSendReset = authViewModel::sendResetInstructions,
-        onDismissReset = authViewModel::closeResetDialog,
-        isSendingReset = uiState.isSendingReset,
+        onForgotPasswordClick = onForgotPassword,
         isLoading = uiState.isLoading,
         loginError = uiState.loginError
     )
@@ -118,31 +103,11 @@ fun LoginScreen(
     onLoginClick: () -> Unit,
     onGoRegisterClick: () -> Unit,
     onForgotPasswordClick: () -> Unit,
-    isResetDialogOpen: Boolean,
-    resetEmail: String,
-    resetEmailError: String?,
-    resetError: String?,
-    onResetEmailChange: (String) -> Unit,
-    onSendReset: () -> Unit,
-    onDismissReset: () -> Unit,
-    isSendingReset: Boolean,
     isLoading: Boolean,
     loginError: String?
 ) {
     // --- ¡ESTADO AÑADIDO PARA VISIBILIDAD DE CONTRASEÑA! ---
     var passwordVisible by rememberSaveable { mutableStateOf(false) }
-
-    if (isResetDialogOpen) {
-        ForgotPasswordDialog(
-            email = resetEmail,
-            emailError = resetEmailError,
-            resetError = resetError,
-            isSending = isSendingReset,
-            onEmailChange = onResetEmailChange,
-            onSend = onSendReset,
-            onDismiss = onDismissReset
-        )
-    }
 
     Box(
         modifier = Modifier
@@ -280,57 +245,3 @@ fun LoginScreen(
     }
 }
 
-@Composable
-private fun ForgotPasswordDialog(
-    email: String,
-    emailError: String?,
-    resetError: String?,
-    isSending: Boolean,
-    onEmailChange: (String) -> Unit,
-    onSend: () -> Unit,
-    onDismiss: () -> Unit
-) {
-    AlertDialog(
-        onDismissRequest = onDismiss,
-        title = { Text("Recupera tu contraseña") },
-        text = {
-            Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
-                Text(
-                    text = "Ingresa tu correo y te enviaremos una clave temporal para que vuelvas a entrar y la cambies.",
-                    style = MaterialTheme.typography.bodyMedium
-                )
-                OutlinedTextField(
-                    value = email,
-                    onValueChange = onEmailChange,
-                    label = { Text("Correo registrado") },
-                    singleLine = true,
-                    keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Email),
-                    isError = emailError != null
-                )
-                emailError?.let {
-                    Text(it, color = MaterialTheme.colorScheme.error, style = MaterialTheme.typography.labelSmall)
-                }
-                resetError?.let {
-                    Text(it, color = MaterialTheme.colorScheme.error, style = MaterialTheme.typography.labelSmall)
-                }
-            }
-        },
-        confirmButton = {
-            TextButton(onClick = onSend, enabled = !isSending) {
-                if (isSending) {
-                    CircularProgressIndicator(
-                        modifier = Modifier.size(16.dp),
-                        strokeWidth = 2.dp
-                    )
-                    Spacer(modifier = Modifier.width(8.dp))
-                }
-                Text(if (isSending) "Enviando..." else "Enviar instrucciones")
-            }
-        },
-        dismissButton = {
-            TextButton(onClick = onDismiss) {
-                Text("Cancelar")
-            }
-        }
-    )
-}
