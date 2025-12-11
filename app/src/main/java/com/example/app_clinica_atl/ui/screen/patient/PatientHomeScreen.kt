@@ -12,10 +12,12 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
@@ -398,8 +400,10 @@ private fun WeatherCard(
 
                 weather != null -> {
                     Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                        val placeLabel = weather.placeName?.takeIf { it.isNotBlank() }
+                            ?: weather.locationLabel
                         Text(
-                            text = "Clima en ${weather.locationLabel}",
+                            text = "Clima en $placeLabel",
                             style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold)
                         )
                         Row(
@@ -413,24 +417,33 @@ private fun WeatherCard(
                                     style = MaterialTheme.typography.headlineMedium.copy(fontWeight = FontWeight.Bold)
                                 )
                                 Text(
-                                    text = weather.description,
-                                    style = MaterialTheme.typography.bodyMedium
-                                )
-                                Text(
                                     text = "Viento: ${weather.windKmh} km/h",
                                     style = MaterialTheme.typography.bodySmall
                                 )
                             }
-                            Text(
-                                text = "Ten un muy buen dia \uD83D\uDE0E",
-                                style = MaterialTheme.typography.bodyLarge,
-                                modifier = Modifier
-                                    .background(
-                                        color = MaterialTheme.colorScheme.primary.copy(alpha = 0.1f),
-                                        shape = RoundedCornerShape(12.dp)
+                            Row(
+                                verticalAlignment = Alignment.CenterVertically,
+                                horizontalArrangement = Arrangement.spacedBy(10.dp)
+                            ) {
+                                Box(
+                                    modifier = Modifier
+                                        .size(46.dp)
+                                        .background(
+                                            color = MaterialTheme.colorScheme.primary.copy(alpha = 0.25f),
+                                            shape = CircleShape
+                                        ),
+                                    contentAlignment = Alignment.Center
+                                ) {
+                                    Text(
+                                        text = weather.emoji,
+                                        style = MaterialTheme.typography.headlineSmall
                                     )
-                                    .padding(horizontal = 12.dp, vertical = 10.dp)
-                            )
+                                }
+                                Text(
+                                    text = weather.description,
+                                    style = MaterialTheme.typography.titleLarge.copy(fontWeight = FontWeight.Bold)
+                                )
+                            }
                         }
                     }
                 }

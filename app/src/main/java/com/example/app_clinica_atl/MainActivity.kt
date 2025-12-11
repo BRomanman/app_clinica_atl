@@ -33,6 +33,7 @@ import com.example.app_clinica_atl.ui.theme.App_clinica_atlTheme
 import com.example.app_clinica_atl.ui.viewmodel.*
 import kotlinx.coroutines.launch
 import com.example.app_clinica_atl.data.remote.RetrofitClient
+import com.example.app_clinica_atl.data.remote.weather.WeatherApi
 import com.example.app_clinica_atl.ui.viewmodel.admin.AdminAddDoctorViewModel
 import com.example.app_clinica_atl.ui.viewmodel.admin.AdminAddDoctorViewModelFactory
 import com.example.app_clinica_atl.ui.viewmodel.admin.AdminManageSpecialtiesViewModel
@@ -72,7 +73,9 @@ class MainActivity : ComponentActivity() {
     private val specialtyRepository: SpecialtyRepository by lazy { SpecialtyRepositoryImpl() }
     private val segurosRepository: SegurosRepository by lazy { SegurosRepositoryImpl() }
     private val historialRepository: HistorialRepository by lazy { HistorialRepository() }
-    private val weatherRepository by lazy { WeatherRepository() }
+    private val weatherRepository by lazy {
+        WeatherRepository(api = RetrofitClient.weatherApi, context = applicationContext)
+    }
 
     // --- ViewModels (sin cambios) ---
     private val authViewModel: AuthViewModel by viewModels { AuthViewModelFactory(usuariosRepository, userPreferences) }
