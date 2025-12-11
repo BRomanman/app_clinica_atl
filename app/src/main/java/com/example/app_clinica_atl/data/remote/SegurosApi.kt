@@ -12,45 +12,38 @@ import retrofit2.http.Path
 
 interface SegurosApi {
 
+    // --- Seguros ---
     @GET("seguros")
-    suspend fun getSeguros(): List<SeguroDto>
+    suspend fun getSeguros(): Response<List<SeguroDto>>
 
     @GET("seguros/{id}")
-    suspend fun getSeguroById(@Path("id") id: Long): SeguroDto
+    suspend fun getSeguroById(@Path("id") id: Long): Response<SeguroDto>
 
     @POST("seguros")
-    suspend fun createSeguro(@Body seguro: SeguroDto): SeguroDto
+    suspend fun createSeguro(@Body seguro: SeguroDto): Response<SeguroDto>
 
     @PUT("seguros/{id}")
     suspend fun updateSeguro(
         @Path("id") id: Long,
         @Body seguro: SeguroDto
-    ): SeguroDto
+    ): Response<SeguroDto>
 
     @DELETE("seguros/{id}")
     suspend fun deleteSeguro(@Path("id") id: Long): Response<Unit>
 
-
-
-
-
-    // GET /api/v1/seguros/contratos/usuario/{idUsuario}
+    // --- Contratos ---
     @GET("seguros/contratos/usuario/{idUsuario}")
-    suspend fun contratosPorUsuario(@Path("idUsuario") idUsuario: Long): List<ContratoSeguroDto>
+    suspend fun contratosPorUsuario(@Path("idUsuario") idUsuario: Long): Response<List<ContratoSeguroDto>>
 
-    // GET /api/v1/seguros/contratos/seguro/{idSeguro}
     @GET("seguros/contratos/seguro/{idSeguro}")
-    suspend fun contratosPorSeguro(@Path("idSeguro") idSeguro: Long): List<ContratoSeguroDto>
+    suspend fun contratosPorSeguro(@Path("idSeguro") idSeguro: Long): Response<List<ContratoSeguroDto>>
 
-    // GET /api/v1/seguros/contratos/{id_contrato}
     @GET("seguros/contratos/{idContrato}")
-    suspend fun contratoById(@Path("idContrato") idContrato: Long): ContratoSeguroDto
+    suspend fun contratoById(@Path("idContrato") idContrato: Long): Response<ContratoSeguroDto>
 
-    // POST /api/v1/seguros/contratos
     @POST("seguros/contratos")
-    suspend fun crearContrato(@Body contrato: ContratoSeguroDto): ContratoSeguroDto
+    suspend fun crearContrato(@Body contrato: ContratoSeguroDto): Response<ContratoSeguroDto>
 
-    // POST /api/v1/seguros/contratos/{id}/cancelar
     @POST("seguros/contratos/{id}/cancelar")
-    suspend fun cancelarContrato(@Path("id") idContrato: Long): ContratoSeguroDto
+    suspend fun cancelarContrato(@Path("id") idContrato: Long): Response<ContratoSeguroDto>
 }

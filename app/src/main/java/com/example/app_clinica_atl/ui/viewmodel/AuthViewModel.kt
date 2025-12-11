@@ -156,7 +156,7 @@ class AuthViewModel(
                         loginSuccess = true,
                         userRole = user.role,
                         userDoctorId = user.doctorId,
-                        weakPasswordWarning = if (weakPass) "Tu contrase?a es d?bil (contiene tu nombre y a?o). C?mbiala cuanto antes." else null
+                        weakPasswordWarning = if (weakPass) "Tu contraseña es débil (contiene tu nombre y año). Cámbiala cuanto antes." else null
                     )
                 }
             } else {

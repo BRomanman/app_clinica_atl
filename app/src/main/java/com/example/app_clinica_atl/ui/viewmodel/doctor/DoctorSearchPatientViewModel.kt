@@ -40,43 +40,29 @@ class DoctorSearchPatientViewModel(
      * Ejecuta la búsqueda en el repositorio.
      */
     private fun searchPatients(query: String) {
-        if (query.isBlank()) {
+        val trimmed = query.trim()
+        if (trimmed.length < 2) {
             _uiState.update { it.copy(isLoading = false, patients = emptyList(), errorMsg = null) }
-            return
-        }
-
-        val patientId = query.toLongOrNull()
-        if (patientId == null) {
-            _uiState.update { it.copy(isLoading = false, patients = emptyList(), errorMsg = "Ingrese un ID válido") }
             return
         }
 
         viewModelScope.launch {
             _uiState.update { it.copy(isLoading = true, errorMsg = null, patients = emptyList()) }
 
-            val result = userRepository.getUserById(patientId)
-
-            _uiState.update {
-                if (result.isSuccess) {
-                    val patient = result.getOrNull()
-                    if (patient != null && roleToId(patient.role) != 1L) {
-                        return@update it.copy(
-                            isLoading = false,
-                            patients = emptyList(),
-                            errorMsg = "Solo puedes buscar pacientes (rol 1)."
-                        )
-                    }
-
-                    it.copy(
+            val searchResult = userRepository.searchPatients(trimmed)
+            _uiState.update { state ->
+                if (searchResult.isSuccess) {
+                    val patients = searchResult.getOrDefault(emptyList())
+                    state.copy(
                         isLoading = false,
-                        patients = patient?.let { listOf(it) } ?: emptyList(),
-                        errorMsg = null
+                        patients = patients,
+                        errorMsg = if (patients.isEmpty()) "No se encontraron pacientes." else null
                     )
                 } else {
-                    it.copy(
+                    state.copy(
                         isLoading = false,
                         patients = emptyList(),
-                        errorMsg = result.exceptionOrNull()?.message ?: "Error en la búsqueda por ID"
+                        errorMsg = searchResult.exceptionOrNull()?.message ?: "No se pudo buscar pacientes."
                     )
                 }
             }

@@ -130,8 +130,8 @@ fun PatientProfileScreen(
             modifier = Modifier
                 .fillMaxSize()
                 .padding(innerPadding)
-                .padding(start = 16.dp, end = 16.dp, top = 16.dp),
-            contentAlignment = Alignment.Center
+                .padding(horizontal = 16.dp, vertical = 8.dp),
+            contentAlignment = Alignment.TopCenter
         ) {
             when {
                 // (El estado isLoading ahora viene del flow reactivo)
