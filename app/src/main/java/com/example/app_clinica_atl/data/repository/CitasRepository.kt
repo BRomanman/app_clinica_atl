@@ -1,6 +1,6 @@
 package com.example.app_clinica_atl.data.repository
 
-import com.example.app_clinica_atl.data.remote.CitaDto
+import com.example.app_clinica_atl.data.remote.dto.CitaDto
 import com.example.app_clinica_atl.data.remote.dto.CitaDetalleDto
 import kotlinx.coroutines.flow.Flow
 

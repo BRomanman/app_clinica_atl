@@ -28,24 +28,18 @@ class UsuariosRepository(
 
     // --- CÓDIGO AÑADIDO ---
     companion object {
-        private const val DEFAULT_TARIFA_CONSULTA = 25000 // ajusta si quieres otro valor
+        const val DEFAULT_TARIFA_CONSULTA = 25000 // ajusta si quieres otro valor
     }
     // --- FIN DEL CÓDIGO AÑADIDO ---
 
     suspend fun login(email: String, pass: String): Result<UsuarioDto> = loginViaApi(email, pass)
 
+    /**
+     * Registra un paciente (rol fijo = 1). Doctores/administradores se crean en Empleados.
+     */
     suspend fun register(newUser: UsuarioDto): Result<UsuarioDto> = withContext(Dispatchers.IO) {
         try {
-            // Pre-chequeo de correo duplicado para dar error claro
-            val alreadyExists = runCatching { usuariosApi.getUsers() }
-                .getOrDefault(emptyList())
-                .any { it.correo.equals(newUser.email, ignoreCase = true) }
-
-            if (alreadyExists) {
-                return@withContext Result.failure(Exception("El correo ya está registrado. Usa otro correo."))
-            }
-
-            val request = newUser.toUpdateRequest()
+            val request = newUser.toUpdateRequest(forceRoleId = 1L)
             val created = usuariosApi.createUser(request)
             Result.success(created.toUsuarioDto())
         } catch (e: HttpException) {
@@ -106,7 +100,10 @@ class UsuariosRepository(
     }
 
     suspend fun getDoctorIdForUser(userId: Long): Result<Long?> = withContext(Dispatchers.IO) {
-        runCatching { usuariosApi.getUserById(userId).doctor?.id }
+        runCatching {
+            val user = usuariosApi.getUserById(userId)
+            user.doctor?.id ?: user.trabajador?.id
+        }
     }
 
     suspend fun getAllSpecialties(): Result<List<EspecialidadResponseDto>> = withContext(Dispatchers.IO) {
@@ -206,41 +203,60 @@ class UsuariosRepository(
      * Crea la ficha de doctor para un usuario existente.
      * Envia tarifa_consulta obligatoria (NOT NULL en BD).
      */
-    suspend fun createDoctorForUser(
-        userId: Long,
-        salary: Double?,               // viene de la UI
-        tarifa: Int = DEFAULT_TARIFA_CONSULTA,
-        bono: Long? = 0L
-    ): Result<Long> = withContext(Dispatchers.IO) {
+    /**
+     * Crea un doctor directamente en Empleados (API /doctores).
+     */
+    suspend fun createDoctor(
+        nombre: String,
+        apellido: String,
+        fechaNacimiento: String,
+        correo: String,
+        telefono: String,
+        contrasena: String,
+        idEspecialidad: Long,
+        tarifaConsulta: Int,
+        sueldo: Long,
+        bono: Long?
+    ): Result<UsuarioDto> = withContext(Dispatchers.IO) {
         runCatching {
-            val body = DoctorCreateRequestDto(
-                tarifaConsulta = tarifa,
-                sueldo = salary?.toLong(),
+            val doctorPayload = DoctorCreateRequestDto(
+                tarifaConsulta = tarifaConsulta,
+                sueldo = sueldo,
                 bono = bono,
-                usuario = UsuarioIdRefDto(id = userId)
+                usuario = UsuarioIdRefDto(id = null),
+                nombre = nombre,
+                apellido = apellido,
+                fechaNacimiento = fechaNacimiento,
+                correo = correo,
+                telefono = telefono,
+                contrasena = contrasena,
+                idRol = 2L,
+                tipo = "Doctor",
+                idEspecialidad = idEspecialidad
             )
-            val created = usuariosApi.createDoctorForUser(body)
-            created.id ?: error("El backend no devolvió id de doctor")
+            val created = usuariosApi.createDoc(doctorPayload.toDoctorDto())
+            created.toUsuarioDto()
         }
     }
     // --- FIN DEL CÓDIGO ACTUALIZADO ---
 }
 
 // --- Helper para /api/v1/usuarios ---
-private fun UsuarioDto.toUpdateRequest(): UsuarioUpdateRequestDto {
+private fun UsuarioDto.toUpdateRequest(forceRoleId: Long? = null): UsuarioUpdateRequestDto {
     val parts = name.trim().split(" ", limit = 2)
     val nombre = parts.getOrElse(0) { "" }.ifBlank { "Usuario" }
-    val apellido = parts.getOrElse(1) { "" }.ifBlank { "Paciente" }
-    val roleId = roleToId(role)
-    val birth = birthDate?.takeIf { it.isNotBlank() }?.let { "${it}T00:00:00" } ?: "2000-01-01T00:00:00"
+    val apellidoCalculado = parts.getOrElse(1) { "" }.ifBlank { "Paciente" }
+    val apellidoFinal = lastName?.takeIf { it.isNotBlank() } ?: apellidoCalculado
+    val roleIdFinal = forceRoleId ?: roleId ?: roleToId(role)
+    val birth = birthDate?.takeIf { it.isNotBlank() } ?: "2000-01-01"
     return UsuarioUpdateRequestDto(
         nombre = nombre,
-        apellido = apellido,
+        apellido = apellidoFinal,
         fechaNacimiento = birth,
         correo = email,
         telefono = phone,
         contrasena = password,
-        idRol = roleId,
-        rol = RolRequest(id = roleId)
+        idRol = roleIdFinal,
+        rol = RolRequest(id = roleIdFinal)
     )
 }

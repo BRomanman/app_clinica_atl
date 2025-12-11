@@ -3,7 +3,7 @@ package com.example.app_clinica_atl.data.repository
 import com.example.app_clinica_atl.data.remote.CitasApi
 import com.example.app_clinica_atl.data.remote.RetrofitClient
 import com.example.app_clinica_atl.data.remote.UsuariosApi
-import com.example.app_clinica_atl.data.remote.CitaDto
+import com.example.app_clinica_atl.data.remote.dto.CitaDto
 import com.example.app_clinica_atl.data.remote.dto.EspecialidadResponseDto
 import com.example.app_clinica_atl.data.remote.dto.DoctorDto
 import retrofit2.HttpException

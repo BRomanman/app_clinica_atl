@@ -33,19 +33,42 @@ import com.example.app_clinica_atl.ui.theme.App_clinica_atlTheme
 import com.example.app_clinica_atl.ui.viewmodel.*
 import kotlinx.coroutines.launch
 import com.example.app_clinica_atl.data.remote.RetrofitClient
+import com.example.app_clinica_atl.ui.viewmodel.admin.AdminAddDoctorViewModel
+import com.example.app_clinica_atl.ui.viewmodel.admin.AdminAddDoctorViewModelFactory
+import com.example.app_clinica_atl.ui.viewmodel.admin.AdminManageSpecialtiesViewModel
+import com.example.app_clinica_atl.ui.viewmodel.admin.AdminManageSpecialtiesViewModelFactory
+import com.example.app_clinica_atl.ui.viewmodel.admin.AdminViewDoctorsViewModel
+import com.example.app_clinica_atl.ui.viewmodel.admin.AdminViewDoctorsViewModelFactory
+import com.example.app_clinica_atl.ui.viewmodel.AuthViewModel
+import com.example.app_clinica_atl.ui.viewmodel.doctor.DoctorPatientProfileViewModel
+import com.example.app_clinica_atl.ui.viewmodel.doctor.DoctorPatientProfileViewModelFactory
+import com.example.app_clinica_atl.ui.viewmodel.doctor.DoctorProfileViewModel
+import com.example.app_clinica_atl.ui.viewmodel.doctor.DoctorProfileViewModelFactory
+import com.example.app_clinica_atl.ui.viewmodel.doctor.DoctorScheduleViewModel
+import com.example.app_clinica_atl.ui.viewmodel.doctor.DoctorScheduleViewModelFactory
+import com.example.app_clinica_atl.ui.viewmodel.doctor.DoctorSearchPatientViewModel
+import com.example.app_clinica_atl.ui.viewmodel.doctor.DoctorSearchPatientViewModelFactory
+import com.example.app_clinica_atl.ui.viewmodel.doctor.DoctorSearchViewModel
+import com.example.app_clinica_atl.ui.viewmodel.doctor.DoctorSearchViewModelFactory
+import com.example.app_clinica_atl.ui.viewmodel.patient.BookAppointmentViewModel
+import com.example.app_clinica_atl.ui.viewmodel.patient.HomeViewModel
+import com.example.app_clinica_atl.ui.viewmodel.patient.HomeViewModelFactory
+import com.example.app_clinica_atl.ui.viewmodel.patient.InsuranceViewModel
+import com.example.app_clinica_atl.ui.viewmodel.patient.InsuranceViewModelFactory
+import com.example.app_clinica_atl.ui.viewmodel.patient.PatientBookAppointmentViewModelFactory
+import com.example.app_clinica_atl.ui.viewmodel.patient.PatientViewModel
+import com.example.app_clinica_atl.ui.viewmodel.patient.PatientViewModelFactory
 import java.lang.Runtime // <-- ¡¡IMPORT AÑADIDO!!
 
 class MainActivity : ComponentActivity() {
 
     // --- Dependencias (sin cambios) ---
-    private val userPreferences by lazy {
-        UserPreferences(this).also { RetrofitClient.initialize(it) }
-    }
+    private val userPreferences by lazy { UserPreferences(this) }
     private val usuariosRepository by lazy { UsuariosRepository(userPreferences) }
     private val doctorRepository: DoctorRepository by lazy { DoctorRepositoryImpl() }
     private val doctorProfileRepository by lazy { DoctorProfileRepository() }
+    private val citasApiService by lazy { RetrofitClient.citasApiService }
     private val citasRepository: CitasRepository by lazy { CitasRepositoryImpl() }
-    private val citasApiService by lazy { RetrofitClient.createCitasApiService() }
     private val specialtyRepository: SpecialtyRepository by lazy { SpecialtyRepositoryImpl() }
     private val segurosRepository: SegurosRepository by lazy { SegurosRepositoryImpl() }
     private val historialRepository: HistorialRepository by lazy { HistorialRepository() }
@@ -53,25 +76,82 @@ class MainActivity : ComponentActivity() {
 
     // --- ViewModels (sin cambios) ---
     private val authViewModel: AuthViewModel by viewModels { AuthViewModelFactory(usuariosRepository, userPreferences) }
-    private val homeViewModel: HomeViewModel by viewModels { HomeViewModelFactory(usuariosRepository, userPreferences, weatherRepository) }
-    private val patientViewModel: PatientViewModel by viewModels { PatientViewModelFactory(application, usuariosRepository, userPreferences, segurosRepository, citasRepository) }
-    private val doctorSearchViewModel: DoctorSearchViewModel by viewModels { DoctorSearchViewModelFactory(doctorRepository) }
+    private val homeViewModel: HomeViewModel by viewModels {
+        HomeViewModelFactory(
+            usuariosRepository,
+            userPreferences,
+            weatherRepository
+        )
+    }
+    private val patientViewModel: PatientViewModel by viewModels {
+        PatientViewModelFactory(
+            application,
+            usuariosRepository,
+            userPreferences,
+            segurosRepository,
+            citasRepository
+        )
+    }
+    private val doctorSearchViewModel: DoctorSearchViewModel by viewModels {
+        DoctorSearchViewModelFactory(
+            doctorRepository
+        )
+    }
     private val doctorProfileViewModel: DoctorProfileViewModel by viewModels {
-        DoctorProfileViewModelFactory(doctorProfileRepository, usuariosRepository, historialRepository, citasRepository)
+        DoctorProfileViewModelFactory(
+            doctorProfileRepository,
+            usuariosRepository,
+            historialRepository,
+            citasRepository
+        )
     }
     private val bookAppointmentViewModel: BookAppointmentViewModel by viewModels {
-        BookAppointmentViewModelFactory(doctorRepository, citasApiService, userPreferences, usuariosRepository)
+        PatientBookAppointmentViewModelFactory(
+            doctorRepository,
+            citasApiService,
+            userPreferences,
+            usuariosRepository
+        )
     }
-    private val insuranceViewModel: InsuranceViewModel by viewModels { InsuranceViewModelFactory(segurosRepository, userPreferences) }
-    private val doctorSearchPatientViewModel: DoctorSearchPatientViewModel by viewModels { DoctorSearchPatientViewModelFactory(usuariosRepository) }
-    private val doctorScheduleViewModel: DoctorScheduleViewModel by viewModels { DoctorScheduleViewModelFactory(citasRepository, usuariosRepository) }
+    private val insuranceViewModel: InsuranceViewModel by viewModels {
+        InsuranceViewModelFactory(
+            segurosRepository,
+            userPreferences
+        )
+    }
+    private val doctorSearchPatientViewModel: DoctorSearchPatientViewModel by viewModels {
+        DoctorSearchPatientViewModelFactory(
+            usuariosRepository
+        )
+    }
+    private val doctorScheduleViewModel: DoctorScheduleViewModel by viewModels {
+        DoctorScheduleViewModelFactory(
+            citasRepository,
+            usuariosRepository
+        )
+    }
     private val adminManageSpecialtiesViewModel: AdminManageSpecialtiesViewModel by viewModels {
         AdminManageSpecialtiesViewModelFactory(usuariosRepository)
     }
-    private val adminAddDoctorViewModel: AdminAddDoctorViewModel by viewModels { AdminAddDoctorViewModelFactory(usuariosRepository, specialtyRepository) }
-    private val adminViewDoctorsViewModel: AdminViewDoctorsViewModel by viewModels { AdminViewDoctorsViewModelFactory(usuariosRepository) }
+    private val adminAddDoctorViewModel: AdminAddDoctorViewModel by viewModels {
+        AdminAddDoctorViewModelFactory(
+            usuariosRepository,
+            specialtyRepository
+        )
+    }
+    private val adminViewDoctorsViewModel: AdminViewDoctorsViewModel by viewModels {
+        AdminViewDoctorsViewModelFactory(
+            usuariosRepository
+        )
+    }
     private val doctorPatientProfileViewModel: DoctorPatientProfileViewModel by viewModels {
-        DoctorPatientProfileViewModelFactory(usuariosRepository, citasRepository, segurosRepository, historialRepository, userPreferences)
+        DoctorPatientProfileViewModelFactory(
+            usuariosRepository,
+            citasRepository,
+            segurosRepository,
+            historialRepository,
+            userPreferences
+        )
     }
     private val themeViewModel: ThemeViewModel by viewModels { ThemeViewModelFactory(userPreferences) }
 
@@ -80,6 +160,8 @@ class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         installSplashScreen()
         super.onCreate(savedInstanceState)
+        // Configurar interceptor JWT antes de usar Retrofit
+        RetrofitClient.configure(userPreferences)
         setContent {
             val themePreference by themeViewModel.themeFlow.collectAsStateWithLifecycle(initialValue = "SYSTEM")
             val isDark = when (themePreference) {
@@ -100,7 +182,6 @@ class MainActivity : ComponentActivity() {
                     val currentRoute = navBackStackEntry?.destination?.route
                     val userRole by authViewModel.userRoleFlow.collectAsStateWithLifecycle(initialValue = null)
                     val userId by userPreferences.userIdFlow.collectAsStateWithLifecycle(initialValue = null)
-                    val userDoctorId by authViewModel.userDoctorIdFlow.collectAsStateWithLifecycle(initialValue = null)
 
                     // --- ¡¡LÓGICA DE REINICIO (SOLUCIÓN NUCLEAR)!! ---
                     LaunchedEffect(currentRoute) {
@@ -155,8 +236,7 @@ class MainActivity : ComponentActivity() {
                                 vm = authViewModel, currentRoute = currentRoute,
                                 onGoToPatientProfile = { navController.navigate(Route.PatientProfile.path); scope.launch { drawerState.close() } },
                                 onGoToDoctorProfile = {
-                                    val doctorTarget = userDoctorId ?: userId
-                                    doctorTarget?.let {
+                                    userId?.let {
                                         navController.navigate(Route.DoctorProfile.createRoute(it))
                                         scope.launch { drawerState.close() }
                                     }
@@ -195,9 +275,9 @@ class MainActivity : ComponentActivity() {
                                 insuranceViewModel = insuranceViewModel,
                                 doctorSearchPatientViewModel = doctorSearchPatientViewModel,
                                 doctorPatientProfileViewModel = doctorPatientProfileViewModel,
-                                usuariosRepository = usuariosRepository,
                                 adminViewDoctorsViewModel = adminViewDoctorsViewModel,
-                                currentDoctorId = userDoctorId
+                                usuariosRepository = usuariosRepository,
+                                currentDoctorId = userId
                             )
                         }
                     }

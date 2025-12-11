@@ -13,6 +13,9 @@ data class HistorialDto(
         value = "fecha_consulta",
         alternate = ["fechaConsulta", "fecha", "fechaCita"]
     ) val fechaConsulta: String? = null, // DATETIME
+    @SerializedName(value = "hora_inicio", alternate = ["horaInicio"]) val horaInicio: String? = null,
+    @SerializedName(value = "hora_fin", alternate = ["horaFin"]) val horaFin: String? = null,
+    @SerializedName(value = "pago", alternate = ["valorPago", "montoPago"]) val pago: Int? = null,
     @SerializedName(
         value = "diagnostico",
         alternate = ["diagnosis"]

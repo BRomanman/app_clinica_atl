@@ -19,11 +19,6 @@ class AuthInterceptor(private val userPreferences: UserPreferences) : Intercepto
             return chain.proceed(request)
         }
 
-        val shouldAttach = request.url.host.contains("10.0.2.2")
-        if (!shouldAttach) {
-            return chain.proceed(request)
-        }
-
         val authenticatedRequest = request.newBuilder()
             .header("Authorization", "Bearer $token")
             .build()

@@ -6,6 +6,7 @@ import com.example.app_clinica_atl.data.remote.dto.UsuarioDto
 import com.example.app_clinica_atl.data.repository.SpecialtyRepository
 import com.example.app_clinica_atl.data.repository.UsuariosRepository
 import com.example.app_clinica_atl.domain.validation.validateChileanPhoneNumber
+import com.example.app_clinica_atl.ui.viewmodel.admin.AdminAddDoctorViewModel
 import io.mockk.coEvery
 import io.mockk.mockk
 import kotlinx.coroutines.Dispatchers
@@ -14,7 +15,6 @@ import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.flowOf
 import kotlinx.coroutines.test.StandardTestDispatcher
 import kotlinx.coroutines.test.TestDispatcher
-import kotlinx.coroutines.test.TestScope
 import kotlinx.coroutines.test.advanceUntilIdle
 import kotlinx.coroutines.test.runTest
 import kotlinx.coroutines.test.setMain
@@ -155,7 +155,8 @@ class AdminAddDoctorViewModelTest {
         )
         coEvery { usuariosRepository.createDoctorForUser(any(), any(), any(), any()) } returns Result.success(10L)
 
-        val vm = AdminAddDoctorViewModel(usuariosRepository, specialtyRepository(failName = "Urgencias"))
+        val vm =
+            AdminAddDoctorViewModel(usuariosRepository, specialtyRepository(failName = "Urgencias"))
         advanceUntilIdle()
 
         vm.onFirstNameChange("Ana")

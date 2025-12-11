@@ -35,7 +35,7 @@ class DoctorRepositoryImpl(
                 // Si no se pidió filtro, devolver todos los usuarios con rol doctor
                 if (target.isBlank()) {
                     val mapped: List<UsuarioDto> = allDoctors.mapNotNull { d ->
-                        d.usuario?.toUsuarioDto()
+                        d.usuario?.toUsuarioDto() ?: d.toUsuarioDto()
                     }.filter { it.role.equals("doctor", ignoreCase = true) }
 
                     return@withContext Result.success(mapped)
@@ -56,8 +56,8 @@ class DoctorRepositoryImpl(
                     val match: EspecialidadResponseDto? =
                         specials.firstOrNull { it.nombre?.equals(target, ignoreCase = true) == true }
 
-                    if (match != null && doc.usuario != null) {
-                        val user = doc.usuario.toUsuarioDto()
+                    if (match != null) {
+                        val user = doc.usuario?.toUsuarioDto() ?: doc.toUsuarioDto()
                         if (user.role.equals("doctor", ignoreCase = true)) {
                             result += user.copy(specialty = match.nombre.orEmpty())
                         }
@@ -73,12 +73,10 @@ class DoctorRepositoryImpl(
     override suspend fun getDoctorById(id: Long): Result<UsuarioDto> =
         withContext(Dispatchers.IO) {
             try {
-                val user = usuariosApi.getUserById(id).toUsuarioDto()
-                if (user.role.equals("doctor", ignoreCase = true)) {
-                    Result.success(user)
-                } else {
-                    Result.failure(NoSuchElementException("El usuario $id no es un doctor."))
-                }
+                // La API de doctores entrega Empleados (DoctorDto)
+                val doctor = usuariosApi.getDocById(id)
+                val user = doctor.toUsuarioDto()
+                Result.success(user)
             } catch (e: Exception) {
                 Result.failure(e)
             }

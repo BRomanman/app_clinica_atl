@@ -2,6 +2,8 @@ package com.example.app_clinica_atl.domain.specialty
 
 import java.text.Normalizer
 
+
+// TODO("quitar funcion de la app y reemplazar por llamada de la api")
 object SpecialtyCatalog {
 
     val officialSpecialties = listOf(

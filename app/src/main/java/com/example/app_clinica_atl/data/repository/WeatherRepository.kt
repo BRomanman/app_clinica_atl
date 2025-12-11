@@ -17,30 +17,48 @@ data class WeatherInfo(
 class WeatherRepository(
     private val api: WeatherApi = RetrofitClient.weatherApi
 ) {
-    // Coordenadas de Huechuraba, Santiago.
-    private val latitude = -33.367
-    private val longitude = -70.633
-    private val locationLabel = "Huechuraba, Santiago"
-
-    suspend fun getCurrentWeather(): Result<WeatherInfo> = withContext(Dispatchers.IO) {
-        runCatching {
-            val response = api.getCurrentWeather(latitude, longitude)
-            val current = response.current_weather ?: error("Sin datos de clima")
-            toWeatherInfo(current)
-        }
+    companion object {
+        // Centro Santiago (plaza de armas) con más precisión
+        private const val DEFAULT_LAT = -33.4372
+        private const val DEFAULT_LON = -70.6506
     }
 
-    private fun toWeatherInfo(current: CurrentWeatherResponse): WeatherInfo {
+    suspend fun getCurrentWeather(
+        lat: Double? = null,
+        lon: Double? = null
+    ): Result<WeatherInfo> =
+        withContext(Dispatchers.IO) {
+            runCatching {
+                val latitude = lat ?: DEFAULT_LAT
+                val longitude = lon ?: DEFAULT_LON
+                val response = api.getCurrentWeather(latitude, longitude)
+                val current = response.current_weather ?: error("Sin datos de clima")
+                toWeatherInfo(current, latitude, longitude, response.timezone)
+            }
+        }
+
+
+    private fun toWeatherInfo(
+        current: CurrentWeatherResponse,
+        lat: Double,
+        lon: Double,
+        timezone: String?
+    ): WeatherInfo {
         val temp = current.temperature?.roundToInt() ?: 0
         val wind = current.windspeed?.roundToInt() ?: 0
-        val description = current.weathercode?.let { weatherCodeToEs(it) } ?: "Clima no disponible"
+        val desc = current.weathercode?.let { weatherCodeToEs(it) } ?: "Clima no disponible"
+        val latLabel = String.format("%.4f", lat)
+        val lonLabel = String.format("%.4f", lon)
+        val tzLabel = timezone?.takeIf { it.isNotBlank() } ?: "coordenadas exactas"
+
         return WeatherInfo(
             temperatureC = temp,
             windKmh = wind,
-            description = description,
-            locationLabel = locationLabel
+            description = desc,
+            locationLabel = "$latLabel, $lonLabel ($tzLabel)"
         )
     }
+
 
     private fun weatherCodeToEs(code: Int): String = when (code) {
         0 -> "Despejado"

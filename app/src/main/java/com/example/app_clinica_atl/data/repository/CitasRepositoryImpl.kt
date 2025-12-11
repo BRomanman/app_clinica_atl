@@ -2,7 +2,7 @@ package com.example.app_clinica_atl.data.repository
 
 import com.example.app_clinica_atl.data.remote.CitasApi
 import com.example.app_clinica_atl.data.remote.RetrofitClient
-import com.example.app_clinica_atl.data.remote.CitaDto
+import com.example.app_clinica_atl.data.remote.dto.CitaDto
 import com.example.app_clinica_atl.data.remote.dto.CitaDetalleDto
 import com.example.app_clinica_atl.data.remote.dto.ReservarCitaRequest
 import com.example.app_clinica_atl.data.remote.citas.CitasApiService
@@ -18,7 +18,7 @@ import java.time.LocalTime
 
 class CitasRepositoryImpl(
     private val citasApi: CitasApi = RetrofitClient.citasApi,
-    private val citasApiService: CitasApiService = RetrofitClient.createCitasApiService()
+    private val citasApiService: CitasApiService = RetrofitClient.citasApiService
 ) : CitasRepository {
 
     override suspend fun getCitasUsuario(idUsuario: Long): List<CitaDto> = withContext(Dispatchers.IO) {

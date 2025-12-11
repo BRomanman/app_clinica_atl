@@ -1,5 +1,6 @@
 package com.example.app_clinica_atl.data.remote
 
+import com.example.app_clinica_atl.data.remote.dto.CitaDto
 import com.example.app_clinica_atl.data.remote.dto.ReservarCitaRequest
 import retrofit2.Response
 import retrofit2.http.Body
