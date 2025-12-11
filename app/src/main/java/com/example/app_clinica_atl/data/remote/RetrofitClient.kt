@@ -1,7 +1,6 @@
 package com.example.app_clinica_atl.data.remote
 
 import com.example.app_clinica_atl.data.local.storage.UserPreferences
-import com.example.app_clinica_atl.data.remote.citas.CitasApiService
 import com.example.app_clinica_atl.data.remote.weather.WeatherApi
 import okhttp3.Interceptor
 import okhttp3.OkHttpClient
@@ -52,7 +51,6 @@ object RetrofitClient {
     val usuariosApi: UsuariosApi by lazy { retrofitUsu.create(UsuariosApi::class.java) }
     val segurosApi: SegurosApi by lazy { retrofitSeg.create(SegurosApi::class.java) }
     val citasApi: CitasApi by lazy { retrofitCit.create(CitasApi::class.java) }
-    val citasApiService: CitasApiService by lazy { retrofitCit.create(CitasApiService::class.java) }
     val historialesApi: HistorialesApi by lazy { retrofitHis.create(HistorialesApi::class.java) }
     val weatherApi: WeatherApi by lazy { retrofitWea.create(WeatherApi::class.java) }
 }

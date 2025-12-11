@@ -28,9 +28,18 @@ interface UsuariosApi {
     @POST("auth/register")
     suspend fun register(@Body user: UsuarioDto): UsuarioResponseDto
 
+
+
+
+
     // Especialidades (personal_service)
     @GET("especialidades")
     suspend fun getAllSpecialties(): Response<List<EspecialidadResponseDto>>
+
+
+
+
+
 
     //UsuarioController
     @GET("usuarios")

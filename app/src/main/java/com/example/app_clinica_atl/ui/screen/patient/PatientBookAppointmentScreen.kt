@@ -9,6 +9,7 @@ import android.content.pm.PackageManager
 import android.os.Build
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
+import androidx.annotation.RequiresApi
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Box
@@ -66,12 +67,17 @@ import androidx.core.app.NotificationManagerCompat
 import androidx.core.content.ContextCompat
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.example.app_clinica_atl.R
+import com.example.app_clinica_atl.notifications.NotificationHelper
 import com.example.app_clinica_atl.ui.viewmodel.patient.BookAppointmentViewModel
-import java.text.SimpleDateFormat
-import java.util.Calendar
-import java.util.Date
+import java.time.Instant
+import java.time.LocalDate
+import java.time.LocalTime
+import java.time.ZoneId
+import java.time.ZoneOffset
+import java.time.format.DateTimeFormatter
 import java.util.Locale
 
+@RequiresApi(Build.VERSION_CODES.O)
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun BookAppointmentScreen(
@@ -82,7 +88,7 @@ fun BookAppointmentScreen(
 ) {
     val state by viewModel.uiState.collectAsStateWithLifecycle()
 
-    // ✅ ahora la fecha se habilita si hay doctor backend O al menos userId de doctor
+
     val canSelectDate =
         state.selectedDoctorBackendId != null || state.selectedDoctorUserId != null
 
@@ -95,8 +101,17 @@ fun BookAppointmentScreen(
     ) { granted ->
         if (granted) {
             pendingNotificationData?.let {
-                sendAppointmentNotification(context, it.doctorName, it.date, it.time)
+                val fallbackDoctor = it.doctorName.ifBlank { "Tu doctor" }
+                val localDate = runCatching { LocalDate.parse(it.date) }.getOrNull()
+                val localTime = runCatching { LocalTime.parse(it.time.ifBlank { "00:00" }) }.getOrNull()
+                if (localDate != null && localTime != null) {
+                    NotificationHelper.createNotificationChannel(context)
+                    NotificationHelper.showAppointmentConfirmation(context, fallbackDoctor, localDate, localTime)
+                } else {
+                    sendAppointmentNotification(context, fallbackDoctor, it.date, it.time)
+                }
             }
+
             pendingNotificationData = null
         } else {
             snackbarHostState.currentSnackbarData?.dismiss()
@@ -112,6 +127,19 @@ fun BookAppointmentScreen(
         )
         pendingNotificationData = details
 
+        fun sendConfirmation() {
+            val fallbackDoctor = details.doctorName.ifBlank { "Tu doctor" }
+            val localDate = runCatching { LocalDate.parse(details.date) }.getOrNull()
+            val localTime = runCatching { LocalTime.parse(details.time.ifBlank { "00:00" }) }.getOrNull()
+            if (localDate != null && localTime != null) {
+                NotificationHelper.createNotificationChannel(context)
+                NotificationHelper.showAppointmentConfirmation(context, fallbackDoctor, localDate, localTime)
+            } else {
+                sendAppointmentNotification(context, fallbackDoctor, details.date, details.time)
+            }
+            pendingNotificationData = null
+        }
+
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
             val hasPermission = ContextCompat.checkSelfPermission(
                 context,
@@ -119,14 +147,12 @@ fun BookAppointmentScreen(
             ) == PackageManager.PERMISSION_GRANTED
 
             if (hasPermission) {
-                sendAppointmentNotification(context, details.doctorName, details.date, details.time)
-                pendingNotificationData = null
+                sendConfirmation()
             } else {
                 notificationPermissionLauncher.launch(Manifest.permission.POST_NOTIFICATIONS)
             }
         } else {
-            sendAppointmentNotification(context, details.doctorName, details.date, details.time)
-            pendingNotificationData = null
+            sendConfirmation()
         }
     }
 
@@ -152,18 +178,25 @@ fun BookAppointmentScreen(
         }
     }
 
-    // --- Lógica del Calendario ---
-    val calendar = Calendar.getInstance()
-    calendar.add(Calendar.DAY_OF_YEAR, 2)
-    calendar.set(Calendar.HOUR_OF_DAY, 0)
-    calendar.set(Calendar.MINUTE, 0)
-    calendar.set(Calendar.SECOND, 0)
-    calendar.set(Calendar.MILLISECOND, 0)
-    val minDateMillis = calendar.timeInMillis
+
+    // todo logica del calendario para evitar citas al pasado
+    
+    val zoneId = ZoneId.systemDefault()
+    val utcZone = ZoneOffset.UTC
+    val minDate = LocalDate.now(utcZone).plusDays(1) // no permitir hoy ni fechas pasadas
+    val minDateMillis = minDate.atStartOfDay(utcZone).toInstant().toEpochMilli()
+    val initialSelectedDateMillis = state.selectedDate.takeIf { it.isNotBlank() }
+        ?.let { runCatching { LocalDate.parse(it) }.getOrNull() }
+        ?.atStartOfDay(utcZone)
+        ?.toInstant()
+        ?.toEpochMilli()
+        ?.coerceAtLeast(minDateMillis)
+        ?: minDateMillis
 
     if (state.isDatePickerVisible) {
         val datePickerState = rememberDatePickerState(
-            initialSelectedDateMillis = System.currentTimeMillis(),
+            // Seleccionar mañana por defecto para evitar hoy
+            initialSelectedDateMillis = initialSelectedDateMillis,
             selectableDates = object : SelectableDates {
                 override fun isSelectableDate(utcTimeMillis: Long): Boolean {
                     return utcTimeMillis >= minDateMillis
@@ -177,8 +210,11 @@ fun BookAppointmentScreen(
                 TextButton(
                     onClick = {
                         datePickerState.selectedDateMillis?.let { millis ->
-                            val sdf = SimpleDateFormat("yyyy-MM-dd", Locale.getDefault())
-                            viewModel.onDateSelected(sdf.format(Date(millis)))
+                            val selectedDate = Instant.ofEpochMilli(millis)
+                                .atZone(zoneId)
+                                .toLocalDate()
+                            val formatted = selectedDate.format(DateTimeFormatter.ISO_LOCAL_DATE)
+                            viewModel.onDateSelected(formatted)
                         }
                     }
                 ) {
@@ -194,6 +230,11 @@ fun BookAppointmentScreen(
             )
         }
     }
+
+
+
+
+
     // --- Fin Lógica Calendario ---
 
     val cs = MaterialTheme.colorScheme
@@ -378,7 +419,7 @@ fun BookAppointmentScreen(
                         isError = state.slotError != null
                     )
 
-                    // ✅ condición ajustada para usar canSelectDate
+
                     if (
                         !state.isLoadingSlots &&
                         state.selectedDate.isNotBlank() &&

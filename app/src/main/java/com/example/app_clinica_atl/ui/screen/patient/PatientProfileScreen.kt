@@ -141,6 +141,13 @@ fun PatientProfileScreen(
                         activeInsurance = uiState.activeInsuranceDetails,
                         insurances = uiState.insurances,
                         appointments = uiState.activeAppointments,
+                        firstNameInput = uiState.firstNameInput,
+                        lastNameInput = uiState.lastNameInput,
+                        emailInput = uiState.emailInput,
+                        firstNameError = uiState.firstNameError,
+                        lastNameError = uiState.lastNameError,
+                        emailError = uiState.emailError,
+                        isSavingPersonalData = uiState.isSavingPersonalData,
                         phoneInput = uiState.phoneInput,
                         phoneError = uiState.phoneError,
                         isSavingPhone = uiState.isSavingPhone,
@@ -153,6 +160,10 @@ fun PatientProfileScreen(
                         onCancelAppointment = viewModel::cancelAppointment,
                         onGoToSeguros = onGoToSeguros,
                         onLogout = onLogout,
+                        onFirstNameChange = viewModel::onFirstNameChange,
+                        onLastNameChange = viewModel::onLastNameChange,
+                        onEmailChange = viewModel::onEmailChange,
+                        onSavePersonalData = viewModel::savePersonalData,
                         onPhoneChange = viewModel::onPhoneChange,
                         onSavePhone = viewModel::savePhone,
                         onPasswordChange = viewModel::onPasswordChange,
@@ -193,6 +204,13 @@ private fun PatientProfileContent(
     activeInsurance: SeguroDto?,
     insurances: List<SeguroDto>,
     appointments: List<CitaDetalleDto>,
+    firstNameInput: String,
+    lastNameInput: String,
+    emailInput: String,
+    firstNameError: String?,
+    lastNameError: String?,
+    emailError: String?,
+    isSavingPersonalData: Boolean,
     phoneInput: String,
     phoneError: String?,
     isSavingPhone: Boolean,
@@ -205,6 +223,10 @@ private fun PatientProfileContent(
     onCancelAppointment: (Long) -> Unit,
     onGoToSeguros: () -> Unit,
     onLogout: () -> Unit,
+    onFirstNameChange: (String) -> Unit,
+    onLastNameChange: (String) -> Unit,
+    onEmailChange: (String) -> Unit,
+    onSavePersonalData: () -> Unit,
     onPhoneChange: (String) -> Unit,
     onSavePhone: () -> Unit,
     onPasswordChange: (String) -> Unit,
@@ -246,6 +268,20 @@ private fun PatientProfileContent(
             InfoRow(label = "Teléfono", value = patient.phone)
             Spacer(modifier = Modifier.height(12.dp))
 
+            PersonalDataEditorCard(
+                firstName = firstNameInput,
+                lastName = lastNameInput,
+                email = emailInput,
+                firstNameError = firstNameError,
+                lastNameError = lastNameError,
+                emailError = emailError,
+                isSaving = isSavingPersonalData,
+                onFirstNameChange = onFirstNameChange,
+                onLastNameChange = onLastNameChange,
+                onEmailChange = onEmailChange,
+                onSave = onSavePersonalData
+            )
+            Spacer(modifier = Modifier.height(12.dp))
 
             PatientPhoneEditorCard(
                 phoneInput = phoneInput,
@@ -254,9 +290,6 @@ private fun PatientProfileContent(
                 onPhoneChange = onPhoneChange,
                 onSavePhone = onSavePhone
             )
-
-
-
 
             Spacer(modifier = Modifier.height(12.dp))
             PasswordEditorCard(
@@ -444,6 +477,80 @@ private fun InsuranceInfoCard(
                         Text("\$${seguro.price}", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.primary)
                     }
                 }
+            }
+        }
+    }
+}
+
+@Composable
+private fun PersonalDataEditorCard(
+    firstName: String,
+    lastName: String,
+    email: String,
+    firstNameError: String?,
+    lastNameError: String?,
+    emailError: String?,
+    isSaving: Boolean,
+    onFirstNameChange: (String) -> Unit,
+    onLastNameChange: (String) -> Unit,
+    onEmailChange: (String) -> Unit,
+    onSave: () -> Unit
+) {
+    Card(
+        modifier = Modifier.fillMaxWidth(),
+        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant)
+    ) {
+        Column(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(16.dp),
+            verticalArrangement = Arrangement.spacedBy(8.dp)
+        ) {
+            Text("Datos personales", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold)
+            OutlinedTextField(
+                value = firstName,
+                onValueChange = onFirstNameChange,
+                label = { Text("Nombre") },
+                modifier = Modifier.fillMaxWidth(),
+                isError = firstNameError != null,
+                singleLine = true
+            )
+            firstNameError?.let {
+                Text(it, color = MaterialTheme.colorScheme.error, style = MaterialTheme.typography.labelSmall)
+            }
+            OutlinedTextField(
+                value = lastName,
+                onValueChange = onLastNameChange,
+                label = { Text("Apellido") },
+                modifier = Modifier.fillMaxWidth(),
+                isError = lastNameError != null,
+                singleLine = true
+            )
+            lastNameError?.let {
+                Text(it, color = MaterialTheme.colorScheme.error, style = MaterialTheme.typography.labelSmall)
+            }
+            OutlinedTextField(
+                value = email,
+                onValueChange = onEmailChange,
+                label = { Text("Correo electrónico") },
+                modifier = Modifier.fillMaxWidth(),
+                isError = emailError != null,
+                singleLine = true,
+                keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Email)
+            )
+            emailError?.let {
+                Text(it, color = MaterialTheme.colorScheme.error, style = MaterialTheme.typography.labelSmall)
+            }
+            Button(
+                onClick = onSave,
+                enabled = !isSaving,
+                modifier = Modifier.fillMaxWidth()
+            ) {
+                if (isSaving) {
+                    CircularProgressIndicator(modifier = Modifier.size(18.dp), strokeWidth = 2.dp)
+                    Spacer(modifier = Modifier.width(8.dp))
+                }
+                Text(if (isSaving) "Guardando..." else "Guardar cambios")
             }
         }
     }

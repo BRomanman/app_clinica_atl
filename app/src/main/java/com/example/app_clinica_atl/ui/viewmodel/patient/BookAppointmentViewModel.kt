@@ -4,12 +4,11 @@ import android.util.Log
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.example.app_clinica_atl.data.local.storage.UserPreferences
-import com.example.app_clinica_atl.data.remote.citas.CitasApiService
+import com.example.app_clinica_atl.data.remote.CitasApi
 import com.example.app_clinica_atl.data.remote.dto.ReservarCitaRequest
 import com.example.app_clinica_atl.data.remote.dto.UsuarioDto
 import com.example.app_clinica_atl.data.repository.DoctorRepository
 import com.example.app_clinica_atl.data.repository.UsuariosRepository
-import com.example.app_clinica_atl.domain.specialty.SpecialtyCatalog
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -50,7 +49,7 @@ data class BookAppointmentUiState(
 
 class BookAppointmentViewModel(
     private val doctorRepository: DoctorRepository,
-    private val citasApiService: CitasApiService,
+    private val citasApi: CitasApi,
     private val userPreferences: UserPreferences,
     private val usuariosRepository: UsuariosRepository
 ) : ViewModel() {
@@ -174,15 +173,11 @@ class BookAppointmentViewModel(
             val result = usuariosRepository.getAllSpecialties()
             _uiState.update {
                 if (result.isSuccess) {
-                    val availableOfficial = result.getOrNull()
-                        ?.mapNotNull { spec -> SpecialtyCatalog.canonicalName(spec.nombre) }
-                        ?.toSet()
+                    val names = result.getOrNull()
+                        ?.mapNotNull { it.nombre?.trim() }
+                        ?.filter { it.isNotBlank() }
+                        ?.distinct()
                         .orEmpty()
-                    val names = if (availableOfficial.isEmpty()) {
-                        SpecialtyCatalog.officialSpecialties
-                    } else {
-                        SpecialtyCatalog.officialSpecialties.filter { it in availableOfficial }
-                    }
                     it.copy(isLoadingSpecialties = false, specialties = names)
                 } else {
                     it.copy(
@@ -228,7 +223,9 @@ class BookAppointmentViewModel(
             _uiState.update { it.copy(isLoadingSlots = true, errorMessage = null) }
             try {
                 Log.d("BookAppointmentVM", "Solicitando citas doctor=$doctorId fecha=$date")
-                val citas = citasApiService.getCitasDoctorFecha(doctorId, date)
+                val response = citasApi.getCitasPorDoctorYFecha(doctorId, date)
+                if (!response.isSuccessful) throw retrofit2.HttpException(response)
+                val citas = response.body().orEmpty()
                 Log.d("BookAppointmentVM", "Citas recibidas: ${citas.size}")
 
                 val disponibles = citas
@@ -297,7 +294,8 @@ class BookAppointmentViewModel(
                     "BookAppointmentVM",
                     "Reservando cita slotId=$slotId para userId=$userId"
                 )
-                citasApiService.reservarCita(slotId, request)
+                val response = citasApi.reservarCita(slotId, request)
+                if (!response.isSuccessful) throw retrofit2.HttpException(response)
                 _uiState.update { it.copy(isBooking = false, bookingSuccess = true) }
             } catch (e: Exception) {
                 Log.e("BookAppointmentVM", "Error reservando cita", e)

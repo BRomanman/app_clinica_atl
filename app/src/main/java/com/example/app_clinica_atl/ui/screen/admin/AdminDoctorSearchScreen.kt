@@ -98,7 +98,7 @@ fun AdminDoctorSearchScreen(
                     expanded = expanded,
                     onDismissRequest = { expanded = false }
                 ) {
-                    viewModel.specialties.forEach { specialty ->
+                    uiState.specialties.forEach { specialty ->
                         DropdownMenuItem(
                             text = { Text(specialty) },
                             onClick = {

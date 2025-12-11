@@ -3,13 +3,13 @@ package com.example.app_clinica_atl.ui.viewmodel.patient
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.ViewModelProvider
 import com.example.app_clinica_atl.data.local.storage.UserPreferences
-import com.example.app_clinica_atl.data.remote.citas.CitasApiService
+import com.example.app_clinica_atl.data.remote.CitasApi
 import com.example.app_clinica_atl.data.repository.DoctorRepository
 import com.example.app_clinica_atl.data.repository.UsuariosRepository
 
 class PatientBookAppointmentViewModelFactory(
     private val doctorRepository: DoctorRepository,
-    private val citasApiService: CitasApiService,
+    private val citasApi: CitasApi,
     private val userPreferences: UserPreferences,
     private val usuariosRepository: UsuariosRepository
 ) : ViewModelProvider.Factory {
@@ -19,7 +19,7 @@ class PatientBookAppointmentViewModelFactory(
         if (modelClass.isAssignableFrom(BookAppointmentViewModel::class.java)) {
             return BookAppointmentViewModel(
                 doctorRepository,
-                citasApiService,
+                citasApi,
                 userPreferences,
                 usuariosRepository
             ) as T

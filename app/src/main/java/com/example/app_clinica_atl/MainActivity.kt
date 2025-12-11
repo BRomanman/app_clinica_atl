@@ -68,7 +68,7 @@ class MainActivity : ComponentActivity() {
     private val usuariosRepository by lazy { UsuariosRepository(userPreferences) }
     private val doctorRepository: DoctorRepository by lazy { DoctorRepositoryImpl() }
     private val doctorProfileRepository by lazy { DoctorProfileRepository() }
-    private val citasApiService by lazy { RetrofitClient.citasApiService }
+    private val citasApiService by lazy { RetrofitClient.citasApi }
     private val citasRepository: CitasRepository by lazy { CitasRepositoryImpl() }
     private val specialtyRepository: SpecialtyRepository by lazy { SpecialtyRepositoryImpl() }
     private val segurosRepository: SegurosRepository by lazy { SegurosRepositoryImpl() }
@@ -97,7 +97,8 @@ class MainActivity : ComponentActivity() {
     }
     private val doctorSearchViewModel: DoctorSearchViewModel by viewModels {
         DoctorSearchViewModelFactory(
-            doctorRepository
+            doctorRepository,
+            usuariosRepository
         )
     }
     private val doctorProfileViewModel: DoctorProfileViewModel by viewModels {

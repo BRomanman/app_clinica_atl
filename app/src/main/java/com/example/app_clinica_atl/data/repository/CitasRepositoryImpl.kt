@@ -1,12 +1,12 @@
 package com.example.app_clinica_atl.data.repository
 
+import android.os.Build
+import androidx.annotation.RequiresApi
 import com.example.app_clinica_atl.data.remote.CitasApi
 import com.example.app_clinica_atl.data.remote.RetrofitClient
 import com.example.app_clinica_atl.data.remote.dto.CitaDto
 import com.example.app_clinica_atl.data.remote.dto.CitaDetalleDto
 import com.example.app_clinica_atl.data.remote.dto.ReservarCitaRequest
-import com.example.app_clinica_atl.data.remote.citas.CitasApiService
-import com.example.app_clinica_atl.data.remote.citas.UpdateCitaEstadoRequest
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.flow
@@ -17,8 +17,7 @@ import java.time.LocalDateTime
 import java.time.LocalTime
 
 class CitasRepositoryImpl(
-    private val citasApi: CitasApi = RetrofitClient.citasApi,
-    private val citasApiService: CitasApiService = RetrofitClient.citasApiService
+    private val citasApi: CitasApi = RetrofitClient.citasApi
 ) : CitasRepository {
 
     override suspend fun getCitasUsuario(idUsuario: Long): List<CitaDto> = withContext(Dispatchers.IO) {
@@ -43,10 +42,12 @@ class CitasRepositoryImpl(
         when (response.code()) {
             409 -> throw SlotAlreadyTakenException()
             404 -> throw CitaNotFoundException()
+            405 -> throw HttpException(response) // metodo no permitido
             else -> throw HttpException(response)
         }
     }
 
+    @RequiresApi(Build.VERSION_CODES.O)
     override fun getAppointmentsForPatient(patientId: Long): Flow<List<CitaDetalleDto>> = flow {
         try {
             val appointments = withContext(Dispatchers.IO) {
@@ -67,6 +68,7 @@ class CitasRepositoryImpl(
 
             emit(mapped)
         } catch (e: Exception) {
+            println("Error al obtener las citas. Error: ${e.message}")
             emit(emptyList())
         }
     }
@@ -99,12 +101,12 @@ class CitasRepositoryImpl(
     }
 
     override suspend fun getProximasCitasDoctor(doctorId: Long): List<CitaDto> = withContext(Dispatchers.IO) {
-        citasApiService.getProximasCitasByDoctor(doctorId)
+        citasApi.getProximasCitasDoctor(doctorId)
     }
 
     override suspend fun getProximasCitasPacienteConDoctor(pacienteId: Long, doctorId: Long): List<CitaDto> =
         withContext(Dispatchers.IO) {
-            citasApiService.getProximasCitasByUsuario(pacienteId)
+            citasApi.getProximasCitasUsuario(pacienteId)
                 .filter { it.doctorId == doctorId }
         }
 
@@ -113,12 +115,13 @@ class CitasRepositoryImpl(
     }
 
     override suspend fun getProximasCitasByUsuario(userId: Long): List<CitaDto> = withContext(Dispatchers.IO) {
-        citasApiService.getProximasCitasByUsuario(userId)
+        citasApi.getProximasCitasUsuario(userId)
     }
 
     override suspend fun cancelarCita(citaId: Long): Result<Unit> = withContext(Dispatchers.IO) {
         try {
-            citasApiService.cancelarCita(citaId)
+            val response = citasApi.cancelarCita(citaId)
+            if (!response.isSuccessful) throw HttpException(response)
             Result.success(Unit)
         } catch (e: Exception) {
             Result.failure(e)
@@ -127,10 +130,8 @@ class CitasRepositoryImpl(
 
     override suspend fun finalizarCita(citaId: Long): Result<CitaDto> = withContext(Dispatchers.IO) {
         try {
-            val updated = citasApiService.actualizarCita(
-                citaId,
-                UpdateCitaEstadoRequest(estado = "REALIZADA")
-            )
+            val current = citasApi.getCitaById(citaId)
+            val updated = citasApi.updateCita(citaId, current.copy(estado = "REALIZADA"))
             Result.success(updated)
         } catch (e: Exception) {
             Result.failure(e)
@@ -153,6 +154,7 @@ private fun CitaDto.isOpenSlot(): Boolean {
     return available || status.equals("Disponible", ignoreCase = true)
  }
 
+@RequiresApi(Build.VERSION_CODES.O)
 private fun parseDateTime(cita: CitaDto): LocalDateTime? {
     val datePart = cita.date.ifBlank { "" }
     if (datePart.isBlank()) return null

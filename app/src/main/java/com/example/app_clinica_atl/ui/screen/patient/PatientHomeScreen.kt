@@ -137,7 +137,7 @@ private fun HeroCard(
                     verticalAlignment = Alignment.CenterVertically
                 ) {
                     Text(
-                        text = "Hola, ${userName.ifBlank { "usuario" }}",
+                        text = "Hola, \n${userName.ifBlank { "usuario" }}",
                         style = MaterialTheme.typography.headlineSmall.copy(
                             fontWeight = FontWeight.Bold,
                             fontSize = 22.sp

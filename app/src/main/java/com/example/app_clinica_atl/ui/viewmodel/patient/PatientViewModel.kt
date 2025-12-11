@@ -10,10 +10,13 @@ import com.example.app_clinica_atl.data.remote.dto.CitaDetalleDto
 import com.example.app_clinica_atl.data.remote.dto.SeguroDto
 import com.example.app_clinica_atl.data.remote.dto.UsuarioDto
 import com.example.app_clinica_atl.data.remote.dto.UsuarioSeguroDto
+import com.example.app_clinica_atl.data.remote.dto.UsuarioUpdateRequestDto
 import com.example.app_clinica_atl.data.repository.CitasRepository
 import com.example.app_clinica_atl.data.repository.SegurosRepository
 import com.example.app_clinica_atl.data.repository.UsuariosRepository
 import com.example.app_clinica_atl.domain.validation.validateChileanPhoneNumber
+import com.example.app_clinica_atl.domain.validation.validateEmail
+import com.example.app_clinica_atl.domain.validation.validatePersonName
 import com.example.app_clinica_atl.domain.validation.validateRegisterPassword
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -41,6 +44,13 @@ data class PatientProfileUiState(
     val phoneInput: String = "",
     val phoneError: String? = null,
     val isSavingPhone: Boolean = false,
+    val firstNameInput: String = "",
+    val lastNameInput: String = "",
+    val emailInput: String = "",
+    val firstNameError: String? = null,
+    val lastNameError: String? = null,
+    val emailError: String? = null,
+    val isSavingPersonalData: Boolean = false,
     val passwordInput: String = "",
     val confirmPasswordInput: String = "",
     val passwordError: String? = null,
@@ -62,12 +72,20 @@ class PatientViewModel(
     private val refreshAppointments = MutableStateFlow(0)
     private val refreshInsurance = MutableStateFlow(0)
     private val refreshInsuranceList = MutableStateFlow(0)
+    private val refreshProfile = MutableStateFlow(0)
     private var cachedUserId: Long? = null
 
     private data class PatientProfileEditState(
         val phoneInput: String = "",
         val phoneError: String? = null,
         val isSavingPhone: Boolean = false,
+        val firstNameInput: String = "",
+        val lastNameInput: String = "",
+        val emailInput: String = "",
+        val firstNameError: String? = null,
+        val lastNameError: String? = null,
+        val emailError: String? = null,
+        val isSavingPersonalData: Boolean = false,
         val passwordInput: String = "",
         val confirmPasswordInput: String = "",
         val passwordError: String? = null,
@@ -82,6 +100,7 @@ class PatientViewModel(
             refreshAppointments.value = 0
             refreshInsurance.value = 0
             refreshInsuranceList.value = 0
+            refreshProfile.value = 0
             if (userId == null) {
                 flowOf(
                     PatientProfileUiState(
@@ -91,8 +110,11 @@ class PatientViewModel(
                 )
             } else {
                 val storedImageFlow = userPreferences.profileImageFlow(userId)
+                val patientFlow = refreshProfile.flatMapLatest {
+                    userRepository.getUserByIdAsFlow(userId)
+                }
                 val patientWithImage = combine(
-                    userRepository.getUserByIdAsFlow(userId),
+                    patientFlow,
                     storedImageFlow,
                     _profileImageOverride
                 ) { patient, storedImage, overrideImage ->
@@ -131,10 +153,20 @@ class PatientViewModel(
                 }
 
                 base.combine(_editState) { dataState, editState ->
+                    val defaultFirstName = defaultFirstName(dataState.patient)
+                    val defaultLastName = defaultLastName(dataState.patient)
+                    val defaultEmail = dataState.patient?.email.orEmpty()
                     dataState.copy(
                         phoneInput = editState.phoneInput.ifBlank { dataState.patient?.phone.orEmpty() },
                         phoneError = editState.phoneError,
                         isSavingPhone = editState.isSavingPhone,
+                        firstNameInput = editState.firstNameInput.ifBlank { defaultFirstName },
+                        lastNameInput = editState.lastNameInput.ifBlank { defaultLastName },
+                        emailInput = editState.emailInput.ifBlank { defaultEmail },
+                        firstNameError = editState.firstNameError,
+                        lastNameError = editState.lastNameError,
+                        emailError = editState.emailError,
+                        isSavingPersonalData = editState.isSavingPersonalData,
                         passwordInput = editState.passwordInput,
                         confirmPasswordInput = editState.confirmPasswordInput,
                         passwordError = editState.passwordError,
@@ -204,10 +236,92 @@ class PatientViewModel(
             if (result.isSuccess) {
                 Toast.makeText(getApplication(), "Teléfono actualizado.", Toast.LENGTH_SHORT).show()
                 _editState.update { it.copy(isSavingPhone = false, phoneError = null) }
+                refreshProfile.update { it + 1 }
             } else {
                 val fallback = "No se pudo actualizar el teléfono."
                 Toast.makeText(getApplication(), result.exceptionOrNull()?.message ?: fallback, Toast.LENGTH_SHORT).show()
                 _editState.update { it.copy(isSavingPhone = false) }
+            }
+        }
+    }
+
+    fun onFirstNameChange(name: String) {
+        val error = validatePersonName(name, "Nombre")
+        _editState.update { it.copy(firstNameInput = name, firstNameError = error) }
+    }
+
+    fun onLastNameChange(value: String) {
+        val error = validatePersonName(value, "Apellido")
+        _editState.update { it.copy(lastNameInput = value, lastNameError = error) }
+    }
+
+    fun onEmailChange(value: String) {
+        val error = validateEmail(value)
+        _editState.update { it.copy(emailInput = value, emailError = error) }
+    }
+
+    fun savePersonalData() {
+        val patient = uiState.value.patient
+        val firstName = _editState.value.firstNameInput.ifBlank { defaultFirstName(patient) }
+        val lastName = _editState.value.lastNameInput.ifBlank { defaultLastName(patient) }
+        val email = _editState.value.emailInput.ifBlank { patient?.email.orEmpty() }
+
+        val firstNameError = validatePersonName(firstName, "Nombre")
+        val lastNameError = validatePersonName(lastName, "Apellido")
+        val emailError = validateEmail(email)
+        if (firstNameError != null || lastNameError != null || emailError != null) {
+            _editState.update {
+                it.copy(
+                    firstNameInput = firstName,
+                    lastNameInput = lastName,
+                    emailInput = email,
+                    firstNameError = firstNameError,
+                    lastNameError = lastNameError,
+                    emailError = emailError
+                )
+            }
+            return
+        }
+
+        val userId = cachedUserId
+        if (userId == null) {
+            Toast.makeText(getApplication(), "No se pudo encontrar al usuario.", Toast.LENGTH_SHORT).show()
+            return
+        }
+
+        viewModelScope.launch {
+            _editState.update {
+                it.copy(
+                    isSavingPersonalData = true,
+                    firstNameError = null,
+                    lastNameError = null,
+                    emailError = null
+                )
+            }
+            val result = userRepository.updateUser(
+                userId,
+                UsuarioUpdateRequestDto(
+                    nombre = firstName.trim(),
+                    apellido = lastName.trim(),
+                    correo = email.trim()
+                )
+            )
+
+            if (result.isSuccess) {
+                Toast.makeText(getApplication(), "Datos personales actualizados.", Toast.LENGTH_SHORT).show()
+                refreshProfile.update { it + 1 }
+                _editState.update {
+                    it.copy(
+                        isSavingPersonalData = false,
+                        firstNameInput = firstName.trim(),
+                        lastNameInput = lastName.trim(),
+                        emailInput = email.trim()
+                    )
+                }
+            } else {
+                val fallback = "No se pudieron actualizar los datos."
+                Toast.makeText(getApplication(), result.exceptionOrNull()?.message ?: fallback, Toast.LENGTH_SHORT).show()
+                _editState.update { it.copy(isSavingPersonalData = false) }
             }
         }
     }
@@ -295,4 +409,11 @@ class PatientViewModel(
             }
         }
     }
+
+    private fun defaultFirstName(patient: UsuarioDto?): String =
+        patient?.name?.trim()?.split(" ", limit = 2)?.getOrElse(0) { "" }.orEmpty()
+
+    private fun defaultLastName(patient: UsuarioDto?): String =
+        patient?.lastName?.takeIf { it.isNotBlank() }
+            ?: patient?.name?.trim()?.split(" ", limit = 2)?.getOrNull(1).orEmpty()
 }

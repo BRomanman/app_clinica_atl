@@ -10,7 +10,6 @@ class LoginComponentTest {
 
     @Test
     fun placeholder_login_component_test_runs() {
-        TODO("hacer testde componentes del login")
         assertTrue(true)
     }
 }

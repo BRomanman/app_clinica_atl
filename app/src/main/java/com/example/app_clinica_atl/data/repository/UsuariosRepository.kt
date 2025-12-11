@@ -91,9 +91,7 @@ class UsuariosRepository(
             runCatching {
                 usuariosApi.getDoc().map { it.toUsuarioDto() }
             }.getOrElse {
-                usuariosApi.getUsers()
-                    .map { it.toUsuarioDto() }
-                    .filter { it.role.equals("doctor", true) }
+                emptyList()
             }
         }
         emit(doctors)

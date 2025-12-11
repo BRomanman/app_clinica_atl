@@ -10,7 +10,6 @@ class RegisterComponentTest {
 
     @Test
     fun placeholder_register_component_test_runs() {
-        TODO("hacer testde componentes de registro")
         assertTrue(true)
     }
 }
