@@ -1,6 +1,7 @@
 package com.example.app_clinica_atl.ui.viewmodel.patient
 
 import android.app.Application
+import android.content.Context
 import android.net.Uri
 import android.widget.Toast
 import androidx.lifecycle.AndroidViewModel
@@ -18,11 +19,14 @@ import com.example.app_clinica_atl.domain.validation.validateChileanPhoneNumber
 import com.example.app_clinica_atl.domain.validation.validateEmail
 import com.example.app_clinica_atl.domain.validation.validatePersonName
 import com.example.app_clinica_atl.domain.validation.validateRegisterPassword
+import com.example.app_clinica_atl.util.copyUriToTempFile
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.catch
+import kotlinx.coroutines.flow.collect
 import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.firstOrNull
 import kotlinx.coroutines.flow.flatMapLatest
@@ -68,12 +72,29 @@ class PatientViewModel(
 
     // --- LÓGICA REACTIVA ---
     private val _editState = MutableStateFlow(PatientProfileEditState())
-    private val _profileImageOverride = MutableStateFlow<String?>(null)
+    private val _profilePhotoUrl = MutableStateFlow<String?>(null)
+    val profilePhotoUrl: StateFlow<String?> = _profilePhotoUrl
+    private val _isUploadingPhoto = MutableStateFlow(false)
+    val isUploadingPhoto: StateFlow<Boolean> = _isUploadingPhoto
+    private val _photoErrorMessage = MutableStateFlow<String?>(null)
+    val photoErrorMessage: StateFlow<String?> = _photoErrorMessage
     private val refreshAppointments = MutableStateFlow(0)
     private val refreshInsurance = MutableStateFlow(0)
     private val refreshInsuranceList = MutableStateFlow(0)
     private val refreshProfile = MutableStateFlow(0)
     private var cachedUserId: Long? = null
+
+    init {
+        observeProfilePhotoUrl()
+    }
+
+    private fun observeProfilePhotoUrl() {
+        viewModelScope.launch {
+            userPreferences.userIdFlow.collect { userId ->
+                _profilePhotoUrl.value = userId?.let { userRepository.buildPatientProfilePhotoUrl(it) }
+            }
+        }
+    }
 
     private data class PatientProfileEditState(
         val phoneInput: String = "",
@@ -109,16 +130,8 @@ class PatientViewModel(
                     )
                 )
             } else {
-                val storedImageFlow = userPreferences.profileImageFlow(userId)
                 val patientFlow = refreshProfile.flatMapLatest {
                     userRepository.getUserByIdAsFlow(userId)
-                }
-                val patientWithImage = combine(
-                    patientFlow,
-                    storedImageFlow,
-                    _profileImageOverride
-                ) { patient, storedImage, overrideImage ->
-                    patient?.copy(profileImageUrl = overrideImage ?: storedImage ?: patient.profileImageUrl)
                 }
                 val insuranceDetailsFlow = refreshInsurance.flatMapLatest {
                     insuranceRepository.getActiveSubscriptionDetails(userId)
@@ -136,7 +149,7 @@ class PatientViewModel(
                     }
                 }
                 val base = combine(
-                    patientWithImage,
+                    patientFlow,
                     insuranceDetailsFlow,
                     insuranceSubFlow,
                     appointmentsFlow,
@@ -388,26 +401,38 @@ class PatientViewModel(
     }
 
     fun clearMessages() {
-        // Ya no hay mensajes persistentes; los toasts son eventos.
+        _photoErrorMessage.value = null
     }
 
-    fun updateProfileImage(uri: Uri) {
-        viewModelScope.launch {
-            val userId = userPreferences.userIdFlow.firstOrNull()
-            if (userId == null) {
-                Toast.makeText(getApplication(), "No se pudo encontrar al usuario.", Toast.LENGTH_SHORT).show()
-                return@launch
-            }
-            val result = userRepository.updateProfileImageUrl(userId, uri.toString())
-            if (result.isFailure) {
-                val fallback = "No se pudo actualizar la foto."
-                Toast.makeText(getApplication(), result.exceptionOrNull()?.message ?: fallback, Toast.LENGTH_SHORT).show()
-            } else {
-                userPreferences.saveProfileImage(userId, uri.toString())
-                _profileImageOverride.update { uri.toString() }
-                Toast.makeText(getApplication(), "Foto de perfil actualizada.", Toast.LENGTH_SHORT).show()
+    fun onNewProfilePhotoSelected(uri: Uri, context: Context) {
+        val userId = cachedUserId
+        if (userId == null) {
+            _photoErrorMessage.value = "No se pudo identificar al usuario."
+            return
+        }
+        viewModelScope.launch(Dispatchers.IO) {
+            _isUploadingPhoto.value = true
+            _photoErrorMessage.value = null
+            try {
+                val tempFile = copyUriToTempFile(uri, context)
+                val result = userRepository.uploadPatientProfilePhoto(tempFile)
+                if (result.isSuccess) {
+                    val baseUrl = userRepository.buildPatientProfilePhotoUrl(userId)
+                    _profilePhotoUrl.value = appendTimestamp(baseUrl)
+                } else {
+                    _photoErrorMessage.value = result.exceptionOrNull()?.message ?: "No se pudo actualizar la foto."
+                }
+            } catch (e: Exception) {
+                _photoErrorMessage.value = e.message ?: "No se pudo procesar la imagen."
+            } finally {
+                _isUploadingPhoto.value = false
             }
         }
+    }
+
+    private fun appendTimestamp(url: String): String {
+        val cleanUrl = url.substringBefore("?")
+        return "$cleanUrl?ts=${System.currentTimeMillis()}"
     }
 
     private fun defaultFirstName(patient: UsuarioDto?): String =

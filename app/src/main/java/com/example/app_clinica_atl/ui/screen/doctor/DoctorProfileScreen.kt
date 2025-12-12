@@ -66,7 +66,9 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.core.content.FileProvider
 import coil.compose.AsyncImage
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.example.app_clinica_atl.R
+import com.example.app_clinica_atl.ui.profile.DEFAULT_AVATAR_URL
 import com.example.app_clinica_atl.data.remote.dto.DoctorMonthlyStatDto
 import com.example.app_clinica_atl.ui.viewmodel.doctor.DoctorProfileInfo
 import com.example.app_clinica_atl.ui.viewmodel.doctor.DoctorProfileUiState
@@ -94,6 +96,9 @@ fun DoctorProfileScreen(
 ) {
     val uiState by viewModel.uiState.collectAsState()
     val snackbarHostState = remember { SnackbarHostState() }
+    val profilePhotoUrl by viewModel.profilePhotoUrl.collectAsStateWithLifecycle()
+    val isUploadingPhoto by viewModel.isUploadingPhoto.collectAsStateWithLifecycle()
+    val photoErrorMessage by viewModel.photoErrorMessage.collectAsStateWithLifecycle()
     val context = LocalContext.current
 
     var tempImageUri by remember { mutableStateOf<Uri?>(null) }
@@ -101,8 +106,14 @@ fun DoctorProfileScreen(
         contract = ActivityResultContracts.TakePicture()
     ) { success ->
         if (success) {
-            tempImageUri?.let { viewModel.updateProfileImage(it) }
+            tempImageUri?.let { viewModel.onNewProfilePhotoSelected(it, context) }
         }
+    }
+
+    val galleryLauncher = rememberLauncherForActivityResult(
+        contract = ActivityResultContracts.GetContent()
+    ) { uri ->
+        uri?.let { viewModel.onNewProfilePhotoSelected(it, context) }
     }
     val permissionLauncher = rememberLauncherForActivityResult(
         contract = ActivityResultContracts.RequestPermission()
@@ -138,18 +149,22 @@ fun DoctorProfileScreen(
         snackbarHost = { SnackbarHost(snackbarHostState) },
         topBar = { DoctorProfileTopBar(onBackClick, isPublicView) }
     ) { paddingValues ->
-        DoctorProfileContentHost(
-            doctorId = doctorId,
-            uiState = uiState,
-            paddingValues = paddingValues,
-            onRequestCamera = { permissionLauncher.launch(Manifest.permission.CAMERA) },
-            onPhoneChange = viewModel::onPhoneChange,
-            onSavePhone = viewModel::savePhone,
-            onPasswordChange = viewModel::onPasswordChange,
-            onConfirmPasswordChange = viewModel::onConfirmPasswordChange,
-            onSavePassword = viewModel::savePassword,
-            isPublicView = isPublicView
-        )
+    DoctorProfileContentHost(
+        doctorId = doctorId,
+        uiState = uiState,
+        paddingValues = paddingValues,
+        profilePhotoUrl = profilePhotoUrl,
+        isUploadingPhoto = isUploadingPhoto,
+        photoErrorMessage = photoErrorMessage,
+        onRequestCamera = { permissionLauncher.launch(Manifest.permission.CAMERA) },
+        onRequestGallery = { galleryLauncher.launch("image/*") },
+        onPhoneChange = viewModel::onPhoneChange,
+        onSavePhone = viewModel::savePhone,
+        onPasswordChange = viewModel::onPasswordChange,
+        onConfirmPasswordChange = viewModel::onConfirmPasswordChange,
+        onSavePassword = viewModel::savePassword,
+        isPublicView = isPublicView
+    )
     }
 }
 
@@ -189,18 +204,22 @@ private fun DoctorProfileTopBar(onBackClick: () -> Unit, isPublicView: Boolean) 
 
 @RequiresApi(Build.VERSION_CODES.O)
 @Composable
-private fun DoctorProfileContentHost(
-    doctorId: Long?,
-    uiState: DoctorProfileUiState,
-    paddingValues: PaddingValues,
-    onRequestCamera: () -> Unit,
-    onPhoneChange: (String) -> Unit,
-    onSavePhone: () -> Unit,
-    onPasswordChange: (String) -> Unit,
-    onConfirmPasswordChange: (String) -> Unit,
-    onSavePassword: () -> Unit,
-    isPublicView: Boolean
-) {
+    private fun DoctorProfileContentHost(
+        doctorId: Long?,
+        uiState: DoctorProfileUiState,
+        paddingValues: PaddingValues,
+        profilePhotoUrl: String?,
+        isUploadingPhoto: Boolean,
+        photoErrorMessage: String?,
+        onRequestCamera: () -> Unit,
+        onRequestGallery: () -> Unit,
+        onPhoneChange: (String) -> Unit,
+        onSavePhone: () -> Unit,
+        onPasswordChange: (String) -> Unit,
+        onConfirmPasswordChange: (String) -> Unit,
+        onSavePassword: () -> Unit,
+        isPublicView: Boolean
+    ) {
     Box(
         modifier = Modifier
             .fillMaxSize()
@@ -227,32 +246,35 @@ private fun DoctorProfileContentHost(
                 )
             }
             uiState.doctor != null -> {
-                DoctorProfileContent(
-                    doctor = uiState.doctor,
-                    phoneInput = uiState.phoneInput,
-                    phoneError = uiState.phoneError,
-                    isSavingPhone = uiState.isSavingPhone,
-                    passwordInput = uiState.passwordInput,
-                    confirmPasswordInput = uiState.confirmPasswordInput,
-                    passwordError = uiState.passwordError,
-                    confirmPasswordError = uiState.confirmPasswordError,
-                    isSavingPassword = uiState.isSavingPassword,
-                    stats = uiState.stats,
-                    totalAppointments = uiState.totalAppointments,
-                    bonusAmount = uiState.bonusAmount,
-                    isUploadingPhoto = uiState.isUploadingPhoto,
-                    onPhoneChange = onPhoneChange,
-                    onSavePhone = onSavePhone,
-                    onPasswordChange = onPasswordChange,
-                    onConfirmPasswordChange = onConfirmPasswordChange,
-                    onSavePassword = onSavePassword,
-                    onProfileImageClick = onRequestCamera,
-                    isPublicView = isPublicView
-                )
+                    DoctorProfileContent(
+                        doctor = uiState.doctor,
+                        phoneInput = uiState.phoneInput,
+                        phoneError = uiState.phoneError,
+                        isSavingPhone = uiState.isSavingPhone,
+                        passwordInput = uiState.passwordInput,
+                        confirmPasswordInput = uiState.confirmPasswordInput,
+                        passwordError = uiState.passwordError,
+                        confirmPasswordError = uiState.confirmPasswordError,
+                        isSavingPassword = uiState.isSavingPassword,
+                        stats = uiState.stats,
+                        totalAppointments = uiState.totalAppointments,
+                        bonusAmount = uiState.bonusAmount,
+                        profilePhotoUrl = profilePhotoUrl,
+                        isUploadingPhoto = isUploadingPhoto,
+                        photoErrorMessage = photoErrorMessage,
+                        onPhoneChange = onPhoneChange,
+                        onSavePhone = onSavePhone,
+                        onPasswordChange = onPasswordChange,
+                        onConfirmPasswordChange = onConfirmPasswordChange,
+                        onSavePassword = onSavePassword,
+                        onRequestCamera = onRequestCamera,
+                        onRequestGallery = onRequestGallery,
+                        isPublicView = isPublicView
+                    )
+                }
             }
         }
     }
-}
 
 @RequiresApi(Build.VERSION_CODES.O)
 @Composable
@@ -269,13 +291,16 @@ private fun DoctorProfileContent(
     stats: List<DoctorMonthlyStatDto>,
     totalAppointments: Int,
     bonusAmount: Double,
+    profilePhotoUrl: String?,
     isUploadingPhoto: Boolean,
+    photoErrorMessage: String?,
     onPhoneChange: (String) -> Unit,
     onSavePhone: () -> Unit,
     onPasswordChange: (String) -> Unit,
     onConfirmPasswordChange: (String) -> Unit,
     onSavePassword: () -> Unit,
-    onProfileImageClick: () -> Unit,
+    onRequestCamera: () -> Unit,
+    onRequestGallery: () -> Unit,
     isPublicView: Boolean
 ) {
     LazyColumn(
@@ -287,8 +312,11 @@ private fun DoctorProfileContent(
         item {
             DoctorProfileHeader(
                 doctor = doctor,
+                profilePhotoUrl = profilePhotoUrl,
                 isUploadingPhoto = isUploadingPhoto,
-                onProfileImageClick = onProfileImageClick,
+                photoErrorMessage = photoErrorMessage,
+                onRequestCamera = onRequestCamera,
+                onRequestGallery = onRequestGallery,
                 isPublicView = isPublicView
             )
         }
@@ -346,8 +374,11 @@ private fun DoctorProfileContent(
 @Composable
 private fun DoctorProfileHeader(
     doctor: DoctorProfileInfo,
+    profilePhotoUrl: String?,
     isUploadingPhoto: Boolean,
-    onProfileImageClick: () -> Unit,
+    photoErrorMessage: String?,
+    onRequestCamera: () -> Unit,
+    onRequestGallery: () -> Unit,
     isPublicView: Boolean
 ) {
     Card(
@@ -363,13 +394,12 @@ private fun DoctorProfileHeader(
         ) {
             Box(contentAlignment = Alignment.Center) {
                 AsyncImage(
-                    model = doctor.profileImageUrl ?: R.drawable.logo_clean,
+                    model = profilePhotoUrl ?: doctor.profileImageUrl ?: DEFAULT_AVATAR_URL,
                     placeholder = painterResource(id = R.drawable.logo_clean),
                     contentDescription = "Foto de ${doctor.name}",
                     modifier = Modifier
                         .size(140.dp)
-                        .clip(CircleShape)
-                        .let { mod -> if (isPublicView) mod else mod.clickable(onClick = onProfileImageClick) },
+                        .clip(CircleShape),
                     contentScale = ContentScale.Crop
                 )
                 if (isUploadingPhoto) {
@@ -378,22 +408,39 @@ private fun DoctorProfileHeader(
             }
             Spacer(modifier = Modifier.height(12.dp))
             Text(
-                text = "Dr/a " + doctor.name,
+                text = "Dr/a ${doctor.name}",
                 style = MaterialTheme.typography.titleLarge,
                 fontWeight = FontWeight.Bold,
                 color = MaterialTheme.colorScheme.onPrimaryContainer
             )
+            if (!isPublicView) {
+                Row(
+                    horizontalArrangement = Arrangement.spacedBy(12.dp),
+                    verticalAlignment = Alignment.CenterVertically,
+                    modifier = Modifier.padding(top = 8.dp)
+                ) {
+                    TextButton(onClick = onRequestCamera) {
+                        Text("Tomar foto", color = MaterialTheme.colorScheme.onPrimaryContainer)
+                    }
+                    TextButton(onClick = onRequestGallery) {
+                        Text("Galería", color = MaterialTheme.colorScheme.onPrimaryContainer)
+                    }
+                }
+                photoErrorMessage?.let {
+                    Text(
+                        text = it,
+                        color = MaterialTheme.colorScheme.error,
+                        style = MaterialTheme.typography.bodySmall,
+                        modifier = Modifier.padding(top = 4.dp)
+                    )
+                }
+            }
             doctor.specialty?.let {
                 Text(
                     text = it,
                     style = MaterialTheme.typography.bodyMedium,
                     color = MaterialTheme.colorScheme.onPrimaryContainer
                 )
-            }
-            if (!isPublicView) {
-                TextButton(onClick = onProfileImageClick) {
-                    Text("Cambiar foto", color = MaterialTheme.colorScheme.onPrimaryContainer)
-                }
             }
         }
     }

@@ -11,13 +11,16 @@ import com.example.app_clinica_atl.data.remote.dto.LoginResponseDto
 import com.example.app_clinica_atl.data.remote.dto.UsuarioDto
 import com.example.app_clinica_atl.data.remote.dto.UsuarioResponseDto
 import com.example.app_clinica_atl.data.remote.dto.UsuarioUpdateRequestDto
+import okhttp3.MultipartBody
 import retrofit2.Response
 import retrofit2.http.Body
 import retrofit2.http.DELETE
 import retrofit2.http.GET
+import retrofit2.http.Multipart
 import retrofit2.http.POST
 import retrofit2.http.PUT
 import retrofit2.http.Path
+import retrofit2.http.Part
 
 interface UsuariosApi {
 
@@ -60,6 +63,13 @@ interface UsuariosApi {
     @DELETE("usuarios/{id}")
     suspend fun deleteUser(@Path("id") id: Long): Response<Unit>
 
+    @Multipart
+    @POST("usuarios/{id}/foto-perfil")
+    suspend fun uploadUserProfilePhoto(
+        @Path("id") userId: Long,
+        @Part file: MultipartBody.Part
+    ): Response<Unit>
+
     //DoctorController
     @GET("doctores")
     suspend fun getDoc(): Response<List<DoctorDto>>
@@ -78,6 +88,13 @@ interface UsuariosApi {
 
     @DELETE("doctores/{id}")
     suspend fun deleteDoc(@Path("id") id: Long): Response<Unit>
+
+    @Multipart
+    @POST("doctores/{id}/foto-perfil")
+    suspend fun uploadDoctorProfilePhoto(
+        @Path("id") doctorId: Long,
+        @Part file: MultipartBody.Part
+    ): Response<Unit>
 
     // --------- Añadido para creación “minimal” del doctor sin tocar tu DoctorDto ---------
     // Mismo endpoint, cuerpo genérico. Esto NO rompe lo anterior.
@@ -99,6 +116,13 @@ interface UsuariosApi {
     suspend fun createDoctorForUser(@Body body: DoctorCreateRequestDto): Response<DoctorDto>
 
     // --- CÓDIGO CORREGIDO ---
+    @Multipart
+    @POST("administradores/{id}/foto-perfil")
+    suspend fun uploadAdminProfilePhoto(
+        @Path("id") adminId: Long,
+        @Part file: MultipartBody.Part
+    ): Response<Unit>
+
     @POST("especialidades")
     suspend fun createSpecialty(@Body body: EspecialidadRequestDto): retrofit2.Response<EspecialidadResponseDto>
     // --- FIN DEL CÓDIGO CORREGIDO ---

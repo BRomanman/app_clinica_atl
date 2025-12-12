@@ -12,11 +12,11 @@ import retrofit2.converter.gson.GsonConverterFactory
 // y expone instancias por microservicio (usuarios, seguros, citas, historial, clima).
 object RetrofitClient {
     //https://vzv5wjj9-8080.brs.devtunnels.ms/
-        private const val CODIGO = "vzv5wjj9"
-        private const val BASE_URL_USUARIO = "https://$CODIGO-8082.brs.devtunnels.ms/api/v1/"
-        private const val BASE_URL_SEGURO = "https://$CODIGO-8084.brs.devtunnels.ms/api/v1/"
-        private const val BASE_URL_CITAS = "https://$CODIGO-8080.brs.devtunnels.ms/api/v1/"
-        private const val BASE_URL_HISTORIAL = "https://$CODIGO-8083.brs.devtunnels.ms/api/v1/"
+    private const val CODIGO = "vzv5wjj9"
+    const val BASE_URL_USUARIO = "https://$CODIGO-8082.brs.devtunnels.ms/api/v1/"
+    private const val BASE_URL_SEGURO = "https://$CODIGO-8084.brs.devtunnels.ms/api/v1/"
+    private const val BASE_URL_CITAS = "https://$CODIGO-8080.brs.devtunnels.ms/api/v1/"
+    private const val BASE_URL_HISTORIAL = "https://$CODIGO-8083.brs.devtunnels.ms/api/v1/"
     private const val BASE_URL_WEATHER = "https://api.open-meteo.com/v1/"
 
     private val logging = HttpLoggingInterceptor()

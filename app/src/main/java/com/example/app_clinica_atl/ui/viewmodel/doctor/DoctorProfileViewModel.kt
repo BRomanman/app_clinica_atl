@@ -1,5 +1,6 @@
 package com.example.app_clinica_atl.ui.viewmodel.doctor
 
+import android.content.Context
 import android.net.Uri
 import android.os.Build
 import androidx.annotation.RequiresApi
@@ -14,6 +15,7 @@ import com.example.app_clinica_atl.data.repository.CitasRepository
 import com.example.app_clinica_atl.data.repository.DoctorProfileRepository
 import com.example.app_clinica_atl.data.repository.HistorialRepository
 import com.example.app_clinica_atl.data.repository.UsuariosRepository
+import com.example.app_clinica_atl.util.copyUriToTempFile
 import com.example.app_clinica_atl.domain.validation.validateChileanPhoneNumber
 import com.example.app_clinica_atl.domain.validation.validateRegisterPassword
 import java.time.LocalDate
@@ -21,6 +23,7 @@ import java.time.LocalDateTime
 import java.time.OffsetDateTime
 import java.time.YearMonth
 import java.time.format.DateTimeFormatter
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -73,10 +76,21 @@ class DoctorProfileViewModel(
     private val _uiState = MutableStateFlow(DoctorProfileUiState())
     val uiState: StateFlow<DoctorProfileUiState> = _uiState.asStateFlow()
 
+    private val _profilePhotoUrl = MutableStateFlow<String?>(null)
+    val profilePhotoUrl: StateFlow<String?> = _profilePhotoUrl.asStateFlow()
+    private val _isUploadingPhoto = MutableStateFlow(false)
+    val isUploadingPhoto: StateFlow<Boolean> = _isUploadingPhoto.asStateFlow()
+    private val _photoErrorMessage = MutableStateFlow<String?>(null)
+    val photoErrorMessage: StateFlow<String?> = _photoErrorMessage.asStateFlow()
+
     private var currentUserId: Long? = null
     private var currentDoctorId: Long? = null
     private var statsJob: Job? = null
     private var specialtiesJob: Job? = null
+
+    private fun refreshPhotoUrl(doctorId: Long?) {
+        _profilePhotoUrl.value = doctorId?.let { usuariosRepository.buildDoctorProfilePhotoUrl(it) }
+    }
 
     @RequiresApi(Build.VERSION_CODES.O)
     fun loadDoctorProfile(doctorId: Long) {
@@ -98,6 +112,7 @@ class DoctorProfileViewModel(
                     )
                 }
                 val doctorKey = info.doctorId ?: dto.id ?: doctorId
+                refreshPhotoUrl(doctorKey)
                 if (doctorKey != null) {
                     observeStats(doctorKey)
                     observeSpecialties(doctorKey)
@@ -278,27 +293,47 @@ class DoctorProfileViewModel(
         }
     }
 
-    fun updateProfileImage(uri: Uri) {
-        val userId = currentUserId ?: return
-        viewModelScope.launch {
+    fun onNewProfilePhotoSelected(uri: Uri, context: Context) {
+        val doctorId = currentDoctorId ?: return
+        viewModelScope.launch(Dispatchers.IO) {
+            _isUploadingPhoto.value = true
+            _photoErrorMessage.value = null
             _uiState.update { it.copy(isUploadingPhoto = true) }
-            val result = usuariosRepository.updateProfileImageUrl(userId, uri.toString())
-            _uiState.update {
+            try {
+                val tempFile = copyUriToTempFile(uri, context)
+                val result = usuariosRepository.uploadDoctorProfilePhoto(tempFile)
+                val baseUrl = usuariosRepository.buildDoctorProfilePhotoUrl(doctorId)
                 if (result.isSuccess) {
-                    it.copy(
-                        isUploadingPhoto = false,
-                        doctor = it.doctor?.copy(profileImageUrl = uri.toString()),
-                        successMsg = "Foto de perfil actualizada.",
-                        transientError = null
-                    )
+                    _profilePhotoUrl.value = appendTimestamp(baseUrl)
+                    _uiState.update {
+                        it.copy(
+                            isUploadingPhoto = false,
+                            successMsg = "Foto de perfil actualizada.",
+                            transientError = null
+                        )
+                    }
                 } else {
-                    it.copy(
-                        isUploadingPhoto = false,
-                        transientError = result.exceptionOrNull()?.message ?: "No se pudo actualizar la foto."
-                    )
+                    val message = result.exceptionOrNull()?.message ?: "No se pudo actualizar la foto."
+                    _photoErrorMessage.value = message
+                    _uiState.update {
+                        it.copy(isUploadingPhoto = false, transientError = message)
+                    }
                 }
+            } catch (e: Exception) {
+                val message = e.message ?: "No se pudo procesar la imagen."
+                _photoErrorMessage.value = message
+                _uiState.update {
+                    it.copy(isUploadingPhoto = false, transientError = message)
+                }
+            } finally {
+                _isUploadingPhoto.value = false
             }
         }
+    }
+
+    private fun appendTimestamp(url: String): String {
+        val cleanUrl = url.substringBefore("?")
+        return "$cleanUrl?ts=${System.currentTimeMillis()}"
     }
 
     fun clearMessages() {

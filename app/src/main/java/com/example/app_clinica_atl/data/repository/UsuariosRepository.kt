@@ -20,7 +20,12 @@ import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.firstOrNull
 import kotlinx.coroutines.flow.flow
 import kotlinx.coroutines.withContext
+import okhttp3.MediaType.Companion.toMediaTypeOrNull
+import okhttp3.MultipartBody
+import okhttp3.RequestBody.Companion.asRequestBody
 import retrofit2.HttpException
+import retrofit2.Response
+import java.io.File
 
 class UsuariosRepository(
     private val userPreferences: UserPreferences,
@@ -122,6 +127,45 @@ class UsuariosRepository(
         }
     }
 
+    suspend fun uploadPatientProfilePhoto(imageFile: File): Result<Unit> {
+        val userId = userPreferences.userIdFlow.firstOrNull()
+        return uploadProfilePhotoForId(
+            entityId = userId,
+            imageFile = imageFile,
+            missingEntityMessage = "No se pudo encontrar al paciente autenticado.",
+            uploadCall = usuariosApi::uploadUserProfilePhoto
+        )
+    }
+
+    suspend fun uploadDoctorProfilePhoto(imageFile: File): Result<Unit> {
+        val doctorId = userPreferences.userDoctorIdFlow.firstOrNull()
+        return uploadProfilePhotoForId(
+            entityId = doctorId,
+            imageFile = imageFile,
+            missingEntityMessage = "No fue posible identificar al doctor logueado.",
+            uploadCall = usuariosApi::uploadDoctorProfilePhoto
+        )
+    }
+
+    suspend fun uploadAdminProfilePhoto(imageFile: File): Result<Unit> {
+        val adminId = userPreferences.userIdFlow.firstOrNull()
+        return uploadProfilePhotoForId(
+            entityId = adminId,
+            imageFile = imageFile,
+            missingEntityMessage = "No se pudo encontrar al administrador autenticado.",
+            uploadCall = usuariosApi::uploadAdminProfilePhoto
+        )
+    }
+
+    fun buildPatientProfilePhotoUrl(userId: Long): String =
+        "${RetrofitClient.BASE_URL_USUARIO}usuarios/$userId/foto-perfil"
+
+    fun buildDoctorProfilePhotoUrl(doctorId: Long): String =
+        "${RetrofitClient.BASE_URL_USUARIO}doctores/$doctorId/foto-perfil"
+
+    fun buildAdminProfilePhotoUrl(adminId: Long): String =
+        "${RetrofitClient.BASE_URL_USUARIO}administradores/$adminId/foto-perfil"
+
     suspend fun loginViaApi(email: String, pass: String): Result<UsuarioDto> = withContext(Dispatchers.IO) {
         try {
             val loginRequest = LoginRequestDto(correo = email, contrasena = pass)
@@ -177,8 +221,6 @@ class UsuariosRepository(
         }
     }
 
-    suspend fun updateProfileImageUrl(userId: Long, imageUrl: String): Result<Unit> = Result.success(Unit)
-
     suspend fun updatePhoneNumber(userId: Long, phone: String): Result<Unit> = withContext(Dispatchers.IO) {
         try {
             usuariosApi.updateUser(userId, UsuarioUpdateRequestDto(telefono = phone))
@@ -207,6 +249,31 @@ class UsuariosRepository(
     }
 
     // ========= Mantengo para AdminManageSpecialties (solo PUT) =========
+    private suspend fun uploadProfilePhotoForId(
+        entityId: Long?,
+        imageFile: File,
+        missingEntityMessage: String,
+        uploadCall: suspend (Long, MultipartBody.Part) -> Response<Unit>
+    ): Result<Unit> = withContext(Dispatchers.IO) {
+        if (entityId == null) return@withContext Result.failure(Exception(missingEntityMessage))
+        try {
+            val response = uploadCall(entityId, createImagePart(imageFile))
+            if (response.isSuccessful) {
+                Result.success(Unit)
+            } else {
+                Result.failure(HttpException(response))
+            }
+        } catch (e: Exception) {
+            Result.failure(e)
+        }
+    }
+
+    private fun createImagePart(imageFile: File): MultipartBody.Part {
+        val requestBody = imageFile.asRequestBody("image/jpeg".toMediaTypeOrNull())
+        return MultipartBody.Part.createFormData("file", imageFile.name, requestBody)
+    }
+
+
     suspend fun createSpecialty(name: String) =
         Result.failure<EspecialidadResponseDto>(IllegalStateException("No se puede crear especialidad sin doctor. Usa 'Crear Doctor'."))
     // ===================================================================

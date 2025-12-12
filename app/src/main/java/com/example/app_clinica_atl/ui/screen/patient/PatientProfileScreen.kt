@@ -11,6 +11,7 @@ import androidx.compose.foundation.clickable
 import androidx.compose.ui.platform.LocalContext
 import androidx.core.content.FileProvider
 import coil.compose.AsyncImage
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -66,6 +67,7 @@ import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import com.example.app_clinica_atl.R
+import com.example.app_clinica_atl.ui.profile.DEFAULT_AVATAR_URL
 import com.example.app_clinica_atl.data.remote.dto.CitaDetalleDto
 import com.example.app_clinica_atl.data.remote.dto.SeguroDto
 import com.example.app_clinica_atl.data.remote.dto.UsuarioDto
@@ -86,6 +88,9 @@ fun PatientProfileScreen(
 ) {
     val uiState by viewModel.uiState.collectAsState()
     val snackbarHostState = remember { SnackbarHostState() }
+    val profilePhotoUrl by viewModel.profilePhotoUrl.collectAsStateWithLifecycle()
+    val isUploadingPhoto by viewModel.isUploadingPhoto.collectAsStateWithLifecycle()
+    val photoErrorMessage by viewModel.photoErrorMessage.collectAsStateWithLifecycle()
 
     // --- Lógica de Cámara (Launchers) ---
     val context = LocalContext.current
@@ -96,9 +101,15 @@ fun PatientProfileScreen(
     ) { success ->
         if (success) {
             tempImageUri?.let {
-                viewModel.updateProfileImage(it)
+                viewModel.onNewProfilePhotoSelected(it, context)
             }
         }
+    }
+
+    val galleryLauncher = rememberLauncherForActivityResult(
+        contract = ActivityResultContracts.GetContent()
+    ) { uri ->
+        uri?.let { viewModel.onNewProfilePhotoSelected(it, context) }
     }
 
     val permissionLauncher = rememberLauncherForActivityResult(
@@ -173,9 +184,15 @@ fun PatientProfileScreen(
                         onSavePersonalData = viewModel::savePersonalData,
                         onPhoneChange = viewModel::onPhoneChange,
                         onSavePhone = viewModel::savePhone,
-                        onProfileImageClick = {
+                        profilePhotoUrl = profilePhotoUrl,
+                        isUploadingPhoto = isUploadingPhoto,
+                        photoErrorMessage = photoErrorMessage,
+                        onRequestCamera = {
                             // Pide permiso de cámara al hacer clic
                             permissionLauncher.launch(Manifest.permission.CAMERA)
+                        },
+                        onRequestGallery = {
+                            galleryLauncher.launch("image/*")
                         }
                     )
                 }
@@ -229,7 +246,11 @@ private fun PatientProfileContent(
     onSavePersonalData: () -> Unit,
     onPhoneChange: (String) -> Unit,
     onSavePhone: () -> Unit,
-    onProfileImageClick: () -> Unit
+    profilePhotoUrl: String?,
+    isUploadingPhoto: Boolean,
+    photoErrorMessage: String?,
+    onRequestCamera: () -> Unit,
+    onRequestGallery: () -> Unit
 ) {
     LazyColumn(
         modifier = Modifier.fillMaxSize(),
@@ -238,17 +259,48 @@ private fun PatientProfileContent(
         // --- Item 1: Imagen de Perfil ---
         item {
 
-            AsyncImage(
-                model = patient.profileImageUrl, // Carga la URL de la BD (String o Uri)
-                contentDescription = "Foto de ${patient.name}",
-                placeholder = painterResource(id = R.drawable.logo_clean),
-                error = painterResource(id = R.drawable.logo_clean),
-                contentScale = ContentScale.Crop,
-                modifier = Modifier
-                    .size(150.dp)
-                    .clip(CircleShape)
-                    .clickable { onProfileImageClick() } // <-- ¡Acción de cámara!
-            )
+            Box(
+                modifier = Modifier.size(150.dp),
+                contentAlignment = Alignment.Center
+            ) {
+                AsyncImage(
+                    model = profilePhotoUrl ?: DEFAULT_AVATAR_URL,
+                    contentDescription = "Foto de ${patient.name}",
+                    placeholder = painterResource(id = R.drawable.logo_clean),
+                    error = painterResource(id = R.drawable.logo_clean),
+                    contentScale = ContentScale.Crop,
+                    modifier = Modifier
+                        .size(150.dp)
+                        .clip(CircleShape)
+                        .clickable { onRequestCamera() }
+                )
+                if (isUploadingPhoto) {
+                    CircularProgressIndicator(
+                        modifier = Modifier.size(48.dp),
+                        strokeWidth = 3.dp
+                    )
+                }
+            }
+            Spacer(modifier = Modifier.height(16.dp))
+            Row(
+                horizontalArrangement = Arrangement.spacedBy(12.dp),
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                TextButton(onClick = onRequestCamera) {
+                    Text("Tomar foto")
+                }
+                TextButton(onClick = onRequestGallery) {
+                    Text("Elegir foto desde archivos")
+                }
+            }
+            photoErrorMessage?.let {
+                Text(
+                    text = it,
+                    color = MaterialTheme.colorScheme.error,
+                    style = MaterialTheme.typography.bodySmall
+                )
+            }
+            Spacer(modifier = Modifier.height(16.dp))
             Spacer(modifier = Modifier.height(16.dp))
             Text(
                 text = patient.name,
