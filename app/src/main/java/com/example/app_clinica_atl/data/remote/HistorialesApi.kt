@@ -1,20 +1,18 @@
 package com.example.app_clinica_atl.data.remote
 
-import okhttp3.ResponseBody
+import com.example.app_clinica_atl.data.remote.dto.HistorialDto
+import retrofit2.Response
 import retrofit2.http.GET
 import retrofit2.http.Path
 
 interface HistorialesApi {
 
-    @GET("historial")
-    suspend fun getHistoriales(): retrofit2.Response<ResponseBody>
+    @GET("usuario/{usuarioId}")
+    suspend fun getHistorialByUserId(@Path("usuarioId") userId: Long): Response<List<HistorialDto>>
 
-    @GET("historial/{historialId}")
-    suspend fun getHistorialById(@Path("historialId") id: Long): retrofit2.Response<ResponseBody>
+    @GET("doctor/{doctorId}")
+    suspend fun getHistorialByDoctorId(@Path("doctorId") doctorId: Long): Response<List<HistorialDto>>
 
-    @GET("historial/usuario/{usuarioId}")
-    suspend fun getHistorialByUserId(@Path("usuarioId") userId: Long): retrofit2.Response<ResponseBody>
-
-    @GET("historial/doctor/{doctorId}")
-    suspend fun getHistorialByDoctorId(@Path("doctorId") doctorId: Long): retrofit2.Response<ResponseBody>
+    @GET("{historialId}")
+    suspend fun getHistorialById(@Path("historialId") id: Long): Response<HistorialDto>
 }

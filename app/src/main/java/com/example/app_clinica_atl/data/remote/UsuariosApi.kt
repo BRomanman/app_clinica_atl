@@ -1,13 +1,13 @@
 package com.example.app_clinica_atl.data.remote
 
 import com.example.app_clinica_atl.data.remote.dto.DoctorCreateRequestDto
-import com.example.app_clinica_atl.data.remote.dto.LoginRequestDto
-import com.example.app_clinica_atl.data.remote.dto.LoginResponseDto
 import com.example.app_clinica_atl.data.remote.dto.DoctorDto
 import com.example.app_clinica_atl.data.remote.dto.EspecialidadCreateRequestDto
 import com.example.app_clinica_atl.data.remote.dto.EspecialidadRequestDto
 import com.example.app_clinica_atl.data.remote.dto.EspecialidadResponseDto
 import com.example.app_clinica_atl.data.remote.dto.EspecialidadUpdateRequestDto
+import com.example.app_clinica_atl.data.remote.dto.LoginRequestDto
+import com.example.app_clinica_atl.data.remote.dto.LoginResponseDto
 import com.example.app_clinica_atl.data.remote.dto.UsuarioDto
 import com.example.app_clinica_atl.data.remote.dto.UsuarioResponseDto
 import com.example.app_clinica_atl.data.remote.dto.UsuarioUpdateRequestDto
@@ -62,19 +62,19 @@ interface UsuariosApi {
 
     //DoctorController
     @GET("doctores")
-    suspend fun getDoc(): List<DoctorDto>
+    suspend fun getDoc(): Response<List<DoctorDto>>
 
     @GET("doctores/{id}")
-    suspend fun getDocById(@Path("id") id: Long): DoctorDto
+    suspend fun getDocById(@Path("id") id: Long): Response<DoctorDto>
 
     @POST("doctores")
-    suspend fun createDoc(@Body doc: DoctorDto): DoctorDto
+    suspend fun createDoc(@Body doc: DoctorDto): Response<DoctorDto>
 
     @PUT("doctores/{id}")
     suspend fun updateDoc(
         @Path("id") id: Long,
         @Body doc: DoctorDto
-    ): DoctorDto
+    ): Response<DoctorDto>
 
     @DELETE("doctores/{id}")
     suspend fun deleteDoc(@Path("id") id: Long): Response<Unit>
@@ -82,12 +82,12 @@ interface UsuariosApi {
     // --------- Añadido para creación “minimal” del doctor sin tocar tu DoctorDto ---------
     // Mismo endpoint, cuerpo genérico. Esto NO rompe lo anterior.
     @POST("doctores")
-    suspend fun createDocRaw(@Body body: Map<String, @JvmSuppressWildcards Any?>): DoctorDto
+    suspend fun createDocRaw(@Body body: Map<String, @JvmSuppressWildcards Any?>): Response<DoctorDto>
     // ------------------------------------------------------------------------------------
 
     // Especialidades por doctor (personal_service)
     @GET("doctores/{doctorId}/especialidades")
-    suspend fun getDoctorSpecialties(@Path("doctorId") doctorId: Long): List<EspecialidadResponseDto>
+    suspend fun getDoctorSpecialties(@Path("doctorId") doctorId: Long): Response<List<EspecialidadResponseDto>>
 
     @PUT("especialidades/{id}")
     suspend fun updateSpecialty(
@@ -96,7 +96,7 @@ interface UsuariosApi {
     ): Response<EspecialidadResponseDto>
 
     @POST("doctores")
-    suspend fun createDoctorForUser(@Body body: DoctorCreateRequestDto): DoctorDto
+    suspend fun createDoctorForUser(@Body body: DoctorCreateRequestDto): Response<DoctorDto>
 
     // --- CÓDIGO CORREGIDO ---
     @POST("especialidades")

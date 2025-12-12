@@ -15,7 +15,12 @@ class DoctorProfileRepository(
 
     suspend fun getDoctorProfile(doctorId: Long): Result<DoctorDto> {
         return try {
-            Result.success(usuariosApi.getDocById(doctorId))
+            val response = usuariosApi.getDocById(doctorId)
+            if (response.isSuccessful) {
+                Result.success(response.body() ?: DoctorDto(id = doctorId))
+            } else {
+                throw HttpException(response)
+            }
         } catch (e: HttpException) {
             val message = when (e.code()) {
                 404 -> "Doctor no encontrado."
@@ -29,7 +34,14 @@ class DoctorProfileRepository(
 
     suspend fun getAppointmentsForDoctor(doctorId: Long): Result<List<CitaDto>> {
         return try {
-            Result.success(citasApi.getProximasCitasDoctor(doctorId))
+            val response = citasApi.getProximasCitasDoctor(doctorId)
+            if (response.isSuccessful) {
+                Result.success(response.body().orEmpty())
+            } else if (response.code() == 204) {
+                Result.success(emptyList())
+            } else {
+                throw HttpException(response)
+            }
         } catch (e: HttpException) {
             if (e.code() == 204) {
                 Result.success(emptyList())
@@ -43,8 +55,14 @@ class DoctorProfileRepository(
 
     suspend fun getSpecialtiesForDoctor(doctorId: Long): Result<List<EspecialidadResponseDto>> {
         return try {
-            val list = usuariosApi.getDoctorSpecialties(doctorId)
-            Result.success(list)
+            val response = usuariosApi.getDoctorSpecialties(doctorId)
+            if (response.isSuccessful) {
+                Result.success(response.body().orEmpty())
+            } else if (response.code() == 204) {
+                Result.success(emptyList())
+            } else {
+                throw HttpException(response)
+            }
         } catch (e: HttpException) {
             if (e.code() == 204) Result.success(emptyList()) else Result.failure(e)
         } catch (e: Exception) {

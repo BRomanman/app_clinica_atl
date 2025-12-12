@@ -21,7 +21,7 @@ class CitasRepositoryImpl(
 ) : CitasRepository {
 
     override suspend fun getCitasUsuario(idUsuario: Long): List<CitaDto> = withContext(Dispatchers.IO) {
-        citasApi.getCitasByUsuario(idUsuario)
+        citasApi.getCitasByUsuario(idUsuario).bodyOrEmpty()
     }
 
     override suspend fun getHorariosDisponibles(doctorId: Long, date: String): List<CitaDto> =
@@ -51,7 +51,7 @@ class CitasRepositoryImpl(
     override fun getAppointmentsForPatient(patientId: Long): Flow<List<CitaDetalleDto>> = flow {
         try {
             val appointments = withContext(Dispatchers.IO) {
-                citasApi.getCitasByUsuario(patientId)
+                citasApi.getCitasByUsuario(patientId).bodyOrEmpty()
             }
 
             val doctorCache = mutableMapOf<Long, DoctorBrief>()
@@ -75,7 +75,7 @@ class CitasRepositoryImpl(
 
     override suspend fun getAppointmentsForPatientOnce(patientId: Long): Result<List<CitaDto>> = withContext(Dispatchers.IO) {
         try {
-            val appointments = citasApi.getCitasByUsuario(patientId)
+            val appointments = citasApi.getCitasByUsuario(patientId).bodyOrEmpty()
             Result.success(appointments)
         } catch (e: Exception) {
             Result.failure(e)
@@ -84,7 +84,7 @@ class CitasRepositoryImpl(
 
     override suspend fun getAppointmentsForDoctorOnce(doctorId: Long): Result<List<CitaDto>> = withContext(Dispatchers.IO) {
         try {
-            val appointments = citasApi.getProximasCitasDoctor(doctorId)
+            val appointments = citasApi.getProximasCitasDoctor(doctorId).bodyOrEmpty()
             Result.success(appointments)
         } catch (e: Exception) {
             Result.failure(e)
@@ -93,7 +93,7 @@ class CitasRepositoryImpl(
 
     override suspend fun getUpcomingAppointmentsForPatient(patientId: Long): Result<List<CitaDto>> = withContext(Dispatchers.IO) {
         try {
-            val appointments = citasApi.getProximasCitasUsuario(patientId)
+            val appointments = citasApi.getProximasCitasUsuario(patientId).bodyOrEmpty()
             Result.success(appointments)
         } catch (e: Exception) {
             Result.failure(e)
@@ -101,12 +101,12 @@ class CitasRepositoryImpl(
     }
 
     override suspend fun getProximasCitasDoctor(doctorId: Long): List<CitaDto> = withContext(Dispatchers.IO) {
-        citasApi.getProximasCitasDoctor(doctorId)
+        citasApi.getProximasCitasDoctor(doctorId).bodyOrEmpty()
     }
 
     override suspend fun getProximasCitasPacienteConDoctor(pacienteId: Long, doctorId: Long): List<CitaDto> =
         withContext(Dispatchers.IO) {
-            citasApi.getProximasCitasUsuario(pacienteId)
+            citasApi.getProximasCitasUsuario(pacienteId).bodyOrEmpty()
                 .filter { it.doctorId == doctorId }
         }
 
@@ -115,7 +115,7 @@ class CitasRepositoryImpl(
     }
 
     override suspend fun getProximasCitasByUsuario(userId: Long): List<CitaDto> = withContext(Dispatchers.IO) {
-        citasApi.getProximasCitasUsuario(userId)
+        citasApi.getProximasCitasUsuario(userId).bodyOrEmpty()
     }
 
     override suspend fun cancelarCita(citaId: Long): Result<Unit> = withContext(Dispatchers.IO) {
@@ -154,6 +154,12 @@ private fun CitaDto.isOpenSlot(): Boolean {
     return available || status.equals("Disponible", ignoreCase = true)
  }
 
+private fun retrofit2.Response<List<CitaDto>>.bodyOrEmpty(): List<CitaDto> {
+    if (isSuccessful) return body().orEmpty()
+    if (code() == 204 || code() == 404) return emptyList()
+    throw HttpException(this)
+}
+
 @RequiresApi(Build.VERSION_CODES.O)
 private fun parseDateTime(cita: CitaDto): LocalDateTime? {
     val datePart = cita.date.ifBlank { "" }
@@ -169,7 +175,11 @@ private data class DoctorBrief(val name: String, val specialty: String)
 
 private suspend fun fetchDoctorBrief(doctorId: Long): DoctorBrief = withContext(Dispatchers.IO) {
     runCatching {
-        val doctorDto = RetrofitClient.usuariosApi.getDocById(doctorId)
+        val response = RetrofitClient.usuariosApi.getDocById(doctorId)
+        val doctorDto = response.body() ?: return@withContext DoctorBrief(
+            name = "Doctor #$doctorId",
+            specialty = ""
+        )
         val user = doctorDto.usuario
         val fullName = listOfNotNull(user?.nombre, user?.apellido)
             .joinToString(" ")

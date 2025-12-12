@@ -29,7 +29,8 @@ class DoctorRepositoryImpl(
 
                 // 1) Traer todos los doctores desde /doctores (contiene usuario dentro)
                 val allDoctors: List<DoctorDto> = runCatching<List<DoctorDto>> {
-                    usuariosApi.getDoc()
+                    val response = usuariosApi.getDoc()
+                    if (response.isSuccessful) response.body().orEmpty() else emptyList()
                 }.getOrElse { emptyList() }
 
                 // Si no se pidió filtro, devolver todos los usuarios con rol doctor
@@ -50,7 +51,8 @@ class DoctorRepositoryImpl(
                     // /doctores/{doctorId}/especialidades
                     val specials: List<EspecialidadResponseDto> =
                         runCatching<List<EspecialidadResponseDto>> {
-                            usuariosApi.getDoctorSpecialties(docId)
+                            val response = usuariosApi.getDoctorSpecialties(docId)
+                            if (response.isSuccessful) response.body().orEmpty() else emptyList()
                         }.getOrElse { emptyList() }
 
                     val match: EspecialidadResponseDto? =
@@ -74,7 +76,13 @@ class DoctorRepositoryImpl(
         withContext(Dispatchers.IO) {
             try {
                 // La API de doctores entrega Empleados (DoctorDto)
-                val doctor = usuariosApi.getDocById(id)
+                val response = usuariosApi.getDocById(id)
+                val doctor = response.body()
+                    ?: throw if (response.code() == 204 || response.code() == 404) {
+                        NoSuchElementException("Doctor no encontrado")
+                    } else {
+                        HttpException(response)
+                    }
                 val user = doctor.toUsuarioDto()
                 Result.success(user)
             } catch (e: Exception) {

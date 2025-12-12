@@ -5,9 +5,9 @@ import com.example.app_clinica_atl.data.remote.dto.ReservarCitaRequest
 import retrofit2.Response
 import retrofit2.http.Body
 import retrofit2.http.GET
+import retrofit2.http.PATCH
 import retrofit2.http.PUT
 import retrofit2.http.Path
-import retrofit2.http.PATCH
 
 interface CitasApi {
 
@@ -19,17 +19,17 @@ interface CitasApi {
     @GET("citas/usuario/{idUsuario}")
     suspend fun getCitasByUsuario(
         @Path("idUsuario") idUsuario: Long
-    ): List<CitaDto>
+    ): Response<List<CitaDto>>
 
     @GET("citas/usuario/{idUsuario}/proximas")
     suspend fun getProximasCitasUsuario(
         @Path("idUsuario") idUsuario: Long
-    ): List<CitaDto>
+    ): Response<List<CitaDto>>
 
     @GET("citas/doctor/{idDoctor}/proximas")
     suspend fun getProximasCitasDoctor(
         @Path("idDoctor") idDoctor: Long
-    ): List<CitaDto>
+    ): Response<List<CitaDto>>
 
     @GET("citas/doctor/{idDoctor}/fecha/{fecha}")
     suspend fun getCitasPorDoctorYFecha(

@@ -17,6 +17,7 @@ import com.example.app_clinica_atl.data.remote.dto.toUsuarioDto
 import com.example.app_clinica_atl.data.remote.dto.toUsuarioDtoFromLogin
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.firstOrNull
 import kotlinx.coroutines.flow.flow
 import kotlinx.coroutines.withContext
 import retrofit2.HttpException
@@ -89,7 +90,12 @@ class UsuariosRepository(
     fun getAllDoctors(): Flow<List<UsuarioDto>> = flow {
         val doctors = withContext(Dispatchers.IO) {
             runCatching {
-                usuariosApi.getDoc().map { it.toUsuarioDto() }
+                val response = usuariosApi.getDoc()
+                if (response.isSuccessful) {
+                    response.body().orEmpty().map { it.toUsuarioDto() }
+                } else {
+                    emptyList()
+                }
             }.getOrElse {
                 emptyList()
             }
@@ -97,10 +103,15 @@ class UsuariosRepository(
         emit(doctors)
     }
 
+    // Usa el doctorId cacheado (DataStore) para no depender del backend en cada consulta
+    // y evita fallos en agenda cuando /usuarios/{id} responde 404/204.
     suspend fun getDoctorIdForUser(userId: Long): Result<Long?> = withContext(Dispatchers.IO) {
         runCatching {
+            val cached = userPreferences.userDoctorIdFlow.firstOrNull()
+            if (cached != null) return@runCatching cached
+
             val user = usuariosApi.getUserById(userId)
-            user.doctor?.id ?: user.trabajador?.id
+            user.doctor?.id ?: user.trabajador?.id ?: userId
         }
     }
 
@@ -249,8 +260,13 @@ class UsuariosRepository(
                 tipo = "Doctor",
                 idEspecialidad = idEspecialidad
             )
-            val created = usuariosApi.createDoc(doctorPayload.toDoctorDto())
-            created.toUsuarioDto()
+            val response = usuariosApi.createDoc(doctorPayload.toDoctorDto())
+            if (response.isSuccessful) {
+                response.body()?.toUsuarioDto()
+                    ?: throw IllegalStateException("Respuesta vacía al crear doctor")
+            } else {
+                throw HttpException(response)
+            }
         }
     }
     // --- FIN DEL CÓDIGO ACTUALIZADO ---
