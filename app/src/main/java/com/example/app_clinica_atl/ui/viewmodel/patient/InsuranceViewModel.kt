@@ -1,5 +1,7 @@
 package com.example.app_clinica_atl.ui.viewmodel.patient
 
+import android.os.Build
+import androidx.annotation.RequiresApi
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.example.app_clinica_atl.data.local.storage.UserPreferences
@@ -58,6 +60,7 @@ class InsuranceViewModel(
         }
     }
 
+    @RequiresApi(Build.VERSION_CODES.O)
     fun contratarSeguro(
         seguroId: Long,
         beneficiarios: List<BeneficiarioForm>,
