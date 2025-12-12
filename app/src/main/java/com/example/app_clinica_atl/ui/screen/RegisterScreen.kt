@@ -26,6 +26,7 @@ import androidx.compose.material3.IconButton // <-- ¡IMPORT AÑADIDO!
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
@@ -49,7 +50,8 @@ import com.example.app_clinica_atl.ui.viewmodel.AuthViewModel
 @Composable
 fun RegisterScreenVm(
     registerViewModel: AuthViewModel,
-    onRegisterSuccessNavigate: () -> Unit
+    onRegisterSuccessNavigate: () -> Unit,
+    onBackToLogin: () -> Unit
 ) {
     val uiState by registerViewModel.registerUiState.collectAsState()
 
@@ -82,7 +84,8 @@ fun RegisterScreenVm(
         confirmPasswordError = uiState.confirmPasswordError,
         onRegisterClick = registerViewModel::registerUser,
         isLoading = uiState.isLoading,
-        registerError = uiState.registerError
+        registerError = uiState.registerError,
+        onBackToLogin = onBackToLogin
     )
 }
 
@@ -110,7 +113,8 @@ fun RegisterScreen(
     confirmPasswordError: String?,
     onRegisterClick: () -> Unit,
     isLoading: Boolean,
-    registerError: String?
+    registerError: String?,
+    onBackToLogin: () -> Unit
 ) {
     // --- ¡¡ESTADOS AÑADIDOS PARA VISIBILIDAD!! ---
     var passwordVisible by rememberSaveable { mutableStateOf(false) }
@@ -278,6 +282,18 @@ fun RegisterScreen(
             registerError?.let {
                 Spacer(modifier = Modifier.height(8.dp))
                 Text(text = it, color = MaterialTheme.colorScheme.error, style = MaterialTheme.typography.bodyMedium)
+            }
+            Spacer(modifier = Modifier.height(8.dp))
+            TextButton(
+                onClick = onBackToLogin,
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .height(48.dp),
+                colors = ButtonDefaults.textButtonColors(
+                    contentColor = MaterialTheme.colorScheme.primary
+                )
+            ) {
+                Text("Volver a iniciar sesion")
             }
         }
     }

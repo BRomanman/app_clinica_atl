@@ -97,7 +97,8 @@ fun AppNavGraph(
                     navController.navigate(Route.Home.path) {
                         popUpTo(Route.Login.path) { inclusive = true }
                     }
-                }
+                },
+                onBackToLogin = { navController.popBackStack() }
             )
         }
 
