@@ -293,7 +293,6 @@ fun RegisterScreen(
                     contentColor = MaterialTheme.colorScheme.primary
                 )
             ) {
-                TODO("agregar algo colorido para que se vea")
                 Text("Volver a iniciar sesion")
             }
         }

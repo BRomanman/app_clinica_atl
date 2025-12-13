@@ -58,7 +58,7 @@ fun AdminAddDoctorScreen(
     viewModel: AdminAddDoctorViewModel,
     onBackClick: () -> Unit
 ) {
-    // ✅ CORRECCIÓN: convertir StateFlow -> State para usar 'by'
+
     val uiState by viewModel.uiState.collectAsState()
     val context = LocalContext.current
     val notificationPermissionLauncher = rememberLauncherForActivityResult(
@@ -134,7 +134,8 @@ fun AdminAddDoctorScreen(
                 label = { Text("Fecha de nacimiento (aaaa-mm-dd)") },
                 modifier = Modifier.fillMaxWidth(),
                 isError = uiState.birthDateError != null,
-                singleLine = true
+                singleLine = true,
+                keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number)
             )
             uiState.birthDateError?.let { Text(it, color = MaterialTheme.colorScheme.error) }
             Spacer(Modifier.height(8.dp))
