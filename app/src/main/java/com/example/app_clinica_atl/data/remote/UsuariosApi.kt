@@ -2,8 +2,10 @@ package com.example.app_clinica_atl.data.remote
 
 import com.example.app_clinica_atl.data.remote.dto.AdministradorDto
 import com.example.app_clinica_atl.data.remote.dto.AdministradorUpdateRequestDto
+import com.example.app_clinica_atl.data.remote.dto.ChangePasswordRequestDto
 import com.example.app_clinica_atl.data.remote.dto.DoctorCreateRequestDto
 import com.example.app_clinica_atl.data.remote.dto.DoctorDto
+import com.example.app_clinica_atl.data.remote.dto.DoctorUpdateRequestDto
 import com.example.app_clinica_atl.data.remote.dto.EspecialidadCreateRequestDto
 import com.example.app_clinica_atl.data.remote.dto.EspecialidadRequestDto
 import com.example.app_clinica_atl.data.remote.dto.EspecialidadResponseDto
@@ -85,7 +87,7 @@ interface UsuariosApi {
     @PUT("doctores/{id}")
     suspend fun updateDoc(
         @Path("id") id: Long,
-        @Body doc: DoctorDto
+        @Body doctor: DoctorUpdateRequestDto
     ): Response<DoctorDto>
 
     @DELETE("doctores/{id}")
@@ -114,8 +116,10 @@ interface UsuariosApi {
         @Body request: EspecialidadUpdateRequestDto
     ): Response<EspecialidadResponseDto>
 
+    // Ojo: el baseUrl ya incluye /api/v1/, así que aquí sólo usamos "doctores".
+    // Mapea directamente al /api/v1/doctores que manipula la tabla Doctores del backend.
     @POST("doctores")
-    suspend fun createDoctorForUser(@Body body: DoctorCreateRequestDto): Response<DoctorDto>
+    suspend fun createDoctor(@Body doctor: DoctorCreateRequestDto): Response<DoctorDto>
 
     // --- CÓDIGO CORREGIDO ---
     @Multipart
@@ -133,6 +137,12 @@ interface UsuariosApi {
         @Path("id") id: Long,
         @Body request: AdministradorUpdateRequestDto
     ): Response<AdministradorDto>
+
+    @PUT("administradores/{id}/contrasena")
+    suspend fun changeAdminPassword(
+        @Path("id") id: Long,
+        @Body request: ChangePasswordRequestDto
+    ): Response<Unit>
 
     @POST("especialidades")
     suspend fun createSpecialty(@Body body: EspecialidadRequestDto): retrofit2.Response<EspecialidadResponseDto>

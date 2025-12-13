@@ -28,27 +28,39 @@ class AdminViewDoctorsViewModel(
     val uiState: StateFlow<AdminViewDoctorsUiState> = _uiState.asStateFlow()
 
     init {
-        loadDoctors()
+        loadDoctorsWithSpecialties()
     }
 
-    private fun loadDoctors() {
+    private fun loadDoctorsWithSpecialties() {
         viewModelScope.launch {
             _uiState.update { it.copy(isLoading = true) }
-            val result = repository.getAllDoctors()
-            if (result.isSuccess) {
-                val doctors = result.getOrNull().orEmpty()
+            val specialtiesResult = repository.getAllSpecialties()
+            val doctorsResult = repository.getAllDoctors()
+
+            if (specialtiesResult.isSuccess && doctorsResult.isSuccess) {
+                val specialties = specialtiesResult.getOrNull().orEmpty()
+                val doctors = doctorsResult.getOrNull().orEmpty()
+                val specialtyMap = specialties.associate { it.id to it.name }
+                val enrichedDoctors = doctors.map { doc ->
+                    val specialtyName = doc.idEspecialidad?.let { specialtyMap[it] }
+                    doc.copy(especialidad = specialtyName)
+                }
                 _uiState.update {
                     it.copy(
                         isLoading = false,
-                        doctorsList = doctors,
-                        filteredList = doctors
+                        doctorsList = enrichedDoctors,
+                        filteredList = enrichedDoctors,
+                        errorMsg = null
                     )
                 }
             } else {
+                val errorMsg = specialtiesResult.exceptionOrNull()?.message
+                    ?: doctorsResult.exceptionOrNull()?.message
+                    ?: "Error cargando lista"
                 _uiState.update {
                     it.copy(
                         isLoading = false,
-                        errorMsg = result.exceptionOrNull()?.message ?: "Error cargando lista"
+                        errorMsg = errorMsg
                     )
                 }
             }

@@ -3,6 +3,7 @@ package com.example.app_clinica_atl.ui.viewmodel
 import com.example.app_clinica_atl.data.remote.dto.AdministradorUpdateRequestDto
 import com.example.app_clinica_atl.data.remote.dto.DoctorCreateRequestDto
 import com.example.app_clinica_atl.data.remote.dto.DoctorDto
+import com.example.app_clinica_atl.data.remote.dto.DoctorUpdateRequestDto
 import com.example.app_clinica_atl.data.remote.dto.EspecialidadDto
 import com.example.app_clinica_atl.data.remote.dto.EspecialidadRequestDto
 import com.example.app_clinica_atl.data.remote.dto.EspecialidadUpdateRequestDto
@@ -51,7 +52,7 @@ class AdminAddDoctorViewModelTest {
         override suspend fun getAllDoctors() = Result.failure(IllegalStateException("not used"))
         override suspend fun getDoctorById(doctorId: Long) = Result.failure(IllegalStateException("not used"))
         override suspend fun createDoctor(request: DoctorCreateRequestDto) = createDoctorResult
-        override suspend fun updateDoctor(doctorId: Long, request: DoctorDto) = Result.failure(IllegalStateException("not used"))
+        override suspend fun updateDoctor(doctorId: Long, request: DoctorUpdateRequestDto) = Result.failure(IllegalStateException("not used"))
         override suspend fun deactivateDoctor(doctorId: Long) = Result.success(Unit)
         override suspend fun getAllSpecialties() = Result.success(specialties)
         override suspend fun createSpecialty(request: EspecialidadRequestDto) = Result.failure(IllegalStateException("not used"))
@@ -136,7 +137,7 @@ class AdminAddDoctorViewModelTest {
         advanceUntilIdle()
 
         val state = vm.uiState.value
-        assertEquals("backend down", state.errorMsg)
+        assertEquals("Error creando doctor: backend down", state.errorMsg)
         assertFalse(state.registrationSuccess)
     }
 

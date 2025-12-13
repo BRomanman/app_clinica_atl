@@ -4,8 +4,14 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.viewModelScope
 import com.example.app_clinica_atl.data.remote.dto.DoctorDto
+import com.example.app_clinica_atl.data.remote.dto.DoctorUpdateRequestDto
+import com.example.app_clinica_atl.data.remote.dto.EspecialidadDto
 import com.example.app_clinica_atl.data.repository.AdminRepository
+import com.example.app_clinica_atl.domain.validation.validateChileanPhoneNumber
+import com.example.app_clinica_atl.domain.validation.validateEmail
+import com.example.app_clinica_atl.domain.validation.validateRequired
 import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
@@ -13,8 +19,25 @@ import kotlinx.coroutines.launch
 data class AdminEditDoctorUiState(
     val nombre: String = "",
     val apellido: String = "",
+    val birthDate: String = "",
     val email: String = "",
     val telefono: String = "",
+    val tarifaConsulta: String = "",
+    val sueldo: String = "",
+    val bono: String = "",
+    val activo: Boolean = true,
+    val backendSpecialties: List<EspecialidadDto> = emptyList(),
+    val selectedSpecialtyId: Long? = null,
+    val selectedSpecialtyName: String = "",
+    val specialtyError: String? = null,
+    val nombreError: String? = null,
+    val apellidoError: String? = null,
+    val birthDateError: String? = null,
+    val emailError: String? = null,
+    val telefonoError: String? = null,
+    val tarifaError: String? = null,
+    val sueldoError: String? = null,
+    val bonoError: String? = null,
     val isLoading: Boolean = true,
     val updateSuccess: Boolean = false,
     val errorMsg: String? = null
@@ -26,7 +49,7 @@ class AdminEditDoctorViewModel(
 ) : ViewModel() {
 
     private val _uiState = MutableStateFlow(AdminEditDoctorUiState())
-    val uiState = _uiState.asStateFlow()
+    val uiState: StateFlow<AdminEditDoctorUiState> = _uiState.asStateFlow()
 
     init {
         loadDoctor()
@@ -34,58 +57,203 @@ class AdminEditDoctorViewModel(
 
     private fun loadDoctor() {
         viewModelScope.launch {
-            _uiState.update { it.copy(isLoading = true) }
+            _uiState.update { it.copy(isLoading = true, errorMsg = null, updateSuccess = false) }
             val result = repository.getDoctorById(doctorId)
             if (result.isSuccess) {
                 val doc = result.getOrNull()!!
-                val firstName = doc.nombre ?: doc.usuario?.nombre ?: ""
-                val lastName = doc.apellido ?: doc.usuario?.apellido ?: ""
-                val email = doc.usuario?.correo ?: doc.correo.orEmpty()
-                val telefono = doc.usuario?.telefono ?: doc.telefono.orEmpty()
+                val rawBirth = doc.fechaNacimiento?.trim().orEmpty()
+                val birthValue = if (rawBirth.length >= 10) rawBirth.substring(0, 10) else rawBirth
+                _uiState.update {
+                    it.copy(
+                        nombre = doc.nombre.orEmpty(),
+                        apellido = doc.apellido.orEmpty(),
+                        birthDate = birthValue,
+                        email = doc.correo.orEmpty(),
+                        telefono = doc.telefono.orEmpty(),
+                        tarifaConsulta = doc.tarifaConsulta?.toString().orEmpty(),
+                        sueldo = doc.sueldo?.toString().orEmpty(),
+                        bono = doc.bono?.toString().orEmpty(),
+                        activo = doc.activo ?: true,
+                        selectedSpecialtyId = doc.idEspecialidad,
+                        selectedSpecialtyName = doc.especialidad.orEmpty()
+                    )
+                }
+                loadSpecialtiesForDoctor(doc)
+            } else {
                 _uiState.update {
                     it.copy(
                         isLoading = false,
-                        nombre = firstName,
-                        apellido = lastName,
-                        email = email,
-                        telefono = telefono
+                        errorMsg = result.exceptionOrNull()?.message ?: "Error cargando doctor"
+                    )
+                }
+            }
+        }
+    }
+
+    private fun loadSpecialtiesForDoctor(doctor: DoctorDto) {
+        viewModelScope.launch {
+            val result = repository.getAllSpecialties()
+            if (result.isSuccess) {
+                val specialties = result.getOrNull().orEmpty()
+                val specialtyName = specialties.firstOrNull { it.id == doctor.idEspecialidad }?.name
+                    ?: doctor.especialidad.orEmpty()
+                _uiState.update {
+                    it.copy(
+                        backendSpecialties = specialties,
+                        selectedSpecialtyName = specialtyName,
+                        isLoading = false,
+                        specialtyError = null
                     )
                 }
             } else {
-                _uiState.update { it.copy(isLoading = false, errorMsg = "Error cargando doctor") }
+                _uiState.update {
+                    it.copy(
+                        backendSpecialties = emptyList(),
+                        isLoading = false,
+                        errorMsg = result.exceptionOrNull()?.message ?: "Error cargando especialidades"
+                    )
+                }
             }
         }
     }
 
-    fun onNombreChange(v: String) = _uiState.update { it.copy(nombre = v) }
-    fun onApellidoChange(v: String) = _uiState.update { it.copy(apellido = v) }
-    fun onTelefonoChange(v: String) = _uiState.update { it.copy(telefono = v) }
+    fun onNombreChange(value: String) =
+        _uiState.update { it.copy(nombre = value, nombreError = null, errorMsg = null, updateSuccess = false) }
+
+    fun onApellidoChange(value: String) =
+        _uiState.update { it.copy(apellido = value, apellidoError = null, errorMsg = null, updateSuccess = false) }
+
+    fun onBirthDateChange(value: String) =
+        _uiState.update { it.copy(birthDate = value, birthDateError = null, errorMsg = null, updateSuccess = false) }
+
+    fun onEmailChange(value: String) =
+        _uiState.update { it.copy(email = value, emailError = null, errorMsg = null, updateSuccess = false) }
+
+    fun onTelefonoChange(value: String) =
+        _uiState.update { it.copy(telefono = value, telefonoError = null, errorMsg = null, updateSuccess = false) }
+
+    fun onTarifaChange(value: String) =
+        _uiState.update { it.copy(tarifaConsulta = value, tarifaError = null, errorMsg = null, updateSuccess = false) }
+
+    fun onSueldoChange(value: String) =
+        _uiState.update { it.copy(sueldo = value, sueldoError = null, errorMsg = null, updateSuccess = false) }
+
+    fun onBonoChange(value: String) =
+        _uiState.update { it.copy(bono = value, bonoError = null, errorMsg = null, updateSuccess = false) }
+
+    fun onSpecialtySelected(specialty: EspecialidadDto) =
+        _uiState.update {
+            it.copy(
+                selectedSpecialtyId = specialty.id,
+                selectedSpecialtyName = specialty.name,
+                specialtyError = null,
+                errorMsg = null,
+                updateSuccess = false
+            )
+        }
 
     fun saveChanges() {
         viewModelScope.launch {
-            _uiState.update { it.copy(isLoading = true, updateSuccess = false) }
-            val updateDto = DoctorDto(
-                id = doctorId,
-                nombre = _uiState.value.nombre,
-                apellido = _uiState.value.apellido,
-                correo = _uiState.value.email,
-                telefono = _uiState.value.telefono
+            val state = _uiState.value
+            val nombreError = validateRequired(state.nombre, "Nombre")
+            val apellidoError = validateRequired(state.apellido, "Apellido")
+            val birthDateError = validateBirthDate(state.birthDate)
+            val emailError = validateEmail(state.email)
+            val telefonoError = validateChileanPhoneNumber(state.telefono)
+            val tarifaValue = parseInt(state.tarifaConsulta)
+            val tarifaError = if (tarifaValue == null || tarifaValue <= 0) "Tarifa invalida" else null
+            val sueldoValue = parseLong(state.sueldo)
+            val sueldoError = if (sueldoValue == null || sueldoValue <= 0L) "Salario invalido" else null
+            val bonoValue = parseLongAllowBlank(state.bono)
+            val bonoError = if (bonoValue == null || bonoValue < 0L) "Bono invalido" else null
+            val specialtyError = if (state.selectedSpecialtyId == null) "Debe seleccionar una especialidad" else null
+
+            if (listOf(
+                    nombreError, apellidoError, birthDateError, emailError,
+                    telefonoError, tarifaError, sueldoError, bonoError, specialtyError
+                ).any { it != null }
+            ) {
+                _uiState.update {
+                    it.copy(
+                        nombreError = nombreError,
+                        apellidoError = apellidoError,
+                        birthDateError = birthDateError,
+                        emailError = emailError,
+                        telefonoError = telefonoError,
+                        tarifaError = tarifaError,
+                        sueldoError = sueldoError,
+                        bonoError = bonoError,
+                        specialtyError = specialtyError,
+                        isLoading = false,
+                        updateSuccess = false
+                    )
+                }
+                return@launch
+            }
+
+            val request = DoctorUpdateRequestDto(
+                nombre = state.nombre.trim(),
+                apellido = state.apellido.trim(),
+                fechaNacimiento = state.birthDate.trim(),
+                correo = state.email.trim(),
+                telefono = state.telefono.trim(),
+                idEspecialidad = state.selectedSpecialtyId!!,
+                tarifaConsulta = tarifaValue!!,
+                sueldo = sueldoValue!!,
+                bono = bonoValue!!,
+                activo = state.activo
             )
-            val result = repository.updateDoctor(doctorId, updateDto)
+
+            _uiState.update { it.copy(isLoading = true, errorMsg = null, updateSuccess = false) }
+            val result = repository.updateDoctor(doctorId, request)
             if (result.isSuccess) {
                 _uiState.update { it.copy(isLoading = false, updateSuccess = true) }
             } else {
-                _uiState.update { it.copy(isLoading = false, errorMsg = result.exceptionOrNull()?.message) }
+                _uiState.update {
+                    it.copy(
+                        isLoading = false,
+                        errorMsg = result.exceptionOrNull()?.message ?: "Error actualizando doctor"
+                    )
+                }
             }
         }
     }
+
+    private fun sanitizeNumber(raw: String): String =
+        raw.replace("\\s".toRegex(), "")
+            .replace(".", "")
+            .replace(",", "")
+
+    private fun parseInt(raw: String): Int? {
+        val clean = sanitizeNumber(raw)
+        return if (clean.isEmpty()) null else clean.toIntOrNull()
+    }
+
+    private fun parseLong(raw: String): Long? {
+        val clean = sanitizeNumber(raw)
+        return if (clean.isEmpty()) null else clean.toLongOrNull()
+    }
+
+    private fun parseLongAllowBlank(raw: String): Long? {
+        val clean = sanitizeNumber(raw)
+        return when {
+            clean.isEmpty() -> 0L
+            else -> clean.toLongOrNull()
+        }
+    }
+
+    private fun validateBirthDate(value: String): String? {
+        if (value.isBlank()) return "Fecha de nacimiento es requerida."
+        val regex = Regex("^\\d{4}-\\d{2}-\\d{2}$")
+        return if (!regex.matches(value)) "Formato invalido (aaaa-mm-dd)." else null
+    }
 }
 
-// Esta es la Factory que el NavGraph estaba buscando y no encontraba
 class AdminEditDoctorViewModelFactory(
     private val repo: AdminRepository,
     private val id: Long
 ) : ViewModelProvider.Factory {
+    @Suppress("UNCHECKED_CAST")
     override fun <T : ViewModel> create(modelClass: Class<T>): T {
         return AdminEditDoctorViewModel(repo, id) as T
     }

@@ -11,8 +11,11 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ArrowBack
+import androidx.compose.material.icons.filled.Visibility
+import androidx.compose.material.icons.filled.VisibilityOff
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
+import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -21,6 +24,8 @@ import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.input.KeyboardType
+import androidx.compose.ui.text.input.PasswordVisualTransformation
+import androidx.compose.ui.text.input.VisualTransformation
 import androidx.compose.ui.unit.dp
 import androidx.core.content.FileProvider
 import coil.compose.AsyncImage
@@ -77,6 +82,10 @@ fun AdminProfileScreen(
     LaunchedEffect(uiState.updateSuccess) {
         if(uiState.updateSuccess) viewModel.clearMsg()
     }
+
+    var currentPasswordVisible by rememberSaveable { mutableStateOf(false) }
+    var newPasswordVisible by rememberSaveable { mutableStateOf(false) }
+    var confirmPasswordVisible by rememberSaveable { mutableStateOf(false) }
 
     Scaffold(
         topBar = {
@@ -170,10 +179,12 @@ fun AdminProfileScreen(
 
             OutlinedTextField(
                 value = uiState.email,
-                onValueChange = {},
-                label = { Text("Correo (No editable)") },
+                onValueChange = viewModel::onEmailChange,
+                label = { Text("Correo") },
                 modifier = Modifier.fillMaxWidth(),
-                enabled = false
+                enabled = uiState.isEditing,
+                keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Email),
+                singleLine = true
             )
             Spacer(modifier = Modifier.height(8.dp))
 
@@ -188,6 +199,120 @@ fun AdminProfileScreen(
             )
 
             Spacer(modifier = Modifier.height(24.dp))
+
+            if (!uiState.isChangingPassword) {
+                OutlinedButton(
+                    onClick = viewModel::toggleChangePassword,
+                    modifier = Modifier.fillMaxWidth()
+                ) {
+                    Text("Cambiar contraseña")
+                }
+            } else {
+                Column(verticalArrangement = Arrangement.spacedBy(8.dp), modifier = Modifier.fillMaxWidth()) {
+                    OutlinedTextField(
+                        value = uiState.currentPassword,
+                        onValueChange = viewModel::onCurrentPasswordChange,
+                        label = { Text("Contraseña actual") },
+                        modifier = Modifier.fillMaxWidth(),
+                        singleLine = true,
+                        keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Password),
+                        visualTransformation = if (currentPasswordVisible) VisualTransformation.None else PasswordVisualTransformation(),
+                        trailingIcon = {
+                            IconButton(onClick = { currentPasswordVisible = !currentPasswordVisible }) {
+                                val icon = if (currentPasswordVisible) Icons.Default.VisibilityOff else Icons.Default.Visibility
+                                Icon(imageVector = icon, contentDescription = null)
+                            }
+                        },
+                        isError = uiState.currentPasswordError != null
+                    )
+                    uiState.currentPasswordError?.let {
+                        Text(it, color = MaterialTheme.colorScheme.error, style = MaterialTheme.typography.bodySmall)
+                    }
+
+                    OutlinedTextField(
+                        value = uiState.newPassword,
+                        onValueChange = viewModel::onNewPasswordChange,
+                        label = { Text("Nueva contraseña") },
+                        modifier = Modifier.fillMaxWidth(),
+                        singleLine = true,
+                        keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Password),
+                        visualTransformation = if (newPasswordVisible) VisualTransformation.None else PasswordVisualTransformation(),
+                        trailingIcon = {
+                            IconButton(onClick = { newPasswordVisible = !newPasswordVisible }) {
+                                val icon = if (newPasswordVisible) Icons.Default.VisibilityOff else Icons.Default.Visibility
+                                Icon(imageVector = icon, contentDescription = null)
+                            }
+                        },
+                        isError = uiState.newPasswordError != null
+                    )
+                    uiState.newPasswordError?.let {
+                        Text(it, color = MaterialTheme.colorScheme.error, style = MaterialTheme.typography.bodySmall)
+                    }
+
+                    OutlinedTextField(
+                        value = uiState.confirmPassword,
+                        onValueChange = viewModel::onConfirmPasswordChange,
+                        label = { Text("Confirmar nueva contraseña") },
+                        modifier = Modifier.fillMaxWidth(),
+                        singleLine = true,
+                        keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Password),
+                        visualTransformation = if (confirmPasswordVisible) VisualTransformation.None else PasswordVisualTransformation(),
+                        trailingIcon = {
+                            IconButton(onClick = { confirmPasswordVisible = !confirmPasswordVisible }) {
+                                val icon = if (confirmPasswordVisible) Icons.Default.VisibilityOff else Icons.Default.Visibility
+                                Icon(imageVector = icon, contentDescription = null)
+                            }
+                        },
+                        isError = uiState.confirmPasswordError != null
+                    )
+                    uiState.confirmPasswordError?.let {
+                        Text(it, color = MaterialTheme.colorScheme.error, style = MaterialTheme.typography.bodySmall)
+                    }
+
+                    Row(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(top = 8.dp),
+                        horizontalArrangement = Arrangement.spacedBy(16.dp)
+                    ) {
+                        OutlinedButton(
+                            onClick = viewModel::toggleChangePassword,
+                            enabled = !uiState.isPasswordUpdating,
+                            modifier = Modifier.weight(1f)
+                        ) {
+                            Text("Cancelar")
+                        }
+                        Button(
+                            onClick = viewModel::changePassword,
+                            enabled = !uiState.isPasswordUpdating &&
+                                    uiState.currentPassword.isNotBlank() &&
+                                    uiState.newPassword.isNotBlank() &&
+                                    uiState.confirmPassword.isNotBlank() &&
+                                    uiState.newPasswordError == null &&
+                                    uiState.confirmPasswordError == null &&
+                                    uiState.newPassword == uiState.confirmPassword,
+                            modifier = Modifier.weight(1f)
+                        ) {
+                            if (uiState.isPasswordUpdating) {
+                                CircularProgressIndicator(modifier = Modifier.size(20.dp), strokeWidth = 2.dp)
+                                Spacer(modifier = Modifier.width(8.dp))
+                            }
+                            Text("Guardar contraseña")
+                        }
+                    }
+
+                    uiState.passwordChangeError?.let {
+                        Text(it, color = MaterialTheme.colorScheme.error, modifier = Modifier.padding(top = 4.dp))
+                    }
+                    if (uiState.passwordChangeSuccess) {
+                        Text(
+                            "Contraseña actualizada correctamente.",
+                            color = Color(0xFF2E7D32),
+                            modifier = Modifier.padding(top = 4.dp)
+                        )
+                    }
+                }
+            }
 
             // Mensajes y Botones
             if (uiState.errorMsg != null) {

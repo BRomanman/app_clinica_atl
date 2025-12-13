@@ -45,7 +45,7 @@ import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 // NO MÁS HILT
-import com.example.app_clinica_atl.data.remote.dto.UsuarioDto
+import com.example.app_clinica_atl.data.remote.dto.DoctorDto
 import com.example.app_clinica_atl.ui.viewmodel.doctor.DoctorSearchViewModel
 import com.example.app_clinica_atl.R // Asegúrate de tener este import
 
@@ -132,9 +132,10 @@ fun AdminDoctorSearchScreen(
                 verticalArrangement = Arrangement.spacedBy(12.dp)
             ) {
                 items(uiState.doctors) { doctor ->
+                    val doctorId = doctor.id ?: return@items
                     DoctorCard(
                         doctor = doctor,
-                        onClick = { onDoctorClick(doctor.id) }
+                        onClick = { onDoctorClick(doctorId) }
                     )
                 }
             }
@@ -144,7 +145,7 @@ fun AdminDoctorSearchScreen(
 
 @Composable
 private fun DoctorCard(
-    doctor: UsuarioDto,
+    doctor: DoctorDto,
     onClick: () -> Unit
 ) {
     Card(
@@ -159,9 +160,18 @@ private fun DoctorCard(
                 .padding(16.dp),
             verticalAlignment = Alignment.CenterVertically
         ) {
+            val fullName = listOfNotNull(
+                doctor.nombre?.trim(),
+                doctor.apellido?.trim()
+            ).filter { it.isNotBlank() }
+                .joinToString(" ")
+                .takeIf { it.isNotBlank() }
+                ?: "Doctor sin nombre"
+            val specialtyLabel = doctor.especialidad?.takeIf { it.isNotBlank() } ?: "Especialidad no definida"
+
             Image(
-                painter = painterResource(id = getDoctorImageResource(doctor.specialty)),
-                contentDescription = "Foto de ${doctor.name}",
+                painter = painterResource(id = getDoctorImageResource(doctor.especialidad)),
+                contentDescription = "Foto de $fullName",
                 modifier = Modifier
                     .size(60.dp)
                     .clip(CircleShape)
@@ -169,12 +179,12 @@ private fun DoctorCard(
             Spacer(modifier = Modifier.width(16.dp))
             Column(modifier = Modifier.weight(1f)) {
                 Text(
-                    text = doctor.name,
+                    text = fullName,
                     style = MaterialTheme.typography.titleMedium,
                     fontWeight = FontWeight.Bold
                 )
                 Text(
-                    text = doctor.specialty ?: "Especialidad no definida",
+                    text = specialtyLabel,
                     style = MaterialTheme.typography.bodyMedium,
                     color = MaterialTheme.colorScheme.primary
                 )

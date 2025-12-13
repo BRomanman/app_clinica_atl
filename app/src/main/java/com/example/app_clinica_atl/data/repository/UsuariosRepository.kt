@@ -9,7 +9,6 @@ import com.example.app_clinica_atl.data.remote.dto.EspecialidadUpdateRequestDto
 import com.example.app_clinica_atl.data.remote.dto.LoginRequestDto
 import com.example.app_clinica_atl.data.remote.dto.RolRequest
 import com.example.app_clinica_atl.data.remote.dto.UsuarioDto
-import com.example.app_clinica_atl.data.remote.dto.UsuarioIdRefDto // <-- IMPORT AÑADIDO
 import com.example.app_clinica_atl.data.remote.dto.UsuarioResponseDto
 import com.example.app_clinica_atl.data.remote.dto.UsuarioUpdateRequestDto
 import com.example.app_clinica_atl.data.remote.dto.roleToId
@@ -338,10 +337,6 @@ class UsuariosRepository(
     ): Result<UsuarioDto> = withContext(Dispatchers.IO) {
         runCatching {
             val doctorPayload = DoctorCreateRequestDto(
-                tarifaConsulta = tarifaConsulta,
-                sueldo = sueldo,
-                bono = bono,
-                usuario = UsuarioIdRefDto(id = null),
                 nombre = nombre,
                 apellido = apellido,
                 fechaNacimiento = fechaNacimiento,
@@ -349,8 +344,11 @@ class UsuariosRepository(
                 telefono = telefono,
                 contrasena = contrasena,
                 idRol = 2L,
-                tipo = "Doctor",
-                idEspecialidad = idEspecialidad
+                idEspecialidad = idEspecialidad,
+                tarifaConsulta = tarifaConsulta,
+                sueldo = sueldo,
+                bono = bono ?: 0L,
+                activo = true
             )
             val response = usuariosApi.createDoc(doctorPayload.toDoctorDto())
             if (response.isSuccessful) {

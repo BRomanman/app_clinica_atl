@@ -6,6 +6,8 @@ import com.example.app_clinica_atl.data.remote.dto.AdministradorDto
 import com.example.app_clinica_atl.data.remote.dto.AdministradorUpdateRequestDto
 import com.example.app_clinica_atl.data.remote.dto.DoctorCreateRequestDto
 import com.example.app_clinica_atl.data.remote.dto.DoctorDto
+import com.example.app_clinica_atl.data.remote.dto.ChangePasswordRequestDto
+import com.example.app_clinica_atl.data.remote.dto.DoctorUpdateRequestDto
 import com.example.app_clinica_atl.data.remote.dto.EspecialidadDto
 import com.example.app_clinica_atl.data.remote.dto.EspecialidadRequestDto
 import com.example.app_clinica_atl.data.remote.dto.EspecialidadResponseDto
@@ -40,6 +42,31 @@ class AdminRepositoryImpl(
         withContext(Dispatchers.IO) {
             val response = api.updateAdmin(adminId, request)
             response.toResult("administrador")
+        }
+
+    override suspend fun changeAdminPassword(
+        adminId: Long,
+        currentPassword: String,
+        newPassword: String
+    ): Result<Unit> =
+        withContext(Dispatchers.IO) {
+            val request = ChangePasswordRequestDto(
+                currentPassword = currentPassword,
+                newPassword = newPassword
+            )
+            val response = api.changeAdminPassword(adminId, request)
+            if (response.isSuccessful) {
+                Result.success(Unit)
+            } else {
+                val code = response.code()
+                val message = if (code in listOf(400, 401, 403)) {
+                    "WRONG_CURRENT_PASSWORD"
+                } else {
+                    response.errorBody()?.string()?.takeIf { it.isNotBlank() }
+                        ?: "No se pudo actualizar la contraseña."
+                }
+                Result.failure(Exception(message))
+            }
         }
 
     override suspend fun uploadAdminProfilePhoto(
@@ -80,13 +107,13 @@ class AdminRepositoryImpl(
         request: DoctorCreateRequestDto
     ): Result<DoctorDto> =
         withContext(Dispatchers.IO) {
-            val response = api.createDoctorForUser(request)
+            val response = api.createDoctor(request)
             response.toResult("doctor")
         }
 
     override suspend fun updateDoctor(
         doctorId: Long,
-        request: DoctorDto
+        request: DoctorUpdateRequestDto
     ): Result<DoctorDto> =
         withContext(Dispatchers.IO) {
             val response = api.updateDoc(doctorId, request)

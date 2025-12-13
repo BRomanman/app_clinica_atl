@@ -192,22 +192,23 @@ class AdminAddDoctorViewModel(
             return
         }
 
+        val salaryValue = salaryLong!!
+
         _uiState.update { it.copy(isLoading = true, errorMsg = null) }
 
         viewModelScope.launch {
             val passPrefix = s.lastName.padEnd(4, 'x').take(4).replaceFirstChar { it.uppercase() }
             val password = "$passPrefix${Random.nextInt(100, 1000)}@"
-            val chosenSpecId = s.selectedSpecialtyId ?: s.backendSpecialties.firstOrNull { it.name == s.selectedSpecialties.firstOrNull() }?.id
-            if (chosenSpecId == null || chosenSpecId <= 0) {
+            val selectedSpecName = s.selectedSpecialties.firstOrNull()
+            val chosenSpecId = s.selectedSpecialtyId ?: selectedSpecName?.let { name ->
+                s.backendSpecialties.firstOrNull { it.name.equals(name, ignoreCase = true) }?.id
+            }
+            if (chosenSpecId == null || chosenSpecId <= 0L) {
                 _uiState.update { it.copy(isLoading = false, errorMsg = "Especialidad inválida") }
                 return@launch
             }
 
             val doctorRequest = DoctorCreateRequestDto(
-                tarifaConsulta = DoctorDefaults.DEFAULT_TARIFA_CONSULTA,
-                sueldo = salaryLong,
-                bono = 0L,
-                usuario = null,
                 nombre = s.firstName,
                 apellido = s.lastName,
                 fechaNacimiento = s.birthDate,
@@ -215,8 +216,11 @@ class AdminAddDoctorViewModel(
                 telefono = s.phone,
                 contrasena = password,
                 idRol = 2L,
-                tipo = "Doctor",
-                idEspecialidad = chosenSpecId
+                idEspecialidad = chosenSpecId,
+                tarifaConsulta = DoctorDefaults.DEFAULT_TARIFA_CONSULTA,
+                sueldo = salaryValue,
+                bono = 0L,
+                activo = true
             )
             val doctorRes = adminRepository.createDoctor(doctorRequest)
             if (doctorRes.isFailure) {

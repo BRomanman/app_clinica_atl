@@ -15,7 +15,8 @@ object RetrofitClient {
     //Basti: vzv5wjj9
     //Diego: 3zvxm102
 
-    private const val CODIGO = "3zvxm102"
+    private const val CODIGO = "vzv5wjj9"
+    // El cliente de usuarios ya apunta al prefijo /api/v1/.
     const val BASE_URL_USUARIO = "https://$CODIGO-8082.brs.devtunnels.ms/api/v1/"
     private const val BASE_URL_SEGURO = "https://$CODIGO-8084.brs.devtunnels.ms/api/v1/"
     private const val BASE_URL_CITAS = "https://$CODIGO-8080.brs.devtunnels.ms/api/v1/"

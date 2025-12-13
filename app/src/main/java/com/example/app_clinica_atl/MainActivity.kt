@@ -97,8 +97,7 @@ class MainActivity : ComponentActivity() {
     }
     private val doctorSearchViewModel: DoctorSearchViewModel by viewModels {
         DoctorSearchViewModelFactory(
-            doctorRepository,
-            usuariosRepository
+            adminRepository
         )
     }
     private val doctorProfileViewModel: DoctorProfileViewModel by viewModels {

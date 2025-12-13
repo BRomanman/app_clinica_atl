@@ -2,8 +2,10 @@ package com.example.app_clinica_atl.data.repository
 
 import com.example.app_clinica_atl.data.remote.dto.AdministradorDto
 import com.example.app_clinica_atl.data.remote.dto.AdministradorUpdateRequestDto
+import com.example.app_clinica_atl.data.remote.dto.ChangePasswordRequestDto
 import com.example.app_clinica_atl.data.remote.dto.DoctorCreateRequestDto
 import com.example.app_clinica_atl.data.remote.dto.DoctorDto
+import com.example.app_clinica_atl.data.remote.dto.DoctorUpdateRequestDto
 import com.example.app_clinica_atl.data.remote.dto.EspecialidadDto
 import com.example.app_clinica_atl.data.remote.dto.EspecialidadRequestDto
 import com.example.app_clinica_atl.data.remote.dto.EspecialidadUpdateRequestDto
@@ -47,10 +49,16 @@ interface AdminRepository {
 
     suspend fun updateDoctor(
         doctorId: Long,
-        request: DoctorDto
+        request: DoctorUpdateRequestDto
     ): Result<DoctorDto>
 
     suspend fun deactivateDoctor(doctorId: Long): Result<Unit>
+
+    suspend fun changeAdminPassword(
+        adminId: Long,
+        currentPassword: String,
+        newPassword: String
+    ): Result<Unit>
 
     // --- ESPECIALIDADES ---
 

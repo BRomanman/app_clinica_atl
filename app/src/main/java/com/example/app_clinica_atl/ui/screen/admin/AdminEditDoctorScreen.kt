@@ -10,6 +10,10 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
@@ -22,6 +26,7 @@ fun AdminEditDoctorScreen(
     onBackClick: () -> Unit
 ) {
     val uiState by viewModel.uiState.collectAsState()
+    var specialtyExpanded by remember { mutableStateOf(false) }
 
     Scaffold(
         topBar = {
@@ -43,15 +48,19 @@ fun AdminEditDoctorScreen(
                 .verticalScroll(rememberScrollState())
         ) {
             if (uiState.isLoading) {
-                CircularProgressIndicator()
+                CircularProgressIndicator(modifier = Modifier.align(Alignment.CenterHorizontally))
             } else {
                 OutlinedTextField(
                     value = uiState.nombre,
                     onValueChange = viewModel::onNombreChange,
                     label = { Text("Nombre") },
                     modifier = Modifier.fillMaxWidth(),
-                    singleLine = true
+                    singleLine = true,
+                    isError = uiState.nombreError != null
                 )
+                uiState.nombreError?.let {
+                    Text(it, color = MaterialTheme.colorScheme.error, modifier = Modifier.padding(top = 4.dp))
+                }
                 Spacer(modifier = Modifier.height(8.dp))
 
                 OutlinedTextField(
@@ -59,18 +68,26 @@ fun AdminEditDoctorScreen(
                     onValueChange = viewModel::onApellidoChange,
                     label = { Text("Apellido") },
                     modifier = Modifier.fillMaxWidth(),
-                    singleLine = true
+                    singleLine = true,
+                    isError = uiState.apellidoError != null
                 )
+                uiState.apellidoError?.let {
+                    Text(it, color = MaterialTheme.colorScheme.error, modifier = Modifier.padding(top = 4.dp))
+                }
                 Spacer(modifier = Modifier.height(8.dp))
 
                 OutlinedTextField(
                     value = uiState.email,
-                    onValueChange = { },
-                    label = { Text("Email (Solo lectura)") },
+                    onValueChange = viewModel::onEmailChange,
+                    label = { Text("Email") },
                     modifier = Modifier.fillMaxWidth(),
-                    readOnly = true,
-                    enabled = false
+                    keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Email),
+                    singleLine = true,
+                    isError = uiState.emailError != null
                 )
+                uiState.emailError?.let {
+                    Text(it, color = MaterialTheme.colorScheme.error, modifier = Modifier.padding(top = 4.dp))
+                }
                 Spacer(modifier = Modifier.height(8.dp))
 
                 OutlinedTextField(
@@ -79,9 +96,104 @@ fun AdminEditDoctorScreen(
                     label = { Text("Teléfono") },
                     modifier = Modifier.fillMaxWidth(),
                     keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Phone),
-                    singleLine = true
+                    singleLine = true,
+                    isError = uiState.telefonoError != null
                 )
-                Spacer(modifier = Modifier.height(24.dp))
+                uiState.telefonoError?.let {
+                    Text(it, color = MaterialTheme.colorScheme.error, modifier = Modifier.padding(top = 4.dp))
+                }
+                Spacer(modifier = Modifier.height(8.dp))
+
+                OutlinedTextField(
+                    value = uiState.birthDate,
+                    onValueChange = viewModel::onBirthDateChange,
+                    label = { Text("Fecha de nacimiento (aaaa-mm-dd)") },
+                    modifier = Modifier.fillMaxWidth(),
+                    singleLine = true,
+                    isError = uiState.birthDateError != null
+                )
+                uiState.birthDateError?.let {
+                    Text(it, color = MaterialTheme.colorScheme.error, modifier = Modifier.padding(top = 4.dp))
+                }
+                Spacer(modifier = Modifier.height(8.dp))
+
+                OutlinedTextField(
+                    value = uiState.tarifaConsulta,
+                    onValueChange = viewModel::onTarifaChange,
+                    label = { Text("Tarifa consulta (CLP)") },
+                    modifier = Modifier.fillMaxWidth(),
+                    singleLine = true,
+                    keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
+                    isError = uiState.tarifaError != null
+                )
+                uiState.tarifaError?.let {
+                    Text(it, color = MaterialTheme.colorScheme.error, modifier = Modifier.padding(top = 4.dp))
+                }
+                Spacer(modifier = Modifier.height(8.dp))
+
+                OutlinedTextField(
+                    value = uiState.sueldo,
+                    onValueChange = viewModel::onSueldoChange,
+                    label = { Text("Salario (CLP)") },
+                    modifier = Modifier.fillMaxWidth(),
+                    singleLine = true,
+                    keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
+                    isError = uiState.sueldoError != null
+                )
+                uiState.sueldoError?.let {
+                    Text(it, color = MaterialTheme.colorScheme.error, modifier = Modifier.padding(top = 4.dp))
+                }
+                Spacer(modifier = Modifier.height(8.dp))
+
+                OutlinedTextField(
+                    value = uiState.bono,
+                    onValueChange = viewModel::onBonoChange,
+                    label = { Text("Bono (CLP)") },
+                    modifier = Modifier.fillMaxWidth(),
+                    singleLine = true,
+                    keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
+                    isError = uiState.bonoError != null
+                )
+                uiState.bonoError?.let {
+                    Text(it, color = MaterialTheme.colorScheme.error, modifier = Modifier.padding(top = 4.dp))
+                }
+                Spacer(modifier = Modifier.height(12.dp))
+
+                ExposedDropdownMenuBox(
+                    expanded = specialtyExpanded,
+                    onExpandedChange = { specialtyExpanded = !specialtyExpanded }
+                ) {
+                    OutlinedTextField(
+                        value = uiState.selectedSpecialtyName,
+                        onValueChange = {},
+                        readOnly = true,
+                        label = { Text("Especialidad") },
+                        placeholder = { Text("Seleccione una especialidad") },
+                        trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded = specialtyExpanded) },
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .menuAnchor(),
+                        isError = uiState.specialtyError != null
+                    )
+                    ExposedDropdownMenu(
+                        expanded = specialtyExpanded,
+                        onDismissRequest = { specialtyExpanded = false }
+                    ) {
+                        uiState.backendSpecialties.forEach { specialty ->
+                            DropdownMenuItem(
+                                text = { Text(specialty.name) },
+                                onClick = {
+                                    viewModel.onSpecialtySelected(specialty)
+                                    specialtyExpanded = false
+                                }
+                            )
+                        }
+                    }
+                }
+                uiState.specialtyError?.let {
+                    Text(it, color = MaterialTheme.colorScheme.error, modifier = Modifier.padding(top = 4.dp))
+                }
+                Spacer(modifier = Modifier.height(12.dp))
 
                 Button(
                     onClick = viewModel::saveChanges,
