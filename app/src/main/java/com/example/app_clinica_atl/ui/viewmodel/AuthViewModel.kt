@@ -16,7 +16,7 @@ import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 
-// --- Estados de UI para Login ---
+
 data class LoginUiState(
     val email: String = "",
     val emailError: String? = null,
@@ -69,6 +69,11 @@ data class RegisterUiState(
     val registerSuccess: Boolean = false
 )
 
+
+// actualiza los estados actuales para que los errores salgan en el momento
+
+
+
 class AuthViewModel(
     private val userRepository: UsuariosRepository,
     private val userPreferences: UserPreferences
@@ -84,6 +89,9 @@ class AuthViewModel(
     val userDoctorIdFlow = userPreferences.userDoctorIdFlow
 
     // --- Handlers de Login (con validación en tiempo real) ---
+
+
+
     fun onLoginEmailChange(email: String) {
         val emailError = validateEmail(email)
         _loginUiState.update { it.copy(email = email, emailError = emailError, loginError = null) }
@@ -134,6 +142,8 @@ class AuthViewModel(
             )
         }
     }
+
+
 
     // --- Lógica de Negocio (sin cambios) ---
     fun loginUser() {
@@ -431,7 +441,7 @@ class AuthViewModel(
         }
         _registerUiState.update { it.copy(isLoading = true, registerError = null) }
         viewModelScope.launch {
-            // ¡CAMBIO! Combinamos firstName y lastName en el 'name' de la entidad
+
             val newUser = UsuarioDto(
                 name = "${s.firstName} ${s.lastName}",
                 email = s.email,

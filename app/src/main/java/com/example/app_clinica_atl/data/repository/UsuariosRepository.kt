@@ -27,16 +27,55 @@ import retrofit2.HttpException
 import retrofit2.Response
 import java.io.File
 
+/*
+* Los repositorios son los encargados de acceder a los datos de la API y describir sus funciones*
+*/
+
+
 class UsuariosRepository(
     private val userPreferences: UserPreferences,
     private val usuariosApi: UsuariosApi = RetrofitClient.usuariosApi
 ) {
 
+    // login básico sin validación de credenciales. Luego este lo utilizamos
+    // para loginViaApi
     suspend fun login(email: String, pass: String): Result<UsuarioDto> = loginViaApi(email, pass)
 
-    /**
-     * Registra un paciente (rol fijo = 1). Doctores/administradores se crean en Empleados.
-     */
+
+    /*
+    * Si responde bien, guarda en UserPreferences todos los datos de sesión
+    * : userId, role, doctorId, nombre, apellido, correo, y el token JWT (token).
+    * El token queda cacheado en memoria gracias a UserPreferences
+    *
+    */
+    suspend fun loginViaApi(email: String, pass: String): Result<UsuarioDto> = withContext(Dispatchers.IO) {
+        try {
+            val loginRequest = LoginRequestDto(correo = email, contrasena = pass)
+            val loggedUser = usuariosApi.login(loginRequest)
+            userPreferences.saveUserSession(
+                id = loggedUser.userId,
+                role = loggedUser.role,
+                doctorId = loggedUser.doctorId,
+                nombre = loggedUser.nombre,
+                apellido = loggedUser.apellido,
+                correo = loggedUser.correo,
+                token = loggedUser.token
+            )
+            //guardamos en usuario DTO
+            Result.success(loggedUser.toUsuarioDtoFromLogin())
+        } catch (e: HttpException) {
+            val message = if (e.code() == 401) "Credenciales inválidas." else e.message()
+            Result.failure(Exception(message ?: "Error HTTP ${e.code()}", e))
+        } catch (e: Exception) {
+            Result.failure(e)
+        }
+    }
+
+
+
+
+
+    // por defecto en rol = 1 (paciente)
     suspend fun register(newUser: UsuarioDto): Result<UsuarioDto> = withContext(Dispatchers.IO) {
         try {
             val request = newUser.toUpdateRequest(forceRoleId = 1L)
@@ -55,10 +94,15 @@ class UsuariosRepository(
         }
     }
 
+
+
+
+
     suspend fun getUserById(id: Long): Result<UsuarioDto> = withContext(Dispatchers.IO) {
         try {
             val dto = usuariosApi.getUserById(id).toUsuarioDto()
             Result.success(dto)
+
         } catch (e: HttpException) {
             val message = if (e.code() == 404) "Usuario no encontrado." else e.message()
             Result.failure(Exception(message ?: "Error HTTP ${e.code()}", e))
@@ -66,10 +110,15 @@ class UsuariosRepository(
             Result.failure(e)
         }
     }
-
+    // esta funcion ayuda que se eviten los errores en caso de no existir el usuario
     fun getUserByIdAsFlow(id: Long): Flow<UsuarioDto?> = flow {
         emit(runCatching { usuariosApi.getUserById(id).toUsuarioDto() }.getOrNull())
     }
+
+
+
+
+
 
     suspend fun searchPatients(query: String): Result<List<UsuarioDto>> = withContext(Dispatchers.IO) {
         try {
@@ -160,27 +209,7 @@ class UsuariosRepository(
     fun buildAdminProfilePhotoUrl(adminId: Long): String =
         "${RetrofitClient.BASE_URL_USUARIO}administradores/$adminId/foto-perfil"
 
-    suspend fun loginViaApi(email: String, pass: String): Result<UsuarioDto> = withContext(Dispatchers.IO) {
-        try {
-            val loginRequest = LoginRequestDto(correo = email, contrasena = pass)
-            val loggedUser = usuariosApi.login(loginRequest)
-            userPreferences.saveUserSession(
-                id = loggedUser.userId,
-                role = loggedUser.role,
-                doctorId = loggedUser.doctorId,
-                nombre = loggedUser.nombre,
-                apellido = loggedUser.apellido,
-                correo = loggedUser.correo,
-                token = loggedUser.token
-            )
-            Result.success(loggedUser.toUsuarioDtoFromLogin())
-        } catch (e: HttpException) {
-            val message = if (e.code() == 401) "Credenciales inválidas." else e.message()
-            Result.failure(Exception(message ?: "Error HTTP ${e.code()}", e))
-        } catch (e: Exception) {
-            Result.failure(e)
-        }
-    }
+
 
     suspend fun requestPasswordReset(email: String): Result<String> = withContext(Dispatchers.IO) {
         try {
@@ -267,10 +296,10 @@ class UsuariosRepository(
         return MultipartBody.Part.createFormData("file", imageFile.name, requestBody)
     }
 
-
+    // todo revisar si es necesario, no se usa
     suspend fun createSpecialty(name: String) =
         Result.failure<EspecialidadResponseDto>(IllegalStateException("No se puede crear especialidad sin doctor. Usa 'Crear Doctor'."))
-    // ===================================================================
+
 
     suspend fun updateSpecialty(id: Long, name: String): Result<EspecialidadResponseDto> =
         withContext(Dispatchers.IO) {
@@ -285,12 +314,11 @@ class UsuariosRepository(
             }
         }
 
-    // --- CÓDIGO ACTUALIZADO ---
-    /**
+
+    /*
      * Crea la ficha de doctor para un usuario existente.
      * Envia tarifa_consulta obligatoria (NOT NULL en BD).
-     */
-    /**
+     *
      * Crea un doctor directamente en Empleados (API /doctores).
      */
     suspend fun createDoctor(
@@ -347,6 +375,19 @@ class UsuariosRepository(
         }
     }
 }
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 // --- Helper para /api/v1/usuarios ---
 private fun UsuarioDto.toUpdateRequest(forceRoleId: Long? = null): UsuarioUpdateRequestDto {

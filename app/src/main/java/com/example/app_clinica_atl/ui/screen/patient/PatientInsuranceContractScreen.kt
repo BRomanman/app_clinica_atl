@@ -377,7 +377,6 @@ fun ContratarSeguroScreen(
                     correoContacto = correoContacto,
                     telefonoContacto = telefonoContacto
                 )
-                showInsuranceNotification(context, "Contrato generado con éxito")
             }
         ) {
             Text("Confirmar Contratación")
@@ -400,7 +399,6 @@ fun ContratarSeguroScreen(
             Text(msg, color = Color(0xFF0A7F0A), style = MaterialTheme.typography.bodyMedium)
             LaunchedEffect(msg) {
                 Toast.makeText(context, "Contrato confirmado", Toast.LENGTH_SHORT).show()
-                showInsuranceNotification(context, "Contrato generado con éxito")
                 viewModel.clearMessages()
                 onBack()
             }

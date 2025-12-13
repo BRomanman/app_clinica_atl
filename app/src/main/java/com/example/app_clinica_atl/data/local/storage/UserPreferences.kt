@@ -27,8 +27,11 @@ private val Context.dataStore: DataStore<Preferences> by preferencesDataStore(
     name = USER_PREFERENCES_NAME
 )
 
-/**
- * Clase para gestionar la sesi«¸n del usuario (ID, Token, Rol y datos b·sicos) y preferencias (Tema).
+/*
+ *     User preferences es nuestro cach√© que dejamos inicializado cuando se inicia sesi√≥n,
+ *     con esto evitamos colocar los datos all the tiempo. Esto guarda el rol, el tokenCach√©
+ *     que despues se envia a AUTH INTERCEPTOR
+ *
  */
 class UserPreferences(context: Context) {
 
@@ -36,15 +39,19 @@ class UserPreferences(context: Context) {
     private val scope = CoroutineScope(SupervisorJob() + Dispatchers.IO)
     private val tokenCache = AtomicReference<String?>(null)
 
+
+    // es nuestro cach√© que dejamos inicializado cuando se inicia sesi√≥n
+    // con esto evitamos iniciar sesi√≥n all the tiempo
     private object PreferencesKeys {
         val USER_ID = longPreferencesKey("user_id")
         val USER_ROLE = stringPreferencesKey("user_role")
         val USER_DOCTOR_ID = longPreferencesKey("user_doctor_id")
+
+        // User_token es el encargdo de guardar el token JWT y luego se usa en auth interceptor
         val USER_TOKEN = stringPreferencesKey("user_token")
         val USER_NOMBRE = stringPreferencesKey("user_nombre")
         val USER_APELLIDO = stringPreferencesKey("user_apellido")
         val USER_EMAIL = stringPreferencesKey("user_correo")
-        // --- ∂≠∂≠LLAVE A«'ADIDA!! ---
         val THEME_PREFERENCE = stringPreferencesKey("theme_preference")
     }
 
@@ -61,7 +68,9 @@ class UserPreferences(context: Context) {
 
     private fun profileImageKey(userId: Long) = stringPreferencesKey("profile_image_url_$userId")
 
-    // --- Flujos de Sesi«¸n ---
+
+
+    //
     val userIdFlow: Flow<Long?> = dataStore.data
         .catch { exception ->
             if (exception is IOException) { emit(emptyPreferences()) } else { throw exception }
@@ -96,39 +105,8 @@ class UserPreferences(context: Context) {
             preferences[PreferencesKeys.USER_DOCTOR_ID]
         }
 
-    val tokenFlow: Flow<String?> = dataStore.data
-        .catch { exception ->
-            if (exception is IOException) { emit(emptyPreferences()) } else { throw exception }
-        }.map { preferences ->
-            preferences[PreferencesKeys.USER_TOKEN]
-        }
 
-    val userNombreFlow: Flow<String?> = dataStore.data
-        .catch { exception ->
-            if (exception is IOException) { emit(emptyPreferences()) } else { throw exception }
-        }.map { preferences ->
-            preferences[PreferencesKeys.USER_NOMBRE]
-        }
 
-    val userApellidoFlow: Flow<String?> = dataStore.data
-        .catch { exception ->
-            if (exception is IOException) { emit(emptyPreferences()) } else { throw exception }
-        }.map { preferences ->
-            preferences[PreferencesKeys.USER_APELLIDO]
-        }
-
-    val userEmailFlow: Flow<String?> = dataStore.data
-        .catch { exception ->
-            if (exception is IOException) { emit(emptyPreferences()) } else { throw exception }
-        }.map { preferences ->
-            preferences[PreferencesKeys.USER_EMAIL]
-        }
-
-    // --- ∂≠∂≠FLUJO A«'ADIDO PARA EL TEMA!! ---
-    /**
-     * Devuelve la preferencia de tema guardada (ej: "LIGHT", "DARK", "SYSTEM").
-     * Devuelve "SYSTEM" como valor por defecto.
-     */
     val themeFlow: Flow<String> = dataStore.data
         .catch { exception ->
             if (exception is IOException) { emit(emptyPreferences()) } else { throw exception }
@@ -159,13 +137,14 @@ class UserPreferences(context: Context) {
             preferences[PreferencesKeys.USER_APELLIDO] = apellido
             preferences[PreferencesKeys.USER_EMAIL] = correo
             if (token != null) {
+                // se guarda seg√∫n el usuario y esto es lo que se guarda para enviar como post a la api
                 preferences[PreferencesKeys.USER_TOKEN] = token
             } else {
                 preferences.remove(PreferencesKeys.USER_TOKEN)
             }
         }
     }
-
+// cuando se cierra la sesi√≥n se limpia el token
     suspend fun clearUserSession() {
         dataStore.edit { preferences ->
             preferences.remove(PreferencesKeys.USER_ID)
@@ -191,10 +170,7 @@ class UserPreferences(context: Context) {
         }
     }
 
-    // --- ∂≠∂≠FUNCI«"N A«'ADIDA PARA EL TEMA!! ---
-    /**
-     * Guarda la nueva preferencia de tema del usuario.
-     */
+
     suspend fun saveThemePreference(theme: String) {
         dataStore.edit { preferences ->
             preferences[PreferencesKeys.THEME_PREFERENCE] = theme
@@ -211,5 +187,12 @@ class UserPreferences(context: Context) {
 
     suspend fun normalizedUserRole(): String = normalizedUserRoleFlow.firstOrNull() ?: "paciente"
 
+
+    /*
+    * funci√≥n que se utiliza para obtener el token del usuario en AuthInterceptor
+    * Devuelve el valor en RAM (tokenCache). Lo usa AuthInterceptor para no leer de
+    * DataStore en cada request y a√±adir el header
+    */
+    
     fun currentToken(): String? = tokenCache.get()
 }

@@ -25,6 +25,7 @@ object RetrofitClient {
     private val logging = HttpLoggingInterceptor()
         .setLevel(HttpLoggingInterceptor.Level.BODY)
 
+
     @Volatile
     private var authInterceptor: Interceptor? = null
 

@@ -125,8 +125,8 @@ fun LoginScreen(
                 painter = painterResource(id = R.drawable.logo),
                 contentDescription = "Logo de la Clínica",
                 modifier = Modifier
-                    .height(120.dp)
-                    .width(120.dp)
+                    .height(180.dp)
+                    .width(180.dp)
             )
             Spacer(modifier = Modifier.height(24.dp))
             Text(
