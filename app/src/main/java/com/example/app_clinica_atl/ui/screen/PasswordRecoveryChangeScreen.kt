@@ -10,6 +10,7 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Lock
 import androidx.compose.material.icons.filled.Visibility
@@ -33,6 +34,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.text.input.VisualTransformation
 import androidx.compose.ui.unit.dp
@@ -108,7 +110,9 @@ fun PasswordRecoveryChangeScreen(
                     )
                 },
                 label = { Text("Nueva contraseña") },
-                leadingIcon = { Icon(imageVector = Icons.Filled.Lock, contentDescription = null) }
+                keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Email),
+                leadingIcon = { Icon(imageVector = Icons.Filled.Lock, contentDescription = null)
+                }
             )
             uiState.recoveryPasswordError?.let {
                 Text(it, color = MaterialTheme.colorScheme.error, style = MaterialTheme.typography.labelSmall)
@@ -138,6 +142,7 @@ fun PasswordRecoveryChangeScreen(
                     )
                 },
                 label = { Text("Confirmar contraseña") },
+                keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Email),
                 leadingIcon = { Icon(imageVector = Icons.Filled.Lock, contentDescription = null) }
             )
             uiState.recoveryConfirmPasswordError?.let {

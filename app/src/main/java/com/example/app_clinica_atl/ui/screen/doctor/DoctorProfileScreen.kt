@@ -58,6 +58,7 @@ import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.text.input.VisualTransformation
@@ -66,6 +67,7 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.core.content.FileProvider
 import coil.compose.AsyncImage
+import coil.request.ImageRequest
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.example.app_clinica_atl.R
 import com.example.app_clinica_atl.ui.profile.DEFAULT_AVATAR_URL
@@ -99,6 +101,7 @@ fun DoctorProfileScreen(
     val profilePhotoUrl by viewModel.profilePhotoUrl.collectAsStateWithLifecycle()
     val isUploadingPhoto by viewModel.isUploadingPhoto.collectAsStateWithLifecycle()
     val photoErrorMessage by viewModel.photoErrorMessage.collectAsStateWithLifecycle()
+    val authToken by viewModel.authToken.collectAsStateWithLifecycle()
     val context = LocalContext.current
 
     var tempImageUri by remember { mutableStateOf<Uri?>(null) }
@@ -154,6 +157,7 @@ fun DoctorProfileScreen(
         uiState = uiState,
         paddingValues = paddingValues,
         profilePhotoUrl = profilePhotoUrl,
+        authToken = authToken,
         isUploadingPhoto = isUploadingPhoto,
         photoErrorMessage = photoErrorMessage,
         onRequestCamera = { permissionLauncher.launch(Manifest.permission.CAMERA) },
@@ -209,6 +213,7 @@ private fun DoctorProfileTopBar(onBackClick: () -> Unit, isPublicView: Boolean) 
         uiState: DoctorProfileUiState,
         paddingValues: PaddingValues,
         profilePhotoUrl: String?,
+        authToken: String?,
         isUploadingPhoto: Boolean,
         photoErrorMessage: String?,
         onRequestCamera: () -> Unit,
@@ -260,6 +265,7 @@ private fun DoctorProfileTopBar(onBackClick: () -> Unit, isPublicView: Boolean) 
                         totalAppointments = uiState.totalAppointments,
                         bonusAmount = uiState.bonusAmount,
                         profilePhotoUrl = profilePhotoUrl,
+                        authToken = authToken,
                         isUploadingPhoto = isUploadingPhoto,
                         photoErrorMessage = photoErrorMessage,
                         onPhoneChange = onPhoneChange,
@@ -292,6 +298,7 @@ private fun DoctorProfileContent(
     totalAppointments: Int,
     bonusAmount: Double,
     profilePhotoUrl: String?,
+    authToken: String?,
     isUploadingPhoto: Boolean,
     photoErrorMessage: String?,
     onPhoneChange: (String) -> Unit,
@@ -313,6 +320,7 @@ private fun DoctorProfileContent(
             DoctorProfileHeader(
                 doctor = doctor,
                 profilePhotoUrl = profilePhotoUrl,
+                authToken = authToken,
                 isUploadingPhoto = isUploadingPhoto,
                 photoErrorMessage = photoErrorMessage,
                 onRequestCamera = onRequestCamera,
@@ -375,6 +383,7 @@ private fun DoctorProfileContent(
 private fun DoctorProfileHeader(
     doctor: DoctorProfileInfo,
     profilePhotoUrl: String?,
+    authToken: String?,
     isUploadingPhoto: Boolean,
     photoErrorMessage: String?,
     onRequestCamera: () -> Unit,
@@ -394,7 +403,11 @@ private fun DoctorProfileHeader(
         ) {
             Box(contentAlignment = Alignment.Center) {
                 AsyncImage(
-                    model = profilePhotoUrl ?: doctor.profileImageUrl ?: DEFAULT_AVATAR_URL,
+                    model = buildAuthImageRequest(
+                        context = LocalContext.current,
+                        url = profilePhotoUrl ?: doctor.profileImageUrl ?: DEFAULT_AVATAR_URL,
+                        token = authToken
+                    ),
                     placeholder = painterResource(id = R.drawable.logo_clean),
                     contentDescription = "Foto de ${doctor.name}",
                     modifier = Modifier
@@ -513,7 +526,6 @@ fun PhoneEditorCard(
         }
     }
 }
-
 @Composable
 private fun PasswordEditorCard(
     passwordInput: String,
@@ -528,58 +540,106 @@ private fun PasswordEditorCard(
     var passwordVisible by rememberSaveable { mutableStateOf(false) }
     var confirmVisible by rememberSaveable { mutableStateOf(false) }
 
+    val canSave =
+        !isSaving &&
+                passwordInput.isNotBlank() &&
+                confirmPasswordInput.isNotBlank() &&
+                passwordError == null &&
+                confirmPasswordError == null
+
     Card(
         modifier = Modifier.fillMaxWidth(),
         colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface)
     ) {
         Column(modifier = Modifier.padding(16.dp)) {
-            Text("Seguridad (Contraseña por defecto nombre + año de nacimiento)", style = MaterialTheme.typography.titleMedium)
+
+            Text(
+                text = "Seguridad",
+                style = MaterialTheme.typography.titleMedium
+            )
+
             Spacer(modifier = Modifier.height(12.dp))
+
             OutlinedTextField(
                 value = passwordInput,
                 onValueChange = onPasswordChange,
                 label = { Text("Nueva contraseña") },
+                singleLine = true,
                 isError = passwordError != null,
-                keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Password),
-                visualTransformation = if (passwordVisible) VisualTransformation.None else PasswordVisualTransformation(),
+                keyboardOptions = KeyboardOptions(
+                    keyboardType = KeyboardType.Password,
+                    imeAction = ImeAction.Next
+                ),
+                visualTransformation = if (passwordVisible)
+                    VisualTransformation.None
+                else
+                    PasswordVisualTransformation(),
                 trailingIcon = {
                     IconButton(onClick = { passwordVisible = !passwordVisible }) {
                         Icon(
-                            imageVector = if (passwordVisible) Icons.Default.VisibilityOff else Icons.Default.Visibility,
-                            contentDescription = "Mostrar u ocultar contraseña"
+                            imageVector = if (passwordVisible)
+                                Icons.Default.VisibilityOff
+                            else
+                                Icons.Default.Visibility,
+                            contentDescription = null
                         )
                     }
                 },
-                supportingText = { passwordError?.let { Text(it, color = MaterialTheme.colorScheme.error) } },
+                supportingText = {
+                    passwordError?.let {
+                        Text(it, color = MaterialTheme.colorScheme.error)
+                    }
+                },
                 modifier = Modifier.fillMaxWidth()
             )
+
             Spacer(modifier = Modifier.height(12.dp))
+
             OutlinedTextField(
                 value = confirmPasswordInput,
                 onValueChange = onConfirmPasswordChange,
                 label = { Text("Confirmar contraseña") },
+                singleLine = true,
                 isError = confirmPasswordError != null,
-                keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Password),
-                visualTransformation = if (confirmVisible) VisualTransformation.None else PasswordVisualTransformation(),
+                keyboardOptions = KeyboardOptions(
+                    keyboardType = KeyboardType.Password,
+                    imeAction = ImeAction.Done
+                ),
+                visualTransformation = if (confirmVisible)
+                    VisualTransformation.None
+                else
+                    PasswordVisualTransformation(),
                 trailingIcon = {
                     IconButton(onClick = { confirmVisible = !confirmVisible }) {
                         Icon(
-                            imageVector = if (confirmVisible) Icons.Default.VisibilityOff else Icons.Default.Visibility,
-                            contentDescription = "Mostrar u ocultar contraseña"
+                            imageVector = if (confirmVisible)
+                                Icons.Default.VisibilityOff
+                            else
+                                Icons.Default.Visibility,
+                            contentDescription = null
                         )
                     }
                 },
-                supportingText = { confirmPasswordError?.let { Text(it, color = MaterialTheme.colorScheme.error) } },
+                supportingText = {
+                    confirmPasswordError?.let {
+                        Text(it, color = MaterialTheme.colorScheme.error)
+                    }
+                },
                 modifier = Modifier.fillMaxWidth()
             )
-            Spacer(modifier = Modifier.height(12.dp))
+
+            Spacer(modifier = Modifier.height(16.dp))
+
             Button(
                 onClick = onSavePassword,
-                enabled = !isSaving,
+                enabled = canSave,
                 modifier = Modifier.fillMaxWidth()
             ) {
                 if (isSaving) {
-                    CircularProgressIndicator(modifier = Modifier.size(18.dp), strokeWidth = 2.dp)
+                    CircularProgressIndicator(
+                        modifier = Modifier.size(18.dp),
+                        strokeWidth = 2.dp
+                    )
                 } else {
                     Text("Actualizar contraseña")
                 }
@@ -587,6 +647,7 @@ private fun PasswordEditorCard(
         }
     }
 }
+
 
 @RequiresApi(Build.VERSION_CODES.O)
 @Composable
@@ -650,6 +711,17 @@ private fun StatRow(label: String, value: String) {
             Text(value, style = MaterialTheme.typography.bodyMedium, fontWeight = FontWeight.SemiBold)
         }
     }
+}
+
+@RequiresApi(Build.VERSION_CODES.O)
+private fun buildAuthImageRequest(context: Context, url: String?, token: String?): ImageRequest {
+    val builder = ImageRequest.Builder(context)
+        .data(url ?: DEFAULT_AVATAR_URL)
+        .crossfade(true)
+    if (!token.isNullOrBlank() && !url.isNullOrBlank()) {
+        builder.addHeader("Authorization", "Bearer $token")
+    }
+    return builder.build()
 }
 
 @RequiresApi(Build.VERSION_CODES.O)

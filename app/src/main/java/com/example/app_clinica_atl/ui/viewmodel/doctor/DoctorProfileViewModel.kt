@@ -82,6 +82,8 @@ class DoctorProfileViewModel(
     val isUploadingPhoto: StateFlow<Boolean> = _isUploadingPhoto.asStateFlow()
     private val _photoErrorMessage = MutableStateFlow<String?>(null)
     val photoErrorMessage: StateFlow<String?> = _photoErrorMessage.asStateFlow()
+    private val _authToken = MutableStateFlow<String?>(null)
+    val authToken: StateFlow<String?> = _authToken.asStateFlow()
 
     private var currentUserId: Long? = null
     private var currentDoctorId: Long? = null
@@ -89,7 +91,9 @@ class DoctorProfileViewModel(
     private var specialtiesJob: Job? = null
 
     private fun refreshPhotoUrl(doctorId: Long?) {
-        _profilePhotoUrl.value = doctorId?.let { usuariosRepository.buildDoctorProfilePhotoUrl(it) }
+        _profilePhotoUrl.value = doctorId
+            ?.let { usuariosRepository.buildDoctorProfilePhotoUrl(it) }
+            ?.let { appendTimestamp(it) }
     }
 
     @RequiresApi(Build.VERSION_CODES.O)
@@ -97,6 +101,7 @@ class DoctorProfileViewModel(
         currentUserId = doctorId
         viewModelScope.launch {
             _uiState.update { it.copy(isLoading = true, errorMsg = null) }
+            _authToken.value = usuariosRepository.currentToken()
             val result = doctorProfileRepository.getDoctorProfile(doctorId)
             if (result.isSuccess) {
                 val dto = result.getOrNull()!!

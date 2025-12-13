@@ -81,7 +81,7 @@ fun DoctorSearchPatientScreen(
                     .fillMaxWidth()
                     .heightIn(min = 72.dp),
                 singleLine = true,
-                keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number)
+                keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Email)
             )
         }
 

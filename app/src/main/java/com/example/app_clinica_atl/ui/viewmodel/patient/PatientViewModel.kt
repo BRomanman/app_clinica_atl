@@ -78,6 +78,8 @@ class PatientViewModel(
     val isUploadingPhoto: StateFlow<Boolean> = _isUploadingPhoto
     private val _photoErrorMessage = MutableStateFlow<String?>(null)
     val photoErrorMessage: StateFlow<String?> = _photoErrorMessage
+    private val _authToken = MutableStateFlow<String?>(null)
+    val authToken: StateFlow<String?> = _authToken
     private val refreshAppointments = MutableStateFlow(0)
     private val refreshInsurance = MutableStateFlow(0)
     private val refreshInsuranceList = MutableStateFlow(0)
@@ -85,13 +87,17 @@ class PatientViewModel(
     private var cachedUserId: Long? = null
 
     init {
+        _authToken.value = userPreferences.currentToken()
         observeProfilePhotoUrl()
     }
 
     private fun observeProfilePhotoUrl() {
         viewModelScope.launch {
             userPreferences.userIdFlow.collect { userId ->
-                _profilePhotoUrl.value = userId?.let { userRepository.buildPatientProfilePhotoUrl(it) }
+                _authToken.value = userPreferences.currentToken()
+                _profilePhotoUrl.value = userId
+                    ?.let { userRepository.buildPatientProfilePhotoUrl(it) }
+                    ?.let { appendTimestamp(it) }
             }
         }
     }

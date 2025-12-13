@@ -209,6 +209,9 @@ class UsuariosRepository(
     fun buildAdminProfilePhotoUrl(adminId: Long): String =
         "${RetrofitClient.BASE_URL_USUARIO}administradores/$adminId/foto-perfil"
 
+    /** Token actual para peticiones que requieren autenticación fuera de Retrofit (ej. Coil). */
+    fun currentToken(): String? = userPreferences.currentToken()
+
 
 
     suspend fun requestPasswordReset(email: String): Result<String> = withContext(Dispatchers.IO) {

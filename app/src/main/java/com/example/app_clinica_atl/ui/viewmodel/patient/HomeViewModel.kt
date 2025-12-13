@@ -23,6 +23,7 @@ data class HomeUiState(
     val userName: String = "",
     val debugInfo: String? = null,
     val profileImageUrl: String? = null,
+    val authToken: String? = null,
     val popularDoctors: List<UsuarioDto> = emptyList(),
     val weather: WeatherInfo? = null,
     val isWeatherLoading: Boolean = true,
@@ -68,10 +69,17 @@ class HomeViewModel(
         val popular = doctors
             .filter { it.role.equals("doctor", true) }
             .take(6)
+            .map { doc ->
+                val photo = doc.profileImageUrl
+                    ?: doc.doctorId?.let { userRepository.buildDoctorProfilePhotoUrl(it) }
+                    ?: doc.id.takeIf { it > 0 }?.let { userRepository.buildDoctorProfilePhotoUrl(it) }
+                doc.copy(profileImageUrl = photo?.let { appendTimestamp(it) })
+            }
         HomeUiState(
             userName = user?.name ?: "Usuario",
             debugInfo = debug,
             profileImageUrl = user?.profileImageUrl,
+            authToken = userRepository.currentToken(),
             popularDoctors = popular,
             weather = weather,
             isWeatherLoading = isWeatherLoading,
@@ -95,11 +103,16 @@ class HomeViewModel(
                 _weatherInfo.value = it
                 _weatherError.value = null
             }.onFailure { error ->
-                _weatherError.value = error.message ?: "No pudimos obtener el clima."
-            }
-            _isWeatherLoading.value = false
+            _weatherError.value = error.message ?: "No pudimos obtener el clima."
         }
+        _isWeatherLoading.value = false
     }
+}
+
+private fun appendTimestamp(url: String): String {
+    val clean = url.substringBefore("?")
+    return "$clean?ts=${System.currentTimeMillis()}"
+}
 
     fun fetchDebugUser(userId: Long) {
         viewModelScope.launch {

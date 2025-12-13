@@ -11,6 +11,7 @@ import androidx.compose.foundation.clickable
 import androidx.compose.ui.platform.LocalContext
 import androidx.core.content.FileProvider
 import coil.compose.AsyncImage
+import coil.request.ImageRequest
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -91,6 +92,7 @@ fun PatientProfileScreen(
     val profilePhotoUrl by viewModel.profilePhotoUrl.collectAsStateWithLifecycle()
     val isUploadingPhoto by viewModel.isUploadingPhoto.collectAsStateWithLifecycle()
     val photoErrorMessage by viewModel.photoErrorMessage.collectAsStateWithLifecycle()
+    val authToken by viewModel.authToken.collectAsStateWithLifecycle()
 
     // --- Lógica de Cámara (Launchers) ---
     val context = LocalContext.current
@@ -185,6 +187,7 @@ fun PatientProfileScreen(
                         onPhoneChange = viewModel::onPhoneChange,
                         onSavePhone = viewModel::savePhone,
                         profilePhotoUrl = profilePhotoUrl,
+                        authToken = authToken,
                         isUploadingPhoto = isUploadingPhoto,
                         photoErrorMessage = photoErrorMessage,
                         onRequestCamera = {
@@ -219,6 +222,16 @@ private fun createImageUri(context: Context): Uri {
     )
 }
 
+private fun buildAuthImageRequest(context: Context, url: String?, token: String?): ImageRequest {
+    val builder = ImageRequest.Builder(context)
+        .data(url ?: DEFAULT_AVATAR_URL)
+        .crossfade(true)
+    if (!token.isNullOrBlank() && !url.isNullOrBlank()) {
+        builder.addHeader("Authorization", "Bearer $token")
+    }
+    return builder.build()
+}
+
 @Composable
 private fun PatientProfileContent(
     patient: UsuarioDto,
@@ -247,11 +260,13 @@ private fun PatientProfileContent(
     onPhoneChange: (String) -> Unit,
     onSavePhone: () -> Unit,
     profilePhotoUrl: String?,
+    authToken: String?,
     isUploadingPhoto: Boolean,
     photoErrorMessage: String?,
     onRequestCamera: () -> Unit,
     onRequestGallery: () -> Unit
 ) {
+    val context = LocalContext.current
     LazyColumn(
         modifier = Modifier.fillMaxSize(),
         horizontalAlignment = Alignment.CenterHorizontally
@@ -264,7 +279,11 @@ private fun PatientProfileContent(
                 contentAlignment = Alignment.Center
             ) {
                 AsyncImage(
-                    model = profilePhotoUrl ?: DEFAULT_AVATAR_URL,
+                    model = buildAuthImageRequest(
+                        context = context,
+                        url = profilePhotoUrl ?: DEFAULT_AVATAR_URL,
+                        token = authToken
+                    ),
                     contentDescription = "Foto de ${patient.name}",
                     placeholder = painterResource(id = R.drawable.logo_clean),
                     error = painterResource(id = R.drawable.logo_clean),

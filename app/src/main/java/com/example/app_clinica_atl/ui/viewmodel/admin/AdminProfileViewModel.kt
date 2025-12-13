@@ -42,11 +42,15 @@ class AdminProfileViewModel(
     val isUploadingPhoto: StateFlow<Boolean> = _isUploadingPhoto.asStateFlow()
     private val _photoErrorMessage = MutableStateFlow<String?>(null)
     val photoErrorMessage: StateFlow<String?> = _photoErrorMessage.asStateFlow()
+    private val _authToken = MutableStateFlow<String?>(null)
+    val authToken: StateFlow<String?> = _authToken.asStateFlow()
 
     private var currentUserId: Long? = null
 
     private fun refreshPhotoUrl(userId: Long?) {
-        _profilePhotoUrl.value = userId?.let { repository.buildAdminProfilePhotoUrl(it) }
+        _profilePhotoUrl.value = userId
+            ?.let { repository.buildAdminProfilePhotoUrl(it) }
+            ?.let { appendTimestamp(it) }
     }
 
     init {
@@ -61,6 +65,7 @@ class AdminProfileViewModel(
                     _uiState.update { it.copy(isLoading = false, errorMsg = "Sesión inválida para admin") }
                     return@launch
                 }
+                _authToken.value = userPreferences.currentToken()
                 val id = userPreferences.adminIdFlow.first()
                 if (id == null) {
                     _uiState.update { it.copy(isLoading = false, errorMsg = "No se pudo determinar el administrador") }

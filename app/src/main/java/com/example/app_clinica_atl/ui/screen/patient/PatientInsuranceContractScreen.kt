@@ -36,6 +36,8 @@ import androidx.core.app.NotificationManagerCompat
 import com.example.app_clinica_atl.R
 import android.widget.Toast
 import androidx.annotation.RequiresPermission
+import androidx.compose.foundation.text.KeyboardOptions
+import androidx.compose.ui.text.input.KeyboardType
 
 data class BeneficiarioForm(
     val nombre: String = "",
@@ -112,7 +114,8 @@ fun ContratarSeguroScreen(
             label = { Text("Correo de contacto") },
             modifier = Modifier.fillMaxWidth(),
             isError = correoError != null,
-            singleLine = true
+            singleLine = true,
+            keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Email)
         )
         correoError?.let {
             Text(it, color = MaterialTheme.colorScheme.error, style = MaterialTheme.typography.labelSmall)
@@ -125,11 +128,13 @@ fun ContratarSeguroScreen(
                 telefonoContacto = it
                 telefonoError = validateChileanPhoneNumber(it)
                 validationMessage = null
+
             },
             label = { Text("Teléfono de contacto (+569xxxxxxx)") },
             modifier = Modifier.fillMaxWidth(),
             isError = telefonoError != null,
-            singleLine = true
+            singleLine = true,
+            keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number)
         )
         telefonoError?.let {
             Text(it, color = MaterialTheme.colorScheme.error, style = MaterialTheme.typography.labelSmall)
@@ -284,7 +289,8 @@ fun ContratarSeguroScreen(
                         label = { Text("Fecha Nacimiento (dd-mm-yyyy)") },
                         modifier = Modifier.fillMaxWidth(),
                         isError = beneficiarioErrors[index].fechaError != null,
-                        singleLine = true
+                        singleLine = true,
+                        keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number)
                     )
                     beneficiarioErrors[index].fechaError?.let {
                         Text(it, color = MaterialTheme.colorScheme.error, style = MaterialTheme.typography.labelSmall)

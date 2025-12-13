@@ -24,6 +24,7 @@ import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
 import androidx.core.content.FileProvider
 import coil.compose.AsyncImage
+import coil.request.ImageRequest
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.example.app_clinica_atl.R
 import com.example.app_clinica_atl.ui.profile.DEFAULT_AVATAR_URL
@@ -44,6 +45,7 @@ fun AdminProfileScreen(
     val profilePhotoUrl by viewModel.profilePhotoUrl.collectAsStateWithLifecycle()
     val isUploadingPhoto by viewModel.isUploadingPhoto.collectAsStateWithLifecycle()
     val photoErrorMessage by viewModel.photoErrorMessage.collectAsStateWithLifecycle()
+    val authToken by viewModel.authToken.collectAsStateWithLifecycle()
     val context = LocalContext.current
 
     var tempImageUri by remember { mutableStateOf<Uri?>(null) }
@@ -100,7 +102,11 @@ fun AdminProfileScreen(
                 contentAlignment = Alignment.Center
             ) {
                 AsyncImage(
-                    model = profilePhotoUrl ?: DEFAULT_AVATAR_URL,
+                    model = buildAuthImageRequest(
+                        context = context,
+                        url = profilePhotoUrl ?: DEFAULT_AVATAR_URL,
+                        token = authToken
+                    ),
                     contentDescription = "Avatar",
                     placeholder = painterResource(id = R.drawable.logo_clean),
                     error = painterResource(id = R.drawable.logo_clean),
@@ -213,6 +219,16 @@ fun AdminProfileScreen(
             }
         }
     }
+}
+
+private fun buildAuthImageRequest(context: Context, url: String?, token: String?): ImageRequest {
+    val builder = ImageRequest.Builder(context)
+        .data(url ?: DEFAULT_AVATAR_URL)
+        .crossfade(true)
+    if (!token.isNullOrBlank() && !url.isNullOrBlank()) {
+        builder.addHeader("Authorization", "Bearer $token")
+    }
+    return builder.build()
 }
 
 private fun createImageUri(context: Context): Uri {

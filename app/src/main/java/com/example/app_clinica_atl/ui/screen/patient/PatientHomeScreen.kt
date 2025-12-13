@@ -19,28 +19,34 @@ import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Person
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
+import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.vector.rememberVectorPainter
 import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import coil.compose.AsyncImage
+import coil.request.ImageRequest
+import com.example.app_clinica_atl.data.remote.RetrofitClient
 import com.example.app_clinica_atl.data.remote.dto.UsuarioDto
 import com.example.app_clinica_atl.data.repository.WeatherInfo
 import com.example.app_clinica_atl.ui.viewmodel.patient.HomeViewModel
@@ -89,7 +95,7 @@ fun HomeScreen(
         }
 
         item {
-            DoctorsCarousel(doctors = uiState.popularDoctors)
+            DoctorsCarousel(doctors = uiState.popularDoctors, authToken = uiState.authToken)
         }
     }
 }
@@ -204,49 +210,15 @@ private fun HeroCard(
 
 
 @Composable
-fun DoctorsCarousel(doctors: List<UsuarioDto>) {
-    val imagePool = listOf(
-        R.drawable.doctor_cardio_1,
-        R.drawable.doctor_cardio_2,
-        R.drawable.doctor_cardio_3,
-        R.drawable.doctor_cardio_4,
-        R.drawable.doctor_cardio_5,
-        R.drawable.doctor_derma_1,
-        R.drawable.doctor_derma_2,
-        R.drawable.doctor_derma_3,
-        R.drawable.doctor_derma_4,
-        R.drawable.doctor_derma_5,
-        R.drawable.doctor_medgen_1,
-        R.drawable.doctor_medgen_2,
-        R.drawable.doctor_medgen_3,
-        R.drawable.doctor_medgen_4,
-        R.drawable.doctor_medgen_5,
-        R.drawable.doctor_nutri_1,
-        R.drawable.doctor_nutri_2,
-        R.drawable.doctor_nutri_3,
-        R.drawable.doctor_nutri_4,
-        R.drawable.doctor_pedi_1,
-        R.drawable.doctor_pedi_2,
-        R.drawable.doctor_pedi_3,
-        R.drawable.doctor_pedi_4,
-        R.drawable.doctor_psico_1,
-        R.drawable.doctor_psico_2,
-        R.drawable.doctor_psico_3,
-        R.drawable.doctor_psico_4,
-        R.drawable.doctor_psico_5
-    )
-
-    val assignedImages by remember(doctors) {
-        mutableStateOf(
-            doctors.associate { it.id to imagePool.shuffled().first() }
-        )
-    }
-
+fun DoctorsCarousel(doctors: List<UsuarioDto>, authToken: String? = null) {
     val doctorCards = doctors.take(6).map { doctor ->
+        val photoUrl = doctor.profileImageUrl?.takeIf { it.isNotBlank() }
+            ?: doctor.doctorId?.let { "${RetrofitClient.BASE_URL_USUARIO}doctores/$it/foto-perfil" }
+            ?: doctor.id.takeIf { it > 0 }?.let { "${RetrofitClient.BASE_URL_USUARIO}doctores/$it/foto-perfil" }
         DoctorCardData(
             name = doctor.name.ifBlank { "Doctor/a" },
             specialty = doctor.specialty?.ifBlank { "Especialidad no disponible" } ?: "Especialidad no disponible",
-            imageRes = assignedImages[doctor.id] ?: imagePool.random()
+            profilePhotoUrl = photoUrl
         )
     }
 
@@ -274,7 +246,8 @@ fun DoctorsCarousel(doctors: List<UsuarioDto>) {
             ) {
                 items(doctorCards) { doctor ->
                     DoctorCard(
-                        doctor = doctor
+                        doctor = doctor,
+                        authToken = authToken
                     )
                 }
             }
@@ -283,7 +256,7 @@ fun DoctorsCarousel(doctors: List<UsuarioDto>) {
 }
 
 @Composable
-private fun DoctorCard(doctor: DoctorCardData) {
+private fun DoctorCard(doctor: DoctorCardData, authToken: String?) {
     Card(
         modifier = Modifier
             .width(150.dp)
@@ -293,12 +266,42 @@ private fun DoctorCard(doctor: DoctorCardData) {
     ) {
         Box(modifier = Modifier.fillMaxSize()) {
 
-            Image(
-                painter = painterResource(id = doctor.imageRes),
-                contentDescription = "Doctor",
-                contentScale = ContentScale.Crop,
-                modifier = Modifier.fillMaxSize()
-            )
+            if (doctor.profilePhotoUrl != null) {
+                AsyncImage(
+                    model = buildAuthImageRequest(
+                        context = LocalContext.current,
+                        url = doctor.profilePhotoUrl,
+                        token = authToken
+                    ),
+                    contentDescription = "Foto de ${doctor.name}",
+                    contentScale = ContentScale.Crop,
+                    placeholder = rememberVectorPainter(Icons.Default.Person),
+                    error = rememberVectorPainter(Icons.Default.Person),
+                    modifier = Modifier.fillMaxSize()
+                )
+            } else {
+                Box(
+                    modifier = Modifier
+                        .fillMaxSize()
+                        .background(MaterialTheme.colorScheme.surfaceVariant),
+                    contentAlignment = Alignment.Center
+                ) {
+                    Box(
+                        modifier = Modifier
+                            .size(84.dp)
+                            .clip(CircleShape)
+                            .background(MaterialTheme.colorScheme.primary.copy(alpha = 0.15f)),
+                        contentAlignment = Alignment.Center
+                    ) {
+                        Icon(
+                            imageVector = Icons.Default.Person,
+                            contentDescription = "Sin foto de perfil",
+                            tint = MaterialTheme.colorScheme.primary,
+                            modifier = Modifier.size(42.dp)
+                        )
+                    }
+                }
+            }
 
             Box(
                 modifier = Modifier
@@ -334,8 +337,18 @@ private fun DoctorCard(doctor: DoctorCardData) {
 private data class DoctorCardData(
     val name: String,
     val specialty: String,
-    val imageRes: Int
+    val profilePhotoUrl: String?
 )
+
+private fun buildAuthImageRequest(context: android.content.Context, url: String?, token: String?): ImageRequest {
+    val builder = ImageRequest.Builder(context)
+        .data(url)
+        .crossfade(true)
+    if (!token.isNullOrBlank() && !url.isNullOrBlank()) {
+        builder.addHeader("Authorization", "Bearer $token")
+    }
+    return builder.build()
+}
 
 
 @Composable
