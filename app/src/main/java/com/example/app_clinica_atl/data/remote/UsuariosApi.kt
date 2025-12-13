@@ -1,5 +1,7 @@
 package com.example.app_clinica_atl.data.remote
 
+import com.example.app_clinica_atl.data.remote.dto.AdministradorDto
+import com.example.app_clinica_atl.data.remote.dto.AdministradorUpdateRequestDto
 import com.example.app_clinica_atl.data.remote.dto.DoctorCreateRequestDto
 import com.example.app_clinica_atl.data.remote.dto.DoctorDto
 import com.example.app_clinica_atl.data.remote.dto.EspecialidadCreateRequestDto
@@ -123,7 +125,19 @@ interface UsuariosApi {
         @Part file: MultipartBody.Part
     ): Response<Unit>
 
+    @GET("administradores/{id}")
+    suspend fun getAdminById(@Path("id") id: Long): Response<AdministradorDto>
+
+    @PUT("administradores/{id}")
+    suspend fun updateAdmin(
+        @Path("id") id: Long,
+        @Body request: AdministradorUpdateRequestDto
+    ): Response<AdministradorDto>
+
     @POST("especialidades")
     suspend fun createSpecialty(@Body body: EspecialidadRequestDto): retrofit2.Response<EspecialidadResponseDto>
+    
+    @DELETE("especialidades/{id}")
+    suspend fun deleteSpecialty(@Path("id") id: Long): Response<Unit>
     // --- FIN DEL CÓDIGO CORREGIDO ---
 }

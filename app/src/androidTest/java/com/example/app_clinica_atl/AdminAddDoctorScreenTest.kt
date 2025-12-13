@@ -7,18 +7,16 @@ import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
 import androidx.compose.ui.test.performTextInput
 import androidx.test.ext.junit.runners.AndroidJUnit4
+import com.example.app_clinica_atl.data.remote.dto.AdministradorUpdateRequestDto
+import com.example.app_clinica_atl.data.remote.dto.DoctorCreateRequestDto
+import com.example.app_clinica_atl.data.remote.dto.DoctorDto
 import com.example.app_clinica_atl.data.remote.dto.EspecialidadDto
 import com.example.app_clinica_atl.data.remote.dto.EspecialidadRequestDto
-import com.example.app_clinica_atl.data.remote.dto.UsuarioDto
-import com.example.app_clinica_atl.data.repository.SpecialtyRepository
-import com.example.app_clinica_atl.data.repository.UsuariosRepository
+import com.example.app_clinica_atl.data.remote.dto.EspecialidadUpdateRequestDto
+import com.example.app_clinica_atl.data.repository.AdminRepository
 import com.example.app_clinica_atl.domain.validation.validateChileanPhoneNumber
 import com.example.app_clinica_atl.ui.screen.admin.AdminAddDoctorScreen
 import com.example.app_clinica_atl.ui.viewmodel.admin.AdminAddDoctorViewModel
-import io.mockk.coEvery
-import io.mockk.mockk
-import kotlinx.coroutines.flow.Flow
-import kotlinx.coroutines.flow.flowOf
 import org.junit.Assert.assertEquals
 import org.junit.Rule
 import org.junit.Test
@@ -31,17 +29,39 @@ class AdminAddDoctorScreenTest {
     val composeRule = createAndroidComposeRule<ComponentActivity>()
 
     private fun buildViewModel(
-        specialties: List<EspecialidadDto> = listOf(EspecialidadDto(1, "Cardiologia", 0.0)),
-        usersRepo: UsuariosRepository = mockk(relaxed = true),
-        specialtyRepo: SpecialtyRepository = fakeSpecialtyRepository(specialties)
-    ): AdminAddDoctorViewModel = AdminAddDoctorViewModel(usersRepo, specialtyRepo)
+        specialties: List<EspecialidadDto> = listOf(EspecialidadDto(1, "Cardiologia", 0.0))
+    ): AdminAddDoctorViewModel {
+        val repo = fakeAdminRepository(specialties)
+        return AdminAddDoctorViewModel(repo)
+    }
 
-    private fun fakeSpecialtyRepository(
-        specialties: List<EspecialidadDto>
-    ): SpecialtyRepository = object : SpecialtyRepository {
-        override fun getAllSpecialties(): Flow<List<EspecialidadDto>> = flowOf(specialties)
-        override suspend fun createSpecialty(body: EspecialidadRequestDto): Result<EspecialidadDto> =
-            Result.success(EspecialidadDto(99, body.nombre ?: "Nueva", 0.0))
+    private fun fakeAdminRepository(
+        specialties: List<EspecialidadDto>,
+        createDoctorResult: Result<DoctorDto> = Result.success(
+            DoctorDto(
+                id = 1,
+                nombre = "Ana",
+                apellido = "Perez",
+                correo = "ana@atl.cl",
+                telefono = "+56912345678"
+            )
+        )
+    ): AdminRepository = object : AdminRepository {
+        override suspend fun getAdminProfile(adminId: Long) = Result.failure(IllegalStateException("not used"))
+        override suspend fun updateAdminProfile(adminId: Long, request: AdministradorUpdateRequestDto) = Result.failure(IllegalStateException("not used"))
+        override suspend fun uploadAdminProfilePhoto(adminId: Long, imageFile: java.io.File) = Result.failure(IllegalStateException("not used"))
+        override fun buildAdminProfilePhotoUrl(adminId: Long) = ""
+
+        override suspend fun getAllDoctors() = Result.failure(IllegalStateException("not used"))
+        override suspend fun getDoctorById(doctorId: Long) = Result.failure(IllegalStateException("not used"))
+        override suspend fun createDoctor(request: DoctorCreateRequestDto) = createDoctorResult
+        override suspend fun updateDoctor(doctorId: Long, request: DoctorDto) = Result.failure(IllegalStateException("not used"))
+        override suspend fun deactivateDoctor(doctorId: Long) = Result.success(Unit)
+
+        override suspend fun getAllSpecialties() = Result.success(specialties)
+        override suspend fun createSpecialty(request: EspecialidadRequestDto) = Result.failure(IllegalStateException("not used"))
+        override suspend fun updateSpecialty(id: Long, request: EspecialidadUpdateRequestDto) = Result.failure(IllegalStateException("not used"))
+        override suspend fun deleteSpecialty(id: Long) = Result.failure(IllegalStateException("not used"))
     }
 
     @Test
@@ -59,26 +79,12 @@ class AdminAddDoctorScreenTest {
         composeRule.onNodeWithText("Email es requerido.").assertIsDisplayed()
         composeRule.onNodeWithText(validateChileanPhoneNumber("")!!).assertIsDisplayed()
         composeRule.onNodeWithText("Salario invalido").assertIsDisplayed()
-        composeRule.onNodeWithText("Debe seleccionar al menos una").assertIsDisplayed()
+        composeRule.onNodeWithText("Debe seleccionar una especialidad").assertIsDisplayed()
     }
 
     @Test
     fun flujo_exitoso_muestra_mensaje_de_exito() {
-        val usersRepo = mockk<UsuariosRepository>(relaxed = true)
-        coEvery { usersRepo.register(any()) } returns Result.success(
-            UsuarioDto(
-                id = 1,
-                name = "Ana Perez",
-                email = "ana@atl.cl",
-                phone = "+56912345678",
-                password = "pass",
-                role = "doctor"
-            )
-        )
-        coEvery { usersRepo.createDoctorForUser(any(), any(), any(), any()) } returns Result.success(10L)
-
-        val vm = buildViewModel(usersRepo = usersRepo)
-
+        val vm = buildViewModel()
         composeRule.setContent {
             AdminAddDoctorScreen(viewModel = vm, onBackClick = {})
         }

@@ -70,7 +70,7 @@ class MainActivity : ComponentActivity() {
     private val doctorProfileRepository by lazy { DoctorProfileRepository() }
     private val citasApiService by lazy { RetrofitClient.citasApi }
     private val citasRepository: CitasRepository by lazy { CitasRepositoryImpl() }
-    private val specialtyRepository: SpecialtyRepository by lazy { SpecialtyRepositoryImpl() }
+    private val adminRepository: AdminRepository by lazy { AdminRepositoryImpl() }
     private val segurosRepository: SegurosRepository by lazy { SegurosRepositoryImpl() }
     private val historialRepository: HistorialRepository by lazy { HistorialRepository() }
     private val weatherRepository by lazy {
@@ -135,17 +135,14 @@ class MainActivity : ComponentActivity() {
         )
     }
     private val adminManageSpecialtiesViewModel: AdminManageSpecialtiesViewModel by viewModels {
-        AdminManageSpecialtiesViewModelFactory(usuariosRepository)
+        AdminManageSpecialtiesViewModelFactory(adminRepository)
     }
     private val adminAddDoctorViewModel: AdminAddDoctorViewModel by viewModels {
-        AdminAddDoctorViewModelFactory(
-            usuariosRepository,
-            specialtyRepository
-        )
+        AdminAddDoctorViewModelFactory(adminRepository)
     }
     private val adminViewDoctorsViewModel: AdminViewDoctorsViewModel by viewModels {
         AdminViewDoctorsViewModelFactory(
-            usuariosRepository
+            adminRepository
         )
     }
     private val doctorPatientProfileViewModel: DoctorPatientProfileViewModel by viewModels {
@@ -284,7 +281,7 @@ class MainActivity : ComponentActivity() {
                                 doctorSearchPatientViewModel = doctorSearchPatientViewModel,
                                 doctorPatientProfileViewModel = doctorPatientProfileViewModel,
                                 adminViewDoctorsViewModel = adminViewDoctorsViewModel,
-                                usuariosRepository = usuariosRepository,
+                                adminRepository = adminRepository,
                                 currentDoctorId = userId
                             )
                         }

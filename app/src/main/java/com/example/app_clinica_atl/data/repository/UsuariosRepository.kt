@@ -32,12 +32,6 @@ class UsuariosRepository(
     private val usuariosApi: UsuariosApi = RetrofitClient.usuariosApi
 ) {
 
-    // --- CÓDIGO AÑADIDO ---
-    companion object {
-        const val DEFAULT_TARIFA_CONSULTA = 25000 // ajusta si quieres otro valor
-    }
-    // --- FIN DEL CÓDIGO AÑADIDO ---
-
     suspend fun login(email: String, pass: String): Result<UsuarioDto> = loginViaApi(email, pass)
 
     /**

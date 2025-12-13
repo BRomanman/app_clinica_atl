@@ -8,6 +8,7 @@ import androidx.datastore.preferences.core.emptyPreferences
 import androidx.datastore.preferences.core.longPreferencesKey
 import androidx.datastore.preferences.core.stringPreferencesKey
 import androidx.datastore.preferences.preferencesDataStore
+import com.example.app_clinica_atl.data.remote.dto.normalizeRole
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
@@ -15,6 +16,7 @@ import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.catch
 import kotlinx.coroutines.flow.collect
 import kotlinx.coroutines.flow.map
+import kotlinx.coroutines.flow.firstOrNull
 import kotlinx.coroutines.launch
 import java.io.IOException
 import java.util.concurrent.atomic.AtomicReference
@@ -73,6 +75,19 @@ class UserPreferences(context: Context) {
         }.map { preferences ->
             preferences[PreferencesKeys.USER_ROLE]
         }
+
+    val normalizedUserRoleFlow: Flow<String> = userRoleFlow.map { normalizeRole(it) }
+
+    val isAdminFlow: Flow<Boolean> = normalizedUserRoleFlow.map { it == "administrador" }
+
+    /**
+     * Id que representa al admin autenticado (corresponde a Administradores.id_admin cuando es admin).
+     */
+    val adminIdFlow: Flow<Long?> = userIdFlow
+
+    val isDoctorFlow: Flow<Boolean> = normalizedUserRoleFlow.map { it == "doctor" }
+
+    val isPacienteFlow: Flow<Boolean> = normalizedUserRoleFlow.map { it == "paciente" }
 
     val userDoctorIdFlow: Flow<Long?> = dataStore.data
         .catch { exception ->
@@ -134,7 +149,7 @@ class UserPreferences(context: Context) {
     ) {
         dataStore.edit { preferences ->
             preferences[PreferencesKeys.USER_ID] = id
-            preferences[PreferencesKeys.USER_ROLE] = role
+            preferences[PreferencesKeys.USER_ROLE] = normalizeRole(role)
             if (doctorId != null) {
                 preferences[PreferencesKeys.USER_DOCTOR_ID] = doctorId
             } else {
@@ -185,6 +200,16 @@ class UserPreferences(context: Context) {
             preferences[PreferencesKeys.THEME_PREFERENCE] = theme
         }
     }
+
+    suspend fun isAdmin(): Boolean = isAdminFlow.firstOrNull() == true
+
+    suspend fun isDoctor(): Boolean = isDoctorFlow.firstOrNull() == true
+
+    suspend fun isPaciente(): Boolean = isPacienteFlow.firstOrNull() == true
+
+    suspend fun currentAdminId(): Long? = adminIdFlow.firstOrNull()
+
+    suspend fun normalizedUserRole(): String = normalizedUserRoleFlow.firstOrNull() ?: "paciente"
 
     fun currentToken(): String? = tokenCache.get()
 }

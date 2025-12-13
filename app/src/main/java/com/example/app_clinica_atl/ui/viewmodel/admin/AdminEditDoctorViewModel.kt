@@ -3,8 +3,8 @@ package com.example.app_clinica_atl.ui.viewmodel.admin
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.viewModelScope
-import com.example.app_clinica_atl.data.remote.dto.UsuarioUpdateRequestDto
-import com.example.app_clinica_atl.data.repository.UsuariosRepository
+import com.example.app_clinica_atl.data.remote.dto.DoctorDto
+import com.example.app_clinica_atl.data.repository.AdminRepository
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.update
@@ -21,7 +21,7 @@ data class AdminEditDoctorUiState(
 )
 
 class AdminEditDoctorViewModel(
-    private val repository: UsuariosRepository,
+    private val repository: AdminRepository,
     private val doctorId: Long
 ) : ViewModel() {
 
@@ -34,17 +34,21 @@ class AdminEditDoctorViewModel(
 
     private fun loadDoctor() {
         viewModelScope.launch {
-            val result = repository.getUserById(doctorId)
+            _uiState.update { it.copy(isLoading = true) }
+            val result = repository.getDoctorById(doctorId)
             if (result.isSuccess) {
                 val doc = result.getOrNull()!!
-                val parts = doc.name.split(" ", limit = 2)
+                val firstName = doc.nombre ?: doc.usuario?.nombre ?: ""
+                val lastName = doc.apellido ?: doc.usuario?.apellido ?: ""
+                val email = doc.usuario?.correo ?: doc.correo.orEmpty()
+                val telefono = doc.usuario?.telefono ?: doc.telefono.orEmpty()
                 _uiState.update {
                     it.copy(
                         isLoading = false,
-                        nombre = parts.getOrElse(0) { "" },
-                        apellido = parts.getOrElse(1) { "" },
-                        email = doc.email,
-                        telefono = doc.phone
+                        nombre = firstName,
+                        apellido = lastName,
+                        email = email,
+                        telefono = telefono
                     )
                 }
             } else {
@@ -60,12 +64,14 @@ class AdminEditDoctorViewModel(
     fun saveChanges() {
         viewModelScope.launch {
             _uiState.update { it.copy(isLoading = true, updateSuccess = false) }
-            val updateDto = UsuarioUpdateRequestDto(
+            val updateDto = DoctorDto(
+                id = doctorId,
                 nombre = _uiState.value.nombre,
                 apellido = _uiState.value.apellido,
+                correo = _uiState.value.email,
                 telefono = _uiState.value.telefono
             )
-            val result = repository.updateUser(doctorId, updateDto)
+            val result = repository.updateDoctor(doctorId, updateDto)
             if (result.isSuccess) {
                 _uiState.update { it.copy(isLoading = false, updateSuccess = true) }
             } else {
@@ -77,7 +83,7 @@ class AdminEditDoctorViewModel(
 
 // Esta es la Factory que el NavGraph estaba buscando y no encontraba
 class AdminEditDoctorViewModelFactory(
-    private val repo: UsuariosRepository,
+    private val repo: AdminRepository,
     private val id: Long
 ) : ViewModelProvider.Factory {
     override fun <T : ViewModel> create(modelClass: Class<T>): T {

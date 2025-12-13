@@ -2,11 +2,10 @@ package com.example.app_clinica_atl.ui.viewmodel.admin
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.example.app_clinica_atl.data.remote.dto.DoctorCreateRequestDto
 import com.example.app_clinica_atl.data.remote.dto.EspecialidadDto
-import com.example.app_clinica_atl.data.remote.dto.EspecialidadRequestDto
-import com.example.app_clinica_atl.data.remote.dto.UsuarioDto
-import com.example.app_clinica_atl.data.repository.SpecialtyRepository
-import com.example.app_clinica_atl.data.repository.UsuariosRepository
+import com.example.app_clinica_atl.data.repository.AdminRepository
+import com.example.app_clinica_atl.data.repository.DoctorDefaults
 import com.example.app_clinica_atl.domain.validation.validateChileanPhoneNumber
 import com.example.app_clinica_atl.domain.validation.validateEmail
 import com.example.app_clinica_atl.domain.validation.validateRequired
@@ -50,8 +49,7 @@ data class AdminAddDoctorUiState(
 )
 
 class AdminAddDoctorViewModel(
-    private val userRepository: UsuariosRepository,
-    private val specialtyRepository: SpecialtyRepository
+    private val adminRepository: AdminRepository
 ) : ViewModel() {
 
     private val _uiState = MutableStateFlow(AdminAddDoctorUiState())
@@ -59,19 +57,20 @@ class AdminAddDoctorViewModel(
 
     init {
         viewModelScope.launch {
-            specialtyRepository.getAllSpecialties()
-                .catch { e ->
-                    _uiState.update {
-                        it.copy(
-                            isLoading = false,
-                            errorMsg = "Error cargando especialidades: ${e.message}"
-                        )
-                    }
+            _uiState.update { it.copy(isLoading = true, errorMsg = null) }
+            val result = adminRepository.getAllSpecialties()
+            if (result.isSuccess) {
+                val specialties = result.getOrNull().orEmpty()
+                val distinct = specialties.distinctBy { it.name.lowercase() }
+                _uiState.update { it.copy(isLoading = false, backendSpecialties = distinct) }
+            } else {
+                _uiState.update {
+                    it.copy(
+                        isLoading = false,
+                        errorMsg = result.exceptionOrNull()?.message ?: "Error cargando especialidades"
+                    )
                 }
-                .collect { specialties ->
-                    val distinct = specialties.distinctBy { it.name.lowercase() }
-                    _uiState.update { it.copy(isLoading = false, backendSpecialties = distinct) }
-                }
+            }
         }
     }
 
@@ -204,18 +203,22 @@ class AdminAddDoctorViewModel(
                 return@launch
             }
 
-            val doctorRes = userRepository.createDoctor(
+            val doctorRequest = DoctorCreateRequestDto(
+                tarifaConsulta = DoctorDefaults.DEFAULT_TARIFA_CONSULTA,
+                sueldo = salaryLong,
+                bono = 0L,
+                usuario = null,
                 nombre = s.firstName,
                 apellido = s.lastName,
                 fechaNacimiento = s.birthDate,
                 correo = s.email,
                 telefono = s.phone,
                 contrasena = password,
-                idEspecialidad = chosenSpecId,
-                tarifaConsulta = UsuariosRepository.DEFAULT_TARIFA_CONSULTA,
-                sueldo = salaryLong ?: 0L,
-                bono = 0L
+                idRol = 2L,
+                tipo = "Doctor",
+                idEspecialidad = chosenSpecId
             )
+            val doctorRes = adminRepository.createDoctor(doctorRequest)
             if (doctorRes.isFailure) {
                 _uiState.update { it.copy(isLoading = false, errorMsg = "Error creando doctor: ${doctorRes.exceptionOrNull()?.message}") }
                 return@launch

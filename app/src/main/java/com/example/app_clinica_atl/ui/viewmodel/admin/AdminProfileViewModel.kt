@@ -6,8 +6,8 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.viewModelScope
 import com.example.app_clinica_atl.data.local.storage.UserPreferences
-import com.example.app_clinica_atl.data.remote.dto.UsuarioUpdateRequestDto
-import com.example.app_clinica_atl.data.repository.UsuariosRepository
+import com.example.app_clinica_atl.data.remote.dto.AdministradorUpdateRequestDto
+import com.example.app_clinica_atl.data.repository.AdminRepository
 import com.example.app_clinica_atl.util.copyUriToTempFile
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -29,7 +29,7 @@ data class AdminProfileUiState(
 )
 
 class AdminProfileViewModel(
-    private val repository: UsuariosRepository,
+    private val repository: AdminRepository,
     private val userPreferences: UserPreferences
 ) : ViewModel() {
 
@@ -57,26 +57,28 @@ class AdminProfileViewModel(
         viewModelScope.launch {
             _uiState.update { it.copy(isLoading = true) }
             try {
-                val id = userPreferences.userIdFlow.first()
+                if (!userPreferences.isAdmin()) {
+                    _uiState.update { it.copy(isLoading = false, errorMsg = "Sesión inválida para admin") }
+                    return@launch
+                }
+                val id = userPreferences.adminIdFlow.first()
                 if (id == null) {
-                    _uiState.update { it.copy(isLoading = false, errorMsg = "Error de sesión") }
+                    _uiState.update { it.copy(isLoading = false, errorMsg = "No se pudo determinar el administrador") }
                     return@launch
                 }
                 currentUserId = id
                 refreshPhotoUrl(id)
-                val result = repository.getUserById(id)
+                val result = repository.getAdminProfile(id)
 
                 if (result.isSuccess) {
-                    val u = result.getOrNull()!!
-                    // Separar nombre si viene junto
-                    val parts = u.name.split(" ", limit = 2)
+                    val admin = result.getOrNull()!!
                     _uiState.update {
                         it.copy(
                             isLoading = false,
-                            nombre = parts.getOrElse(0){""},
-                            apellido = parts.getOrElse(1){""},
-                            email = u.email,
-                            telefono = u.phone
+                            nombre = admin.nombre.orEmpty(),
+                            apellido = admin.apellido.orEmpty(),
+                            email = admin.correo.orEmpty(),
+                            telefono = admin.telefono.orEmpty()
                         )
                     }
                 } else {
@@ -96,7 +98,7 @@ class AdminProfileViewModel(
             _uiState.update { it.copy(isLoading = true, updateSuccess = false, errorMsg = null) }
             try {
                 val tempFile = copyUriToTempFile(uri, context)
-                val result = repository.uploadAdminProfilePhoto(tempFile)
+                val result = repository.uploadAdminProfilePhoto(adminId, tempFile)
                 val baseUrl = repository.buildAdminProfilePhotoUrl(adminId)
                 if (result.isSuccess) {
                     _profilePhotoUrl.value = appendTimestamp(baseUrl)
@@ -131,12 +133,13 @@ class AdminProfileViewModel(
         val uid = currentUserId ?: return
         viewModelScope.launch {
             _uiState.update { it.copy(isLoading = true, updateSuccess = false) }
-            val dto = UsuarioUpdateRequestDto(
+            val dto = AdministradorUpdateRequestDto(
                 nombre = _uiState.value.nombre,
                 apellido = _uiState.value.apellido,
+                correo = _uiState.value.email,
                 telefono = _uiState.value.telefono
             )
-            val result = repository.updateUser(uid, dto)
+            val result = repository.updateAdminProfile(uid, dto)
 
             if (result.isSuccess) {
                 _uiState.update { it.copy(isLoading = false, updateSuccess = true, isEditing = false) }
@@ -153,7 +156,7 @@ class AdminProfileViewModel(
 }
 
 class AdminProfileViewModelFactory(
-    private val repo: UsuariosRepository,
+    private val repo: AdminRepository,
     private val prefs: UserPreferences
 ) : ViewModelProvider.Factory {
     override fun <T : ViewModel> create(modelClass: Class<T>): T = AdminProfileViewModel(repo, prefs) as T

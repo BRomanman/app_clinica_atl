@@ -22,7 +22,7 @@ import androidx.compose.runtime.collectAsState
 // --- Imports de Datos ---
 import com.example.app_clinica_atl.data.local.storage.UserPreferences
 import com.example.app_clinica_atl.data.remote.dto.normalizeRole
-import com.example.app_clinica_atl.data.repository.UsuariosRepository
+import com.example.app_clinica_atl.data.repository.AdminRepository
 
 
 import com.example.app_clinica_atl.ui.screen.*
@@ -57,7 +57,7 @@ fun AppNavGraph(
     insuranceViewModel: InsuranceViewModel,
     doctorSearchPatientViewModel: DoctorSearchPatientViewModel,
     doctorPatientProfileViewModel: DoctorPatientProfileViewModel,
-    usuariosRepository: UsuariosRepository,
+    adminRepository: AdminRepository,
     // adminViewDoctorsViewModel lo creamos dentro, no hace falta pasarlo
     adminViewDoctorsViewModel: AdminViewDoctorsViewModel?,
     currentDoctorId: Long?
@@ -286,7 +286,7 @@ fun AppNavGraph(
 
         // --- LISTA DE DOCTORES ---
         composable(Route.AdminViewDoctors.path) {
-            val factory = AdminViewDoctorsViewModelFactory(usuariosRepository)
+            val factory = AdminViewDoctorsViewModelFactory(adminRepository)
             val viewModel: AdminViewDoctorsViewModel = viewModel(factory = factory)
 
             AdminViewDoctorsScreen(
@@ -305,7 +305,7 @@ fun AppNavGraph(
             val userPrefs = UserPreferences(context)
 
             // Factory limpia: Solo Repositorio y Preferencias (sin Context extra para cámara)
-            val factory = AdminProfileViewModelFactory(usuariosRepository, userPrefs)
+            val factory = AdminProfileViewModelFactory(adminRepository, userPrefs)
             val viewModel: AdminProfileViewModel = viewModel(factory = factory)
 
             AdminProfileScreen(
@@ -321,7 +321,7 @@ fun AppNavGraph(
         ) { backStackEntry ->
             val doctorId = backStackEntry.arguments?.getLong("doctorId") ?: return@composable
             // Asegúrate de tener AdminEditDoctorViewModel y su Factory creados como vimos antes
-            val factory = AdminEditDoctorViewModelFactory(usuariosRepository, doctorId)
+            val factory = AdminEditDoctorViewModelFactory(adminRepository, doctorId)
             val viewModel: AdminEditDoctorViewModel = viewModel(factory = factory)
 
             // Asegúrate de tener AdminEditDoctorScreen creada

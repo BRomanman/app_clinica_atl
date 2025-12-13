@@ -60,7 +60,9 @@ fun AdminViewDoctorsScreen(
                         Card(
                             modifier = Modifier
                                 .fillMaxWidth()
-                                .clickable { onDoctorClick(doctor.id) },
+                                .clickable {
+                                    doctor.id?.let { onDoctorClick(it) }
+                                },
                             elevation = CardDefaults.cardElevation(2.dp)
                         ) {
                             Row(
@@ -70,9 +72,21 @@ fun AdminViewDoctorsScreen(
                                 Icon(Icons.Default.Person, null, Modifier.size(40.dp))
                                 Spacer(modifier = Modifier.width(16.dp))
                                 Column {
-                                    Text(doctor.name, style = MaterialTheme.typography.titleMedium)
-                                    Text(doctor.specialty ?: "Sin especialidad", style = MaterialTheme.typography.bodyMedium)
-                                    Text(doctor.email, style = MaterialTheme.typography.bodySmall)
+                                    val displayName = listOfNotNull(doctor.nombre, doctor.apellido)
+                                        .joinToString(" ")
+                                        .trim()
+                                        .takeIf { it.isNotBlank() }
+                                        ?: listOfNotNull(doctor.usuario?.nombre, doctor.usuario?.apellido)
+                                            .joinToString(" ")
+                                            .trim()
+                                            .ifBlank { "Doctor" }
+                                    val email = doctor.usuario?.correo ?: doctor.correo.orEmpty()
+                                    Text(displayName, style = MaterialTheme.typography.titleMedium)
+                                    Text(
+                                        text = doctor.especialidad ?: "Sin especialidad",
+                                        style = MaterialTheme.typography.bodyMedium
+                                    )
+                                    Text(email, style = MaterialTheme.typography.bodySmall)
                                 }
                             }
                         }

@@ -2,16 +2,16 @@ package com.example.app_clinica_atl.ui.viewmodel.admin
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.ViewModelProvider
-import com.example.app_clinica_atl.data.repository.UsuariosRepository
+import com.example.app_clinica_atl.data.repository.AdminRepository
 
 class AdminManageSpecialtiesViewModelFactory(
-    private val usuariosRepository: UsuariosRepository
+    private val adminRepository: AdminRepository
 ) : ViewModelProvider.Factory {
 
     @Suppress("UNCHECKED_CAST")
     override fun <T : ViewModel> create(modelClass: Class<T>): T {
         if (modelClass.isAssignableFrom(AdminManageSpecialtiesViewModel::class.java)) {
-            return AdminManageSpecialtiesViewModel(usuariosRepository) as T
+            return AdminManageSpecialtiesViewModel(adminRepository) as T
         }
         throw IllegalArgumentException("Unknown ViewModel class")
     }

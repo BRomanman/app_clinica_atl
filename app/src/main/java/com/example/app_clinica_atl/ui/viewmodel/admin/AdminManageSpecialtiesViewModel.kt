@@ -2,7 +2,8 @@ package com.example.app_clinica_atl.ui.viewmodel.admin
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import com.example.app_clinica_atl.data.repository.UsuariosRepository
+import com.example.app_clinica_atl.data.remote.dto.EspecialidadUpdateRequestDto
+import com.example.app_clinica_atl.data.repository.AdminRepository
 import com.example.app_clinica_atl.domain.validation.validateRequired
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -40,7 +41,7 @@ data class AdminSpecialtiesUiState(
 )
 
 class AdminManageSpecialtiesViewModel(
-    private val usuariosRepository: UsuariosRepository
+    private val adminRepository: AdminRepository
 ) : ViewModel() {
 
     private val _uiState = MutableStateFlow(AdminSpecialtiesUiState())
@@ -51,21 +52,19 @@ class AdminManageSpecialtiesViewModel(
     }
 
     /**
-     * Reutiliza EXACTAMENTE el mismo flujo que BookAppointment:
-     * UsuariosRepository.getAllSpecialties()
+     * Carga las especialidades desde el repositorio de admin.
      */
     private fun loadSpecialties() {
         viewModelScope.launch {
             _uiState.update { it.copy(isLoading = true, errorMsg = null) }
 
-            val result = usuariosRepository.getAllSpecialties()
+            val result = adminRepository.getAllSpecialties()
             _uiState.update { current ->
                 if (result.isSuccess) {
                     val list = result.getOrNull().orEmpty()
                         .mapNotNull { dto ->
-                            val cleanName = dto.nombre?.trim().orEmpty()
+                            val cleanName = dto.name.trim()
                             if (cleanName.isBlank()) return@mapNotNull null
-
                             AdminSpecialtyItem(
                                 id = dto.id,
                                 name = cleanName,
@@ -136,9 +135,13 @@ class AdminManageSpecialtiesViewModel(
         viewModelScope.launch {
             _uiState.update { it.copy(isLoading = true, errorMsg = null) }
 
-            val result = usuariosRepository.updateSpecialty(
+            val editRequest = EspecialidadUpdateRequestDto(
+                nombre = current.editName.trim(),
+                doctorId = null
+            )
+            val result = adminRepository.updateSpecialty(
                 id = id,
-                name = current.editName.trim()
+                request = editRequest
             )
 
             _uiState.update { state ->
