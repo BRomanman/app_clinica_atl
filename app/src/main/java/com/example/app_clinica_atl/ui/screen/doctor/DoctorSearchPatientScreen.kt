@@ -76,7 +76,7 @@ fun DoctorSearchPatientScreen(
             OutlinedTextField(
                 value = uiState.query,
                 onValueChange = viewModel::onQueryChange,
-                label = { Text("Buscar por ID de paciente...") },
+                label = { Text("Buscar paciente por nombre") },
                 modifier = Modifier
                     .fillMaxWidth()
                     .heightIn(min = 72.dp),

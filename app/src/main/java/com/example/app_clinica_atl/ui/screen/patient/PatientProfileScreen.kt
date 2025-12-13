@@ -448,6 +448,9 @@ private fun AppointmentCard(
     }
 }
 
+
+
+
 @Composable
 private fun InsuranceInfoCard(
     activeInsurance: SeguroDto?,
@@ -466,52 +469,42 @@ private fun InsuranceInfoCard(
                 .padding(16.dp)
         ) {
             Text(
-                text = "Mi Seguro Médico",
+                text = "Mis Seguros Médicos",
                 style = MaterialTheme.typography.titleMedium,
                 fontWeight = FontWeight.Bold
             )
             Spacer(modifier = Modifier.height(16.dp))
             if (activeInsurance != null) {
-                Row(
-                    modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.SpaceBetween,
-                    verticalAlignment = Alignment.CenterVertically
-                ) {
-                    Column {
-                        Text(activeInsurance.name, fontWeight = FontWeight.SemiBold)
-                        Text(
-                            "\$${activeInsurance.price.toInt()} / mensual",
-                            style = MaterialTheme.typography.bodyMedium,
-                            color = MaterialTheme.colorScheme.primary
-                        )
-                    }
-                    Button(
-                        onClick = onCancelInsurance,
-                        colors = ButtonDefaults.buttonColors(
-                            containerColor = MaterialTheme.colorScheme.error
-                        )
+                val orderedInsurances = insurances
+                    .sortedBy { it.name }
+                orderedInsurances.forEach { seguro ->
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.SpaceBetween,
+                        verticalAlignment = Alignment.CenterVertically,
                     ) {
-                        Text("Cancelar")
+                        Column {
+                            Spacer(modifier = Modifier.height(12.dp))
+                            Text(seguro.name, fontWeight = FontWeight.SemiBold)
+                            Text(
+                                "\$${seguro.price.toInt()} / mensual",
+                                style = MaterialTheme.typography.bodyMedium,
+                                color = MaterialTheme.colorScheme.primary
+                            )
+                        }
+                        Button(
+                            onClick = onCancelInsurance,
+                            colors = ButtonDefaults.buttonColors(
+                                containerColor = MaterialTheme.colorScheme.error
+                            )
+                        ) {
+                            Text("Cancelar")
+                        }
                     }
-                }
-            } else {
-                Text("No tienes ningún seguro activo.")
-                Spacer(modifier = Modifier.height(8.dp))
-                TextButton(onClick = onGoToSeguros) {
-                    Text("Ver planes disponibles")
                 }
             }
-
-            if (insurances.isNotEmpty()) {
-                Spacer(modifier = Modifier.height(16.dp))
-                Text("Todos mis seguros", fontWeight = FontWeight.SemiBold)
-                Spacer(modifier = Modifier.height(8.dp))
-                insurances.forEach { seguro ->
-                    Column(modifier = Modifier.fillMaxWidth().padding(vertical = 4.dp)) {
-                        Text(seguro.name, fontWeight = FontWeight.Medium)
-                        Text("\$${seguro.price}", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.primary)
-                    }
-                }
+            else {
+                Text("No tienes ningún seguro activo.")
             }
         }
     }
@@ -668,11 +661,6 @@ private fun ProfileEditorCard(
                             style = MaterialTheme.typography.labelLarge,
                             fontWeight = FontWeight.SemiBold,
                             color = MaterialTheme.colorScheme.primary
-                        )
-                        Text(
-                            text = "Gestiona tu contraseña en un flujo dedicado.",
-                            style = MaterialTheme.typography.bodySmall,
-                            color = MaterialTheme.colorScheme.onSurfaceVariant
                         )
                     }
                 }

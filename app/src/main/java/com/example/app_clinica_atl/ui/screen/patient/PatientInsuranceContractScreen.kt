@@ -1,5 +1,6 @@
 package com.example.app_clinica_atl.ui.screen.patient
 
+import android.Manifest
 import android.os.Build
 import androidx.annotation.RequiresApi
 import androidx.compose.foundation.layout.*
@@ -33,6 +34,8 @@ import android.content.Context
 import androidx.core.app.NotificationCompat
 import androidx.core.app.NotificationManagerCompat
 import com.example.app_clinica_atl.R
+import android.widget.Toast
+import androidx.annotation.RequiresPermission
 
 data class BeneficiarioForm(
     val nombre: String = "",
@@ -341,6 +344,7 @@ fun ContratarSeguroScreen(
         Button(
             modifier = Modifier.fillMaxWidth(),
             onClick = {
+                Toast.makeText(context, "Enviando contrato...", Toast.LENGTH_SHORT).show()
                 var hasError = false
                 beneficiarios.forEachIndexed { idx, ben ->
                 val nombreErr = validatePersonName(ben.nombre, "Nombre")
@@ -386,18 +390,17 @@ fun ContratarSeguroScreen(
             Spacer(Modifier.height(8.dp))
         }
 
-        uiState.errorMsg?.let {
-            Text(it, color = Color.Red)
-            LaunchedEffect(it) {
-                delay(2000)
-                viewModel.clearMessages()
+        uiState.errorMsg?.let { msg ->
+            LaunchedEffect(msg) {
+                Toast.makeText(context, msg, Toast.LENGTH_LONG).show()
             }
         }
 
-        uiState.successMsg?.let {
-            Text(it, color = Color(0xFF0A7F0A))
-            LaunchedEffect(it) {
-                delay(2000)
+        uiState.successMsg?.let { msg ->
+            Text(msg, color = Color(0xFF0A7F0A), style = MaterialTheme.typography.bodyMedium)
+            LaunchedEffect(msg) {
+                Toast.makeText(context, "Contrato confirmado", Toast.LENGTH_SHORT).show()
+                showInsuranceNotification(context, "Contrato generado con éxito")
                 viewModel.clearMessages()
                 onBack()
             }
@@ -430,6 +433,7 @@ private fun formatDateInput(input: String): String {
     return sb.toString()
 }
 
+@RequiresPermission(Manifest.permission.POST_NOTIFICATIONS)
 private fun showInsuranceNotification(context: Context, message: String) {
     val channelId = "insurance_channel"
     val manager = NotificationManagerCompat.from(context)

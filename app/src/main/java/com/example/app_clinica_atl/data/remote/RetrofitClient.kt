@@ -11,8 +11,11 @@ import retrofit2.converter.gson.GsonConverterFactory
 // Centraliza la creación de Retrofit: usa un cliente con logging + interceptor JWT opcional
 // y expone instancias por microservicio (usuarios, seguros, citas, historial, clima).
 object RetrofitClient {
-    //https://vzv5wjj9-8080.brs.devtunnels.ms/
-    private const val CODIGO = "vzv5wjj9"
+
+    //Basti: vzv5wjj9
+    //Diego: 3zvxm102
+
+    private const val CODIGO = "3zvxm102"
     const val BASE_URL_USUARIO = "https://$CODIGO-8082.brs.devtunnels.ms/api/v1/"
     private const val BASE_URL_SEGURO = "https://$CODIGO-8084.brs.devtunnels.ms/api/v1/"
     private const val BASE_URL_CITAS = "https://$CODIGO-8080.brs.devtunnels.ms/api/v1/"

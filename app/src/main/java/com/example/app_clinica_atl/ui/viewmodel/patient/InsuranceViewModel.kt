@@ -77,6 +77,19 @@ class InsuranceViewModel(
             }
 
             try {
+                // Validar que no tenga ya este seguro activo
+                val existingInsurances = insuranceRepository.getInsurancesForPatient(patientId)
+                if (existingInsurances.isSuccess) {
+                    val alreadyHas = existingInsurances.getOrNull().orEmpty().any { it.id == seguroId }
+                    if (alreadyHas) {
+                        _uiState.update { it.copy(errorMsg = "Ya tienes contratado este seguro.") }
+                        return@launch
+                    }
+                } else {
+                    _uiState.update { it.copy(errorMsg = existingInsurances.exceptionOrNull()?.message ?: "No se pudo validar tus seguros actuales.") }
+                    return@launch
+                }
+
                 val inputFormatter = DateTimeFormatter.ofPattern("dd-MM-yyyy")
                 val outputDateFormatter = DateTimeFormatter.ISO_LOCAL_DATE
                 val outputDateTimeFormatter = DateTimeFormatter.ISO_LOCAL_DATE_TIME

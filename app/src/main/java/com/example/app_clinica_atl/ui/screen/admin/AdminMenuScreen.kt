@@ -91,7 +91,7 @@ fun AdminMenuScreen(
                         )
                     }
                     Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
-                        Text("Gestion de la Clinica", style = MaterialTheme.typography.titleMedium)
+                        Text("Gestión de la Clinica", style = MaterialTheme.typography.titleMedium)
                         Text(
                             "Que deseas gestionar hoy?",
                             style = MaterialTheme.typography.bodyMedium,

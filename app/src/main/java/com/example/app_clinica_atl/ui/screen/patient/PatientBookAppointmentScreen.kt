@@ -322,7 +322,7 @@ fun BookAppointmentScreen(
                             .padding(12.dp)
                     ) {
                         Text(
-                            text = "Las agendas se abren desde 2 días en adelante para asegurar disponibilidad.",
+                            text = "Las agendas se abren desde 1 día en adelante para asegurar disponibilidad.",
                             style = MaterialTheme.typography.bodySmall,
                             color = MaterialTheme.colorScheme.onTertiaryContainer
                         )
