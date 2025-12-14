@@ -50,6 +50,15 @@ fun AdminEditDoctorScreen(
             if (uiState.isLoading) {
                 CircularProgressIndicator(modifier = Modifier.align(Alignment.CenterHorizontally))
             } else {
+                uiState.doctorId?.let { id ->
+                    Text(
+                        text = "ID doctor: $id",
+                        style = MaterialTheme.typography.bodyMedium,
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(bottom = 8.dp)
+                    )
+                }
                 OutlinedTextField(
                     value = uiState.nombre,
                     onValueChange = viewModel::onNombreChange,

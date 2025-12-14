@@ -40,7 +40,8 @@ data class AdminEditDoctorUiState(
     val bonoError: String? = null,
     val isLoading: Boolean = true,
     val updateSuccess: Boolean = false,
-    val errorMsg: String? = null
+    val errorMsg: String? = null,
+    val doctorId: Long? = null
 )
 
 class AdminEditDoctorViewModel(
@@ -65,6 +66,7 @@ class AdminEditDoctorViewModel(
                 val birthValue = if (rawBirth.length >= 10) rawBirth.substring(0, 10) else rawBirth
                 _uiState.update {
                     it.copy(
+                        doctorId = doc.id,
                         nombre = doc.nombre.orEmpty(),
                         apellido = doc.apellido.orEmpty(),
                         birthDate = birthValue,

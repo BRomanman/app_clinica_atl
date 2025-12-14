@@ -82,6 +82,12 @@ fun AdminViewDoctorsScreen(
                                             .ifBlank { "Doctor" }
                                     val email = doctor.usuario?.correo ?: doctor.correo.orEmpty()
                                     Text(displayName, style = MaterialTheme.typography.titleMedium)
+                                    doctor.id?.let { id ->
+                                        Text(
+                                            text = "ID: $id",
+                                            style = MaterialTheme.typography.labelSmall
+                                        )
+                                    }
                                     Text(
                                         text = doctor.especialidad ?: "Sin especialidad",
                                         style = MaterialTheme.typography.bodyMedium
