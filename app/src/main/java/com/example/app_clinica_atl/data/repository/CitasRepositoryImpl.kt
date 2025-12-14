@@ -6,6 +6,7 @@ import com.example.app_clinica_atl.data.remote.CitasApi
 import com.example.app_clinica_atl.data.remote.RetrofitClient
 import com.example.app_clinica_atl.data.remote.dto.CitaDto
 import com.example.app_clinica_atl.data.remote.dto.CitaDetalleDto
+import com.example.app_clinica_atl.data.remote.dto.DoctorDto
 import com.example.app_clinica_atl.data.remote.dto.ReservarCitaRequest
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.Flow
@@ -181,16 +182,51 @@ private suspend fun fetchDoctorBrief(doctorId: Long): DoctorBrief = withContext(
             specialty = ""
         )
         val user = doctorDto.usuario
-        val fullName = listOfNotNull(user?.nombre, user?.apellido)
+        val fullName = listOfNotNull(
+            user?.nombre ?: doctorDto.nombre,
+            user?.apellido ?: doctorDto.apellido
+        )
             .joinToString(" ")
-            .ifBlank { user?.correo.orEmpty() }
+            .trim()
+            .ifBlank { user?.correo ?: doctorDto.correo ?: "" }
             .ifBlank { "Doctor #$doctorId" }
-
+        val specialty = resolveDoctorSpecialty(doctorDto)
         DoctorBrief(
             name = fullName,
-            specialty = doctorDto.especialidad.orEmpty()
+            specialty = specialty
         )
     }.getOrElse {
         DoctorBrief(name = "Doctor #$doctorId", specialty = "")
     }
+}
+
+private suspend fun resolveDoctorSpecialty(doctorDto: DoctorDto): String = withContext(Dispatchers.IO) {
+    // 1) Specialty already present?
+    val inline = doctorDto.especialidad?.trim().orEmpty()
+    if (inline.isNotEmpty()) return@withContext inline
+
+    // 2) Consultar /doctores/{id}/especialidades
+    val doctorId = doctorDto.id
+    if (doctorId != null) {
+        val specResp = runCatching { RetrofitClient.usuariosApi.getDoctorSpecialties(doctorId) }.getOrNull()
+        val fromEndpoint = specResp?.body()
+            .orEmpty()
+            .mapNotNull { it.nombre?.trim()?.takeIf { name -> name.isNotEmpty() } }
+            .firstOrNull()
+        if (!fromEndpoint.isNullOrEmpty()) return@withContext fromEndpoint
+    }
+
+    // 3) Buscar por idEspecialidad en catálogo
+    val specId = doctorDto.idEspecialidad
+    if (specId != null) {
+        val allSpecs = runCatching { RetrofitClient.usuariosApi.getAllSpecialties() }.getOrNull()
+        val match = allSpecs?.body()
+            .orEmpty()
+            .firstOrNull { it.id == specId }
+            ?.nombre
+            ?.trim()
+        if (!match.isNullOrEmpty()) return@withContext match
+    }
+
+    return@withContext "Sin especialidad"
 }

@@ -171,7 +171,7 @@ private fun PersonalInfoCard(patient: UsuarioDto) {
                 color = MaterialTheme.colorScheme.onSurfaceVariant
             )
             Text(
-                "ID Usuario: ${patient.id}",
+                "ID: ${patient.id}",
                 style = MaterialTheme.typography.bodyLarge,
                 color = MaterialTheme.colorScheme.primary
             )

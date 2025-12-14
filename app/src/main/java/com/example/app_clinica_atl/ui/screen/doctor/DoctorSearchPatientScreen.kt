@@ -150,7 +150,7 @@ private fun PatientCard(
                     Spacer(modifier = Modifier.weight(1f))
 
                     Text(
-                        text = "ID Usuario: ${patient.id}",
+                        text = "ID: ${patient.id}",
                         style = MaterialTheme.typography.titleLarge,
                         fontWeight = FontWeight.Bold,
                         color = MaterialTheme.colorScheme.onSurfaceVariant

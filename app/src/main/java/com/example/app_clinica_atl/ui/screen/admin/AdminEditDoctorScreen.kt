@@ -1,5 +1,6 @@
 package com.example.app_clinica_atl.ui.screen.admin
 
+import android.widget.Toast
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -36,6 +37,7 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.TextRange
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.input.TextFieldValue
@@ -52,6 +54,7 @@ fun AdminEditDoctorScreen(
     viewModel: AdminEditDoctorViewModel,
     onBackClick: () -> Unit
 ) {
+    val context = LocalContext.current
     val uiState by viewModel.uiState.collectAsState()
     var specialtyExpanded by remember { mutableStateOf(false) }
     var birthField by remember(uiState.birthDate) {
@@ -255,7 +258,7 @@ fun AdminEditDoctorScreen(
 
             uiState.errorMsg?.let { Text(it, color = MaterialTheme.colorScheme.error) }
             if (uiState.updateSuccess) {
-                Text("Datos actualizados correctamente.", color = MaterialTheme.colorScheme.primary)
+                Toast.makeText(context, "Datos actualizados correctamente", Toast.LENGTH_LONG).show()
             }
         }
     }

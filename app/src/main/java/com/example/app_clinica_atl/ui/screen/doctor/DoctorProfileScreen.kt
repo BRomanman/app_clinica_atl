@@ -379,6 +379,7 @@ private fun DoctorProfileContent(
     }
 }
 
+@RequiresApi(Build.VERSION_CODES.O)
 @Composable
 private fun DoctorProfileHeader(
     doctor: DoctorProfileInfo,
@@ -664,7 +665,7 @@ private fun DoctorStatsCard(
             Text("Estadísticas mensuales", style = MaterialTheme.typography.titleMedium)
             Spacer(modifier = Modifier.height(8.dp))
             Text(
-                text = "Citas (mes más reciente): $totalAppointments",
+                text = "Citas (mes más reciente): ${totalAppointments}",
                 style = MaterialTheme.typography.bodyLarge,
                 fontWeight = FontWeight.Bold
             )

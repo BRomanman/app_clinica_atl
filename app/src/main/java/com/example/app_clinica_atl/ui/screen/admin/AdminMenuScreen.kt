@@ -108,7 +108,7 @@ fun AdminMenuScreen(
                 AdminActionCard(
                     icon = Icons.Default.Add,
                     title = "Gestionar Especialidades",
-                    subtitle = "Crea, edita o revisa especialidades",
+                    subtitle = "Edita especialidades",
                     onClick = onAddSpecialty
                 )
                 AdminActionCard(

@@ -26,6 +26,8 @@ data class AdminAddDoctorUiState(
     val email: String = "",
     val phone: String = "",
     val salary: String = "",
+    val generatedEmail: String? = null,
+    val generatedPassword: String? = null,
 
     val backendSpecialties: List<EspecialidadDto> = emptyList(),
     val newSpecialties: List<String> = emptyList(),
@@ -178,8 +180,6 @@ class AdminAddDoctorViewModel(
         }
     }
 
-    fun clearSuccess() { _uiState.update { it.copy(registrationSuccess = false, createdDoctorName = null) } }
-
     fun registerDoctor() {
         val s = _uiState.value
 
@@ -266,6 +266,8 @@ class AdminAddDoctorViewModel(
                     isLoading = false,
                     registrationSuccess = true,
                     createdDoctorName = "${s.firstName} ${s.lastName}".trim(),
+                    generatedEmail = s.email,
+                    generatedPassword = password,
                     firstName = "", lastName = "", birthDate = "", email = "", phone = "", salary = "",
                     selectedSpecialties = emptyList(),
                     newSpecialties = emptyList(),
@@ -273,5 +275,9 @@ class AdminAddDoctorViewModel(
                 )
             }
         }
+    }
+
+    fun clearSuccess() {
+        _uiState.update { it.copy(registrationSuccess = false) }
     }
 }

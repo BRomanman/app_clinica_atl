@@ -373,7 +373,10 @@ class DoctorProfileViewModel(
         return citas
             .asSequence()
             .filter { cita ->
-                !cita.status.contains("cancel", ignoreCase = true)
+                !cita.status.contains("cancel", ignoreCase = true) &&
+                        cita.patientId != null &&
+                        cita.patientId!! > 0 &&
+                        !cita.available
             }
             .mapNotNull { cita -> parseYearMonth(cita.date) }
             .groupingBy { it }

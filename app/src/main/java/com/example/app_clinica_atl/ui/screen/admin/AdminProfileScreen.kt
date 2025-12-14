@@ -177,9 +177,7 @@ fun AdminProfileScreen(
 
             Spacer(modifier = Modifier.height(16.dp))
 
-            // =========================
-            // Formulario con validación
-            // =========================
+
             OutlinedTextField(
                 value = uiState.nombre,
                 onValueChange = { raw ->
@@ -225,7 +223,10 @@ fun AdminProfileScreen(
             OutlinedTextField(
                 value = uiState.email,
                 onValueChange = { raw ->
-                    val sanitized = sanitizeEmail(raw, maxLen = 60)
+                    val sanitized = sanitizeEmail(
+                        raw.lowercase(),
+                        maxLen = 60
+                    )
                     viewModel.onEmailChange(sanitized)
                 },
                 label = { Text("Correo") },
@@ -241,7 +242,7 @@ fun AdminProfileScreen(
                         Text("${uiState.email.length}/60")
                     }
                 },
-                placeholder = { Text("usuario@gmail.com") }
+                placeholder = { Text("usuario@ATLADMIN.CL") }
             )
             Spacer(modifier = Modifier.height(8.dp))
 
