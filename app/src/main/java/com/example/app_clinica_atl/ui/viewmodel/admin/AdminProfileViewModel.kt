@@ -9,6 +9,7 @@ import com.example.app_clinica_atl.data.local.storage.UserPreferences
 import com.example.app_clinica_atl.data.remote.dto.AdministradorUpdateRequestDto
 import com.example.app_clinica_atl.data.repository.AdminRepository
 import com.example.app_clinica_atl.util.copyUriToTempFile
+import java.io.IOException
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -194,11 +195,22 @@ class AdminProfileViewModel(
                     currentPasswordError = null,
                     newPasswordError = null,
                     confirmPasswordError = null,
+                    isPasswordUpdating = false,
                     passwordChangeError = null,
                     passwordChangeSuccess = false
                 )
             } else {
-                state.copy(isChangingPassword = false)
+                state.copy(
+                    isChangingPassword = false,
+                    currentPassword = "",
+                    newPassword = "",
+                    confirmPassword = "",
+                    currentPasswordError = null,
+                    newPasswordError = null,
+                    confirmPasswordError = null,
+                    passwordChangeError = null,
+                    isPasswordUpdating = false
+                )
             }
         }
     }
@@ -237,11 +249,23 @@ class AdminProfileViewModel(
         }
 
         viewModelScope.launch {
-            val result = repository.changeAdminPassword(
-                adminId,
-                state.currentPassword,
-                state.newPassword
-            )
+            val result = try {
+                repository.changeAdminPassword(
+                    adminId,
+                    state.currentPassword,
+                    state.newPassword
+                )
+            } catch (e: IOException) {
+                _uiState.update {
+                    it.copy(
+                        isPasswordUpdating = false,
+                        passwordChangeError = "Tiempo de espera agotado. Verifica tu conexión e inténtalo de nuevo.",
+                        passwordChangeSuccess = false
+                    )
+                }
+                return@launch
+            }
+
             if (result.isSuccess) {
                 _uiState.update {
                     it.copy(
@@ -252,7 +276,9 @@ class AdminProfileViewModel(
                         newPasswordError = null,
                         confirmPasswordError = null,
                         isPasswordUpdating = false,
-                        passwordChangeSuccess = true
+                        isChangingPassword = false,
+                        passwordChangeSuccess = true,
+                        passwordChangeError = null
                     )
                 }
             } else {
@@ -277,7 +303,6 @@ class AdminProfileViewModel(
             }
         }
     }
-
     fun toggleEdit() { _uiState.update { it.copy(isEditing = !it.isEditing) } }
 
     fun updateProfile() {
