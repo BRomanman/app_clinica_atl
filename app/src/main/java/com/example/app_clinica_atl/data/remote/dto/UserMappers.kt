@@ -70,8 +70,8 @@ fun DoctorDto.toUsuarioDto(): UsuarioDto {
         u?.nombre ?: nombre,
         u?.apellido ?: apellido
     ).joinToString(" ").trim()
-    val rawRole = extractRoleText(u?.rol) ?: tipo
-    val resolvedRole = normalizeRole(rawRole, u?.idRol ?: idRol ?: extractRoleId(u?.rol))
+    val rawRole = extractRoleText(u?.rol) ?: tipo ?: "doctor"
+    val resolvedRole = normalizeRole(rawRole, u?.idRol ?: idRol ?: 2L)
     val emailValue = u?.correo ?: correo
     val phoneValue = u?.telefono ?: telefono
     return UsuarioDto(
@@ -83,7 +83,7 @@ fun DoctorDto.toUsuarioDto(): UsuarioDto {
         password = "",
         profileImageUrl = u?.imagenPerfil,
         role = resolvedRole,
-        roleId = u?.idRol ?: idRol,
+        roleId = u?.idRol ?: idRol ?: 2L,
         specialty = especialidad,
         salary = sueldo?.toDouble(),
         birthDate = u?.fechaNacimiento ?: fechaNacimiento,
