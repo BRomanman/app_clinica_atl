@@ -235,15 +235,6 @@ fun AdminEditDoctorScreen(
             }
             uiState.specialtyError?.let { Text(it, color = MaterialTheme.colorScheme.error) }
 
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                verticalAlignment = Alignment.CenterVertically,
-                horizontalArrangement = Arrangement.SpaceBetween
-            ) {
-                Text("Activo")
-                Switch(checked = uiState.activo, onCheckedChange = { viewModel.onActivoChange(it) })
-            }
-
             Button(
                 onClick = viewModel::saveChanges,
                 modifier = Modifier.fillMaxWidth(),

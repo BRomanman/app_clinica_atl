@@ -28,9 +28,9 @@ import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.text.input.VisualTransformation
 import androidx.compose.ui.unit.dp
 import androidx.core.content.FileProvider
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import coil.compose.AsyncImage
 import coil.request.ImageRequest
-import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.example.app_clinica_atl.R
 import com.example.app_clinica_atl.ui.profile.DEFAULT_AVATAR_URL
 import com.example.app_clinica_atl.ui.viewmodel.admin.AdminProfileViewModel
@@ -52,6 +52,27 @@ fun AdminProfileScreen(
     val photoErrorMessage by viewModel.photoErrorMessage.collectAsStateWithLifecycle()
     val authToken by viewModel.authToken.collectAsStateWithLifecycle()
     val context = LocalContext.current
+
+    // ===== Validaciones en tiempo real (solo al editar) =====
+    val nombreError = remember(uiState.nombre, uiState.isEditing) {
+        if (uiState.isEditing) validateNombre(uiState.nombre) else null
+    }
+    val apellidoError = remember(uiState.apellido, uiState.isEditing) {
+        if (uiState.isEditing) validateApellido(uiState.apellido) else null
+    }
+    val emailError = remember(uiState.email, uiState.isEditing) {
+        if (uiState.isEditing) validateGmail(uiState.email) else null
+    }
+    val telefonoError = remember(uiState.telefono, uiState.isEditing) {
+        if (uiState.isEditing) validatePhone(uiState.telefono) else null
+    }
+
+    val canSaveProfile = uiState.isEditing &&
+            !uiState.isLoading &&
+            nombreError == null &&
+            apellidoError == null &&
+            emailError == null &&
+            telefonoError == null
 
     var tempImageUri by remember { mutableStateOf<Uri?>(null) }
 
@@ -80,7 +101,7 @@ fun AdminProfileScreen(
     }
 
     LaunchedEffect(uiState.updateSuccess) {
-        if(uiState.updateSuccess) viewModel.clearMsg()
+        if (uiState.updateSuccess) viewModel.clearMsg()
     }
 
     var currentPasswordVisible by rememberSaveable { mutableStateOf(false) }
@@ -134,7 +155,6 @@ fun AdminProfileScreen(
                 }
             }
 
-
             Spacer(modifier = Modifier.height(8.dp))
             Row(
                 horizontalArrangement = Arrangement.spacedBy(8.dp),
@@ -157,46 +177,94 @@ fun AdminProfileScreen(
 
             Spacer(modifier = Modifier.height(16.dp))
 
-            // Formulario
+            // =========================
+            // Formulario con validación
+            // =========================
             OutlinedTextField(
                 value = uiState.nombre,
-                onValueChange = viewModel::onNombreChange,
+                onValueChange = { raw ->
+                    val sanitized = sanitizeName(raw, maxLen = 40)
+                    viewModel.onNombreChange(sanitized)
+                },
                 label = { Text("Nombre") },
                 modifier = Modifier.fillMaxWidth(),
                 enabled = uiState.isEditing,
-                singleLine = true
+                singleLine = true,
+                isError = uiState.isEditing && nombreError != null,
+                supportingText = {
+                    if (uiState.isEditing && nombreError != null) {
+                        Text(nombreError, color = MaterialTheme.colorScheme.error)
+                    } else if (uiState.isEditing) {
+                        Text("${uiState.nombre.length}/40")
+                    }
+                }
             )
             Spacer(modifier = Modifier.height(8.dp))
 
             OutlinedTextField(
                 value = uiState.apellido,
-                onValueChange = viewModel::onApellidoChange,
+                onValueChange = { raw ->
+                    val sanitized = sanitizeName(raw, maxLen = 40)
+                    viewModel.onApellidoChange(sanitized)
+                },
                 label = { Text("Apellido") },
                 modifier = Modifier.fillMaxWidth(),
                 enabled = uiState.isEditing,
-                singleLine = true
+                singleLine = true,
+                isError = uiState.isEditing && apellidoError != null,
+                supportingText = {
+                    if (uiState.isEditing && apellidoError != null) {
+                        Text(apellidoError, color = MaterialTheme.colorScheme.error)
+                    } else if (uiState.isEditing) {
+                        Text("${uiState.apellido.length}/40")
+                    }
+                }
             )
             Spacer(modifier = Modifier.height(8.dp))
 
             OutlinedTextField(
                 value = uiState.email,
-                onValueChange = viewModel::onEmailChange,
+                onValueChange = { raw ->
+                    val sanitized = sanitizeEmail(raw, maxLen = 60)
+                    viewModel.onEmailChange(sanitized)
+                },
                 label = { Text("Correo") },
                 modifier = Modifier.fillMaxWidth(),
                 enabled = uiState.isEditing,
                 keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Email),
-                singleLine = true
+                singleLine = true,
+                isError = uiState.isEditing && emailError != null,
+                supportingText = {
+                    if (uiState.isEditing && emailError != null) {
+                        Text(emailError, color = MaterialTheme.colorScheme.error)
+                    } else if (uiState.isEditing) {
+                        Text("${uiState.email.length}/60")
+                    }
+                },
+                placeholder = { Text("usuario@gmail.com") }
             )
             Spacer(modifier = Modifier.height(8.dp))
 
             OutlinedTextField(
                 value = uiState.telefono,
-                onValueChange = viewModel::onTelefonoChange,
+                onValueChange = { raw ->
+                    val sanitized = sanitizePhone(raw)
+                    viewModel.onTelefonoChange(sanitized)
+                },
                 label = { Text("Teléfono") },
                 modifier = Modifier.fillMaxWidth(),
                 enabled = uiState.isEditing,
                 keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Phone),
-                singleLine = true
+                singleLine = true,
+                isError = uiState.isEditing && telefonoError != null,
+                supportingText = {
+                    if (uiState.isEditing && telefonoError != null) {
+                        Text(telefonoError, color = MaterialTheme.colorScheme.error)
+                    } else if (uiState.isEditing) {
+                        Text("${uiState.telefono.length}/12") // +569 + 8 dígitos = 12
+                    }
+                },
+                placeholder = { Text("+56912345678") }
             )
 
             Spacer(modifier = Modifier.height(24.dp))
@@ -321,6 +389,7 @@ fun AdminProfileScreen(
                     }
                 )
             }
+
             // Mensajes y Botones
             if (uiState.errorMsg != null) {
                 Text(uiState.errorMsg!!, color = MaterialTheme.colorScheme.error)
@@ -350,7 +419,7 @@ fun AdminProfileScreen(
                     Spacer(modifier = Modifier.width(16.dp))
                     Button(
                         onClick = viewModel::updateProfile,
-                        enabled = !uiState.isLoading,
+                        enabled = canSaveProfile,
                         modifier = Modifier.weight(1f)
                     ) {
                         if (uiState.isLoading) CircularProgressIndicator(modifier = Modifier.size(24.dp)) else Text("Guardar")
@@ -386,4 +455,73 @@ private fun createImageUri(context: Context): Uri {
         authority,
         imageFile
     )
+}
+
+// ==========================
+// Helpers: sanitizar/validar
+// ==========================
+private val GMAIL_REGEX = Regex("^[A-Za-z0-9._%+-]+@atladmin\\.cl$", RegexOption.IGNORE_CASE)
+private val PHONE_REGEX = Regex("^\\+569\\d{8}$")
+
+private fun sanitizeName(input: String, maxLen: Int): String {
+    return input
+        .filter { it.isLetter() || it == ' ' }
+        .take(maxLen)
+}
+
+private fun sanitizeEmail(input: String, maxLen: Int): String {
+    return input
+        .trim()
+        .replace(" ", "")
+        .take(maxLen)
+}
+
+private fun sanitizePhone(input: String): String {
+    // Permite solo números y fuerza siempre +569 + 8 dígitos
+    val digits = input.filter { it.isDigit() }
+
+    val afterPrefix = when {
+        digits.startsWith("569") -> digits.drop(3)
+        digits.startsWith("56") -> digits.drop(2)
+        digits.startsWith("9") -> digits.drop(1)
+        else -> digits
+    }.take(8)
+
+    return "+569$afterPrefix"
+}
+
+private fun validateNombre(value: String): String? {
+    if (value.isBlank()) return "El nombre no puede quedar vacío"
+    if (value.length > 40) return "Máximo 40 caracteres"
+    if (value.any { it.isDigit() }) return "No se permiten números"
+    if (value.any { !(it.isLetter() || it == ' ') }) return "Solo letras"
+    return null
+}
+
+private fun validateApellido(value: String): String? {
+    if (value.isBlank()) return "El apellido no puede quedar vacío"
+    if (value.length > 40) return "Máximo 40 caracteres"
+    if (value.any { it.isDigit() }) return "No se permiten números"
+    if (value.any { !(it.isLetter() || it == ' ') }) return "Solo letras"
+    return null
+}
+
+private fun validateGmail(value: String): String? {
+    if (value.isBlank()) return "El correo no puede quedar vacío"
+    if (value.length > 60) return "Máximo 60 caracteres"
+    if (!GMAIL_REGEX.matches(value)) return "Debe ser un correo @atladmin.cl"
+    return null
+}
+
+private fun validatePhone(value: String): String? {
+    if (!value.startsWith("+569")) return "Debe comenzar con +569"
+    val tail = value.removePrefix("+569")
+
+    if (tail.isEmpty()) return "Ingresa 8 dígitos después de +569"
+    if (tail.length < 8) return "Faltan ${8 - tail.length} dígitos"
+    if (tail.length > 8) return "Sobran dígitos"
+    if (!tail.all { it.isDigit() }) return "Solo números"
+    if (!PHONE_REGEX.matches(value)) return "Formato: +569XXXXXXXX"
+
+    return null
 }
