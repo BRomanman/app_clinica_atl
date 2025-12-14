@@ -1,5 +1,6 @@
 package com.example.app_clinica_atl.ui.screen.admin
 
+import android.widget.Toast
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -11,11 +12,11 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.ArrowBack
+import androidx.compose.material.icons.autoMirrored.AutoMirrored
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.CircularProgressIndicator
-import androidx.compose.material3.Divider
 import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
@@ -26,10 +27,12 @@ import androidx.compose.material3.TextButton
 import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import com.example.app_clinica_atl.ui.viewmodel.admin.AdminManageSpecialtiesViewModel
@@ -42,6 +45,14 @@ fun AdminManageSpecialtiesScreen(
     onBackClick: () -> Unit
 ) {
     val uiState by viewModel.uiState.collectAsState()
+    val context = LocalContext.current
+
+    LaunchedEffect(uiState.successMessage) {
+        uiState.successMessage?.takeIf { it.isNotBlank() }?.let { message ->
+            Toast.makeText(context, message, Toast.LENGTH_SHORT).show()
+            viewModel.clearSuccessMessage()
+        }
+    }
 
     Scaffold(
         topBar = {
@@ -50,7 +61,7 @@ fun AdminManageSpecialtiesScreen(
                 navigationIcon = {
                     IconButton(onClick = onBackClick) {
                         Icon(
-                            imageVector = Icons.Default.ArrowBack,
+                            imageVector = Icons.AutoMirrored.Filled.ArrowBack,
                             contentDescription = "Volver"
                         )
                     }
@@ -65,7 +76,6 @@ fun AdminManageSpecialtiesScreen(
                 .fillMaxSize()
                 .padding(horizontal = 16.dp, vertical = 8.dp)
         ) {
-
             if (uiState.isLoading) {
                 Row(
                     modifier = Modifier
@@ -95,13 +105,12 @@ fun AdminManageSpecialtiesScreen(
                         specialty = item,
                         onEditClick = { viewModel.openEditDialog(item) }
                     )
-                    Divider()
+                    HorizontalDivider()
                 }
             }
         }
     }
 
-    // --- Diálogo: Editar ---
     if (uiState.isEditDialogOpen) {
         AlertDialog(
             onDismissRequest = { viewModel.dismissEditDialog() },
@@ -111,7 +120,7 @@ fun AdminManageSpecialtiesScreen(
                     OutlinedTextField(
                         value = uiState.editName,
                         onValueChange = { viewModel.onEditNameChange(it) },
-                        label = { Text("Nombre de la especialidad") },
+                        label = { Text("Nombre") },
                         isError = uiState.editNameError != null,
                         modifier = Modifier.fillMaxWidth()
                     )

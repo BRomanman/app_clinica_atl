@@ -11,33 +11,20 @@ import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 
-/**
- * Item que se muestra en la lista de la pantalla de administración.
- *
- * isFromInitialLoad:
- *  - true  -> venía desde la BD al cargar la pantalla (especialidad "original").
- *  - false -> fue creada en esta pantalla (¡NOTA! en esta versión deshabilitamos creación).
- */
 data class AdminSpecialtyItem(
     val id: Long?,
-    val name: String,
-    val isFromInitialLoad: Boolean
+    val name: String
 )
 
-/**
- * Estado de UI para AdminManageSpecialtiesScreen.
- * (Sin diálogo de "Agregar", solo GET + PUT)
- */
 data class AdminSpecialtiesUiState(
     val isLoading: Boolean = false,
     val specialties: List<AdminSpecialtyItem> = emptyList(),
     val errorMsg: String? = null,
-
-    // --- Diálogo "Modificar especialidad" ---
     val isEditDialogOpen: Boolean = false,
     val editingId: Long? = null,
     val editName: String = "",
-    val editNameError: String? = null
+    val editNameError: String? = null,
+    val successMessage: String? = null
 )
 
 class AdminManageSpecialtiesViewModel(
@@ -51,9 +38,6 @@ class AdminManageSpecialtiesViewModel(
         loadSpecialties()
     }
 
-    /**
-     * Carga las especialidades desde el repositorio de admin.
-     */
     private fun loadSpecialties() {
         viewModelScope.launch {
             _uiState.update { it.copy(isLoading = true, errorMsg = null) }
@@ -63,15 +47,14 @@ class AdminManageSpecialtiesViewModel(
                 if (result.isSuccess) {
                     val list = result.getOrNull().orEmpty()
                         .mapNotNull { dto ->
-                            val cleanName = dto.name.trim()
+                            val cleanName = dto.name?.trim().orEmpty()
                             if (cleanName.isBlank()) return@mapNotNull null
                             AdminSpecialtyItem(
                                 id = dto.id,
-                                name = cleanName,
-                                isFromInitialLoad = true
+                                name = cleanName
                             )
                         }
-                        .distinctBy { it.id to it.name }
+                        .distinctBy { Pair(it.id, it.name) }
 
                     current.copy(
                         isLoading = false,
@@ -87,10 +70,6 @@ class AdminManageSpecialtiesViewModel(
             }
         }
     }
-
-    // --------------------
-    //  Diálogo: EDITAR
-    // --------------------
 
     fun openEditDialog(item: AdminSpecialtyItem) {
         _uiState.update {
@@ -108,6 +87,7 @@ class AdminManageSpecialtiesViewModel(
             it.copy(
                 isEditDialogOpen = false,
                 editingId = null,
+                editName = "",
                 editNameError = null
             )
         }
@@ -120,10 +100,11 @@ class AdminManageSpecialtiesViewModel(
     fun confirmEditSpecialty() {
         val current = _uiState.value
         val id = current.editingId
+        val trimmedName = current.editName.trim()
 
-        val error = validateRequired(current.editName, "Nombre")
-        if (error != null) {
-            _uiState.update { it.copy(editNameError = error) }
+        val nameError = validateRequired(trimmedName, "Nombre")
+        if (nameError != null) {
+            _uiState.update { it.copy(editNameError = nameError) }
             return
         }
 
@@ -136,8 +117,7 @@ class AdminManageSpecialtiesViewModel(
             _uiState.update { it.copy(isLoading = true, errorMsg = null) }
 
             val editRequest = EspecialidadUpdateRequestDto(
-                nombre = current.editName.trim(),
-                doctorId = null
+                nombre = trimmedName
             )
             val result = adminRepository.updateSpecialty(
                 id = id,
@@ -147,14 +127,16 @@ class AdminManageSpecialtiesViewModel(
             _uiState.update { state ->
                 if (result.isSuccess) {
                     val updatedList = state.specialties.map { item ->
-                        if (item.id == id) item.copy(name = current.editName.trim()) else item
+                        if (item.id == id) item.copy(name = trimmedName) else item
                     }
 
                     state.copy(
                         isLoading = false,
                         isEditDialogOpen = false,
                         editingId = null,
+                        editName = "",
                         editNameError = null,
+                        successMessage = "Especialidad modificada con éxito",
                         specialties = updatedList
                     )
                 } else {
@@ -169,5 +151,9 @@ class AdminManageSpecialtiesViewModel(
 
     fun clearError() {
         _uiState.update { it.copy(errorMsg = null) }
+    }
+
+    fun clearSuccessMessage() {
+        _uiState.update { it.copy(successMessage = null) }
     }
 }

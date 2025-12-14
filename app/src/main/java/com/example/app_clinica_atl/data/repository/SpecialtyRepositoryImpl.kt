@@ -39,8 +39,7 @@ class SpecialtyRepositoryImpl(
 
         return EspecialidadDto(
             id = this.id ?: 0L,
-            name = cleanName,
-            price = 0.0
+            name = cleanName
         )
     }
 }

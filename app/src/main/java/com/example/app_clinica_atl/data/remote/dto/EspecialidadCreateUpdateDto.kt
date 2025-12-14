@@ -27,6 +27,5 @@ data class EspecialidadCreateRequestDto(
  * Por eso los campos son opcionales.
  */
 data class EspecialidadUpdateRequestDto(
-    @SerializedName("nombre") val nombre: String? = null,
-    @SerializedName("doctorId") val doctorId: Long? = null
+    @SerializedName("nombre") val nombre: String? = null
 )

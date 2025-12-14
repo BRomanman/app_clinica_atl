@@ -41,10 +41,9 @@ class AdminSpecialtyRepository(
         }
 
     /**
-     * Actualiza solo el nombre de una especialidad.
+     * Actualiza el nombre de una especialidad existente.
      *
      * PUT /api/v1/especialidades/{id}
-     * Enviamos doctorId = null para no cambiar la relación con el doctor.
      */
     suspend fun updateSpecialtyName(
         id: Long,
@@ -53,8 +52,7 @@ class AdminSpecialtyRepository(
         withContext(Dispatchers.IO) {
             try {
                 val request = EspecialidadUpdateRequestDto(
-                    nombre = newName,
-                    doctorId = null
+                    nombre = newName
                 )
                 val response = api.updateSpecialty(id, request)
                 if (response.isSuccessful) {

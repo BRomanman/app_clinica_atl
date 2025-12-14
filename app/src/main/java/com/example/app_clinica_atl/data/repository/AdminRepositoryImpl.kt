@@ -214,7 +214,6 @@ private fun EspecialidadResponseDto.toDtoOrNull(): EspecialidadDto? {
     if (cleanName.isBlank()) return null
     return EspecialidadDto(
         id = id ?: 0L,
-        name = cleanName,
-        price = 0.0
+        name = cleanName
     )
 }
