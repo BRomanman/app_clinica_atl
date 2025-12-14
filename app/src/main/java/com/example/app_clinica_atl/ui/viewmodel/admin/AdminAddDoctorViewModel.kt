@@ -9,6 +9,7 @@ import com.example.app_clinica_atl.data.repository.DoctorDefaults
 import com.example.app_clinica_atl.domain.validation.validateChileanPhoneNumber
 import com.example.app_clinica_atl.domain.validation.validateEmail
 import com.example.app_clinica_atl.domain.validation.validateRequired
+import java.io.IOException
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -222,7 +223,17 @@ class AdminAddDoctorViewModel(
                 bono = 0L,
                 activo = true
             )
-            val doctorRes = adminRepository.createDoctor(doctorRequest)
+            val doctorRes = try {
+                adminRepository.createDoctor(doctorRequest)
+            } catch (e: IOException) {
+                _uiState.update {
+                    it.copy(
+                        isLoading = false,
+                        errorMsg = "Tiempo de espera agotado. Verifica tu conexión o que el servidor de la clínica esté levantado."
+                    )
+                }
+                return@launch
+            }
             if (doctorRes.isFailure) {
                 _uiState.update { it.copy(isLoading = false, errorMsg = "Error creando doctor: ${doctorRes.exceptionOrNull()?.message}") }
                 return@launch
