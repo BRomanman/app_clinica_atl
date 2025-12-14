@@ -4,6 +4,7 @@ import com.example.app_clinica_atl.data.local.storage.UserPreferences
 import com.example.app_clinica_atl.data.remote.RetrofitClient
 import com.example.app_clinica_atl.data.remote.UsuariosApi
 import com.example.app_clinica_atl.data.remote.dto.DoctorCreateRequestDto // <-- IMPORT AÑADIDO
+import com.example.app_clinica_atl.data.remote.dto.DoctorDto
 import com.example.app_clinica_atl.data.remote.dto.EspecialidadResponseDto
 import com.example.app_clinica_atl.data.remote.dto.EspecialidadUpdateRequestDto
 import com.example.app_clinica_atl.data.remote.dto.LoginRequestDto
@@ -135,19 +136,44 @@ class UsuariosRepository(
 
     // --- FUNCIÓN CLAVE PARA EL LISTADO DE DOCTORES ---
     fun getAllDoctors(): Flow<List<UsuarioDto>> = flow {
-        val doctors = withContext(Dispatchers.IO) {
-            runCatching {
+        val (doctors, specialties) = withContext(Dispatchers.IO) {
+            val doctorList = runCatching {
                 val response = usuariosApi.getDoc()
-                if (response.isSuccessful) {
-                    response.body().orEmpty().map { it.toUsuarioDto() }
-                } else {
-                    emptyList()
-                }
-            }.getOrElse {
-                emptyList()
-            }
+                if (response.isSuccessful) response.body().orEmpty() else emptyList()
+            }.getOrElse { emptyList() }
+
+            val specialtyList = runCatching {
+                val response = usuariosApi.getAllSpecialties()
+                if (response.isSuccessful) response.body().orEmpty() else emptyList()
+            }.getOrElse { emptyList() }
+
+            doctorList to specialtyList
         }
-        emit(doctors)
+
+        val specialtyById: Map<Long, String> = specialties.mapNotNull { spec ->
+            val id = spec.id ?: return@mapNotNull null
+            val name = spec.nombre?.trim()?.takeIf { it.isNotEmpty() } ?: return@mapNotNull null
+            id to name
+        }.toMap()
+
+        val specialtyByDoctorId: Map<Long, String> = specialties.mapNotNull { spec ->
+            val doctorId = spec.doctorId ?: return@mapNotNull null
+            val name = spec.nombre?.trim()?.takeIf { it.isNotEmpty() } ?: return@mapNotNull null
+            doctorId to name
+        }.toMap()
+
+        val doctorsWithSpecialty = doctors.map { doctorDto ->
+            val baseUser = doctorDto.toUsuarioDto()
+            val resolvedSpecialty = resolveDoctorSpecialty(
+                doctorDto = doctorDto,
+                currentSpecialty = baseUser.specialty,
+                specialtyByDoctorId = specialtyByDoctorId,
+                specialtyById = specialtyById
+            )
+            baseUser.copy(specialty = resolvedSpecialty)
+        }
+
+        emit(doctorsWithSpecialty)
     }
 
     // Usa el doctorId cacheado (DataStore) para no depender del backend en cada consulta
@@ -374,6 +400,20 @@ class UsuariosRepository(
             yyyymmdd.matches(trimmed) -> trimmed
             else -> null
         }
+    }
+
+    private fun resolveDoctorSpecialty(
+        doctorDto: DoctorDto,
+        currentSpecialty: String?,
+        specialtyByDoctorId: Map<Long, String>,
+        specialtyById: Map<Long, String>
+    ): String? {
+        return listOfNotNull(
+            currentSpecialty?.trim()?.takeIf { it.isNotEmpty() },
+            doctorDto.especialidad?.trim()?.takeIf { it.isNotEmpty() },
+            doctorDto.id?.let { specialtyByDoctorId[it]?.takeIf { name -> name.isNotBlank() } },
+            doctorDto.idEspecialidad?.let { specialtyById[it]?.takeIf { name -> name.isNotBlank() } }
+        ).firstOrNull()
     }
 }
 
