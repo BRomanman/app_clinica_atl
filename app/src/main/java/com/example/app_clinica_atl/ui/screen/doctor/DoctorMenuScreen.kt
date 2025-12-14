@@ -67,7 +67,7 @@ fun DoctorMenuScreen(
             Spacer(modifier = Modifier.height(16.dp))
 
             Button(onClick = onSearchPatient, modifier = Modifier.fillMaxWidth()) {
-                Text("Buscar Pacientes por ID")
+                Text("Buscar Pacientes")
             }
 
             Spacer(modifier = Modifier.height(60.dp))
