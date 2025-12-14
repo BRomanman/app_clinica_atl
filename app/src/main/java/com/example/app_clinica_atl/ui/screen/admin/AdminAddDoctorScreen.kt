@@ -50,7 +50,6 @@ import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.input.TextFieldValue
 import androidx.compose.ui.unit.dp
 import androidx.core.content.ContextCompat
-import com.example.app_clinica_atl.R
 import com.example.app_clinica_atl.data.remote.dto.EspecialidadDto
 import com.example.app_clinica_atl.notifications.NotificationHelper
 import com.example.app_clinica_atl.ui.screen.patient.formatDateInput
@@ -81,7 +80,8 @@ fun AdminAddDoctorScreen(
                 requestPermission = notificationPermissionLauncher::launch
             )
             Toast.makeText(
-                context,"¡Doctor registrado con éxito!",Toast.LENGTH_LONG).show()
+                context, "¡Doctor registrado con éxito!", Toast.LENGTH_LONG
+            ).show()
             viewModel.clearSuccess()
         }
     }
@@ -109,7 +109,10 @@ fun AdminAddDoctorScreen(
             // --------- Datos personales ----------
             OutlinedTextField(
                 value = uiState.firstName,
-                onValueChange = viewModel::onFirstNameChange,
+                onValueChange = { raw ->
+                    val sanitized = validarNombreaddmin(raw, maxLen = 40)
+                    viewModel.onFirstNameChange(sanitized)
+                },
                 label = { Text("Nombre") },
                 modifier = Modifier.fillMaxWidth(),
                 isError = uiState.firstNameError != null,
@@ -120,7 +123,10 @@ fun AdminAddDoctorScreen(
 
             OutlinedTextField(
                 value = uiState.lastName,
-                onValueChange = viewModel::onLastNameChange,
+                onValueChange = { raw ->
+                    val sanitized = validarNombreaddmin(raw, maxLen = 40)
+                    viewModel.onLastNameChange(sanitized)
+                },
                 label = { Text("Apellido") },
                 modifier = Modifier.fillMaxWidth(),
                 isError = uiState.lastNameError != null,
@@ -129,11 +135,13 @@ fun AdminAddDoctorScreen(
             uiState.lastNameError?.let { Text(it, color = MaterialTheme.colorScheme.error) }
             Spacer(Modifier.height(8.dp))
 
-
-
-
             var birthField by remember(uiState.birthDate) {
-                mutableStateOf(TextFieldValue(uiState.birthDate, selection = TextRange(uiState.birthDate.length)))
+                mutableStateOf(
+                    TextFieldValue(
+                        uiState.birthDate,
+                        selection = TextRange(uiState.birthDate.length)
+                    )
+                )
             }
             OutlinedTextField(
                 value = birthField,
@@ -152,9 +160,6 @@ fun AdminAddDoctorScreen(
             uiState.birthDateError?.let {
                 Text(it, color = MaterialTheme.colorScheme.error)
             }
-
-
-
 
             OutlinedTextField(
                 value = uiState.email,
@@ -224,7 +229,10 @@ fun AdminAddDoctorScreen(
                     }
                 }
             } else {
-                Text("No hay especialidades registradas aún.", style = MaterialTheme.typography.bodyMedium)
+                Text(
+                    "No hay especialidades registradas aún.",
+                    style = MaterialTheme.typography.bodyMedium
+                )
             }
 
             Spacer(Modifier.height(16.dp))
@@ -253,7 +261,6 @@ fun AdminAddDoctorScreen(
             }
         }
     }
-
 }
 
 @Composable
@@ -291,11 +298,20 @@ private fun maybeSendDoctorCreatedNotification(
 
     NotificationHelper.createNotificationChannel(context)
     val needsPermission = Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU &&
-            ContextCompat.checkSelfPermission(context, Manifest.permission.POST_NOTIFICATIONS) != PackageManager.PERMISSION_GRANTED
+            ContextCompat.checkSelfPermission(
+                context,
+                Manifest.permission.POST_NOTIFICATIONS
+            ) != PackageManager.PERMISSION_GRANTED
 
     if (needsPermission) {
         requestPermission(Manifest.permission.POST_NOTIFICATIONS)
     } else {
         NotificationHelper.showDoctorCreated(context, doctorName)
     }
+}
+private fun validarNombreaddmin(input: String, maxLen: Int): String {
+
+    return input
+        .filter { it.isLetter() || it == ' ' }
+        .take(maxLen)
 }

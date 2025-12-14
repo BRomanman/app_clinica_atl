@@ -183,7 +183,7 @@ fun AdminProfileScreen(
             OutlinedTextField(
                 value = uiState.nombre,
                 onValueChange = { raw ->
-                    val sanitized = sanitizeName(raw, maxLen = 40)
+                    val sanitized = validarNombreaddmin(raw, maxLen = 40)
                     viewModel.onNombreChange(sanitized)
                 },
                 label = { Text("Nombre") },
@@ -204,7 +204,7 @@ fun AdminProfileScreen(
             OutlinedTextField(
                 value = uiState.apellido,
                 onValueChange = { raw ->
-                    val sanitized = sanitizeName(raw, maxLen = 40)
+                    val sanitized = validarNombreaddmin(raw, maxLen = 40)
                     viewModel.onApellidoChange(sanitized)
                 },
                 label = { Text("Apellido") },
@@ -463,7 +463,7 @@ private fun createImageUri(context: Context): Uri {
 private val GMAIL_REGEX = Regex("^[A-Za-z0-9._%+-]+@atladmin\\.cl$", RegexOption.IGNORE_CASE)
 private val PHONE_REGEX = Regex("^\\+569\\d{8}$")
 
-private fun sanitizeName(input: String, maxLen: Int): String {
+private fun validarNombreaddmin(input: String, maxLen: Int): String {
     return input
         .filter { it.isLetter() || it == ' ' }
         .take(maxLen)
