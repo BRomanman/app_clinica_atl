@@ -10,10 +10,11 @@ import com.example.app_clinica_atl.domain.validation.validateChileanPhoneNumber
 import com.example.app_clinica_atl.domain.validation.validateEmail
 import com.example.app_clinica_atl.domain.validation.validateRequired
 import java.io.IOException
+import java.time.LocalDate
+import java.time.format.DateTimeFormatter
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
-import kotlinx.coroutines.flow.catch
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import kotlin.random.Random
@@ -52,6 +53,15 @@ data class AdminAddDoctorUiState(
 class AdminAddDoctorViewModel(
     private val adminRepository: AdminRepository
 ) : ViewModel() {
+
+    private val UI_DATE_FMT = DateTimeFormatter.ofPattern("dd-MM-yyyy")
+    private val API_DATE_FMT = DateTimeFormatter.ISO_LOCAL_DATE
+
+    private fun uiDateToApi(date: String): String? = try {
+        LocalDate.parse(date, UI_DATE_FMT).format(API_DATE_FMT)
+    } catch (_: Exception) {
+        null
+    }
 
     private val _uiState = MutableStateFlow(AdminAddDoctorUiState())
     val uiState: StateFlow<AdminAddDoctorUiState> = _uiState.asStateFlow()
@@ -209,10 +219,22 @@ class AdminAddDoctorViewModel(
                 return@launch
             }
 
+            val apiBirth = uiDateToApi(s.birthDate)
+            if (apiBirth == null) {
+                _uiState.update {
+                    it.copy(
+                        isLoading = false,
+                        birthDateError = "Formato inválido (dd-mm-aaaa).",
+                        errorMsg = "Fecha de nacimiento inválida"
+                    )
+                }
+                return@launch
+            }
+
             val doctorRequest = DoctorCreateRequestDto(
                 nombre = s.firstName,
                 apellido = s.lastName,
-                fechaNacimiento = s.birthDate,
+                fechaNacimiento = apiBirth,
                 correo = s.email,
                 telefono = s.phone,
                 contrasena = password,
