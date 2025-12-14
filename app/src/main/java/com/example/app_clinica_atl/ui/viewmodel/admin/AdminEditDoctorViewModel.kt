@@ -8,6 +8,7 @@ import com.example.app_clinica_atl.data.remote.dto.DoctorUpdateRequestDto
 import com.example.app_clinica_atl.data.remote.dto.EspecialidadDto
 import com.example.app_clinica_atl.data.repository.AdminRepository
 import com.example.app_clinica_atl.domain.validation.validateChileanPhoneNumber
+import com.example.app_clinica_atl.domain.validation.validateDateDdMmYyyy
 import com.example.app_clinica_atl.domain.validation.validateEmail
 import com.example.app_clinica_atl.domain.validation.validateRequired
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -15,6 +16,8 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
+import java.time.LocalDate
+import java.time.format.DateTimeFormatter
 
 data class AdminEditDoctorUiState(
     val nombre: String = "",
@@ -64,12 +67,15 @@ class AdminEditDoctorViewModel(
                 val doc = result.getOrNull()!!
                 val rawBirth = doc.fechaNacimiento?.trim().orEmpty()
                 val birthValue = if (rawBirth.length >= 10) rawBirth.substring(0, 10) else rawBirth
+                val birthDisplay = runCatching {
+                    LocalDate.parse(birthValue).format(DateTimeFormatter.ofPattern("dd-MM-yyyy"))
+                }.getOrElse { birthValue }
                 _uiState.update {
                     it.copy(
                         doctorId = doc.id,
                         nombre = doc.nombre.orEmpty(),
                         apellido = doc.apellido.orEmpty(),
-                        birthDate = birthValue,
+                        birthDate = birthDisplay,
                         email = doc.correo.orEmpty(),
                         telefono = doc.telefono.orEmpty(),
                         tarifaConsulta = doc.tarifaConsulta?.toString().orEmpty(),
@@ -143,6 +149,9 @@ class AdminEditDoctorViewModel(
     fun onBonoChange(value: String) =
         _uiState.update { it.copy(bono = value, bonoError = null, errorMsg = null, updateSuccess = false) }
 
+    fun onActivoChange(value: Boolean) =
+        _uiState.update { it.copy(activo = value, errorMsg = null, updateSuccess = false) }
+
     fun onSpecialtySelected(specialty: EspecialidadDto) =
         _uiState.update {
             it.copy(
@@ -159,7 +168,7 @@ class AdminEditDoctorViewModel(
             val state = _uiState.value
             val nombreError = validateRequired(state.nombre, "Nombre")
             val apellidoError = validateRequired(state.apellido, "Apellido")
-            val birthDateError = validateBirthDate(state.birthDate)
+            val birthDateError = validateDateDdMmYyyy(state.birthDate, "Fecha de nacimiento")
             val emailError = validateEmail(state.email)
             val telefonoError = validateChileanPhoneNumber(state.telefono)
             val tarifaValue = parseInt(state.tarifaConsulta)
@@ -193,10 +202,16 @@ class AdminEditDoctorViewModel(
                 return@launch
             }
 
+            val birthIso = normalizeBirthDate(state.birthDate)
+            if (birthIso == null) {
+                _uiState.update { it.copy(birthDateError = "Fecha invalida (dd-MM-aaaa)") }
+                return@launch
+            }
+
             val request = DoctorUpdateRequestDto(
                 nombre = state.nombre.trim(),
                 apellido = state.apellido.trim(),
-                fechaNacimiento = state.birthDate.trim(),
+                fechaNacimiento = birthIso,
                 correo = state.email.trim(),
                 telefono = state.telefono.trim(),
                 idEspecialidad = state.selectedSpecialtyId!!,
@@ -244,10 +259,14 @@ class AdminEditDoctorViewModel(
         }
     }
 
-    private fun validateBirthDate(value: String): String? {
-        if (value.isBlank()) return "Fecha de nacimiento es requerida."
-        val regex = Regex("^\\d{4}-\\d{2}-\\d{2}$")
-        return if (!regex.matches(value)) "Formato invalido (aaaa-mm-dd)." else null
+    private fun normalizeBirthDate(input: String): String? {
+        val trimmed = input.trim()
+        if (trimmed.isBlank()) return null
+        val ddMm = DateTimeFormatter.ofPattern("dd-MM-yyyy")
+        return runCatching { LocalDate.parse(trimmed, ddMm).format(DateTimeFormatter.ISO_DATE) }
+            .getOrElse {
+                runCatching { LocalDate.parse(trimmed).format(DateTimeFormatter.ISO_DATE) }.getOrNull()
+            }
     }
 }
 
