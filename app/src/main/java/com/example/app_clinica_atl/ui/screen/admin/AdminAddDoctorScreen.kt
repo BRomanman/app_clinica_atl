@@ -22,7 +22,6 @@ import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ArrowBack
-import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.Checkbox
 import androidx.compose.material3.CircularProgressIndicator
@@ -34,7 +33,6 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
-import androidx.compose.material3.TextButton
 import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
@@ -178,16 +176,12 @@ fun AdminAddDoctorScreen(
             Spacer(Modifier.height(16.dp))
 
             // --------- Especialidades ----------
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.SpaceBetween,
-                verticalAlignment = Alignment.CenterVertically
-            ) {
-                Text("Especialidades", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.SemiBold)
-                TextButton(onClick = { viewModel.openNewSpecialtyDialog() }) {
-                    Text("Nueva especialidad")
-                }
-            }
+            Text(
+                "Especialidades",
+                style = MaterialTheme.typography.titleMedium,
+                fontWeight = FontWeight.SemiBold
+            )
+
             uiState.specialtiesError?.let { Text(it, color = MaterialTheme.colorScheme.error) }
             Spacer(Modifier.height(4.dp))
 
@@ -213,22 +207,6 @@ fun AdminAddDoctorScreen(
                 }
             } else {
                 Text("No hay especialidades registradas aún.", style = MaterialTheme.typography.bodyMedium)
-            }
-
-            // Nuevas especialidades (creadas en la UI)
-            if (uiState.newSpecialties.isNotEmpty()) {
-                Spacer(Modifier.height(12.dp))
-                Text("Nuevas (esta sesión)", style = MaterialTheme.typography.titleSmall, fontWeight = FontWeight.Medium)
-                Spacer(Modifier.height(4.dp))
-                uiState.newSpecialties.forEach { name ->
-                    val checked = uiState.selectedSpecialties.contains(name)
-                    SpecialtyCheckRow(
-                        label = "$name (nueva)",
-                        checked = checked,
-                        onToggle = { viewModel.toggleSpecialty(name) }
-                    )
-                    Divider()
-                }
             }
 
             Spacer(Modifier.height(16.dp))
@@ -258,39 +236,6 @@ fun AdminAddDoctorScreen(
         }
     }
 
-    // --------- Diálogo: Nueva Especialidad ----------
-    if (uiState.showNewSpecialtyDialog) {
-        AlertDialog(
-            onDismissRequest = { viewModel.closeNewSpecialtyDialog() },
-            title = { Text("Nueva especialidad") },
-            text = {
-                Column {
-                    OutlinedTextField(
-                        value = uiState.newSpecialtyName,
-                        onValueChange = viewModel::onNewSpecialtyNameChange,
-                        label = { Text("Nombre de la especialidad") },
-                        singleLine = true,
-                        modifier = Modifier.fillMaxWidth(),
-                        isError = uiState.newSpecialtyError != null
-                    )
-                    uiState.newSpecialtyError?.let {
-                        Spacer(Modifier.height(6.dp))
-                        Text(it, color = MaterialTheme.colorScheme.error, style = MaterialTheme.typography.bodySmall)
-                    }
-                }
-            },
-            confirmButton = {
-                TextButton(onClick = { viewModel.confirmNewSpecialty() }) {
-                    Text("Guardar")
-                }
-            },
-            dismissButton = {
-                TextButton(onClick = { viewModel.closeNewSpecialtyDialog() }) {
-                    Text("Cancelar")
-                }
-            }
-        )
-    }
 }
 
 @Composable
