@@ -87,8 +87,8 @@ class AdminAddDoctorViewModel(
 
     private fun validateBirthDate(value: String): String? {
         if (value.isBlank()) return "Fecha de nacimiento es requerida."
-        val regex = Regex("^\\d{4}-\\d{2}-\\d{2}$")
-        return if (!regex.matches(value)) "Formato invalido (aaaa-mm-dd)." else null
+        val regex = Regex("^\\d{2}-\\d{2}-\\d{4}$")
+        return if (!regex.matches(value)) "Formato invalido (dd-mm-aaaa)." else null
     }
 
     fun onFirstNameChange(name: String) {
