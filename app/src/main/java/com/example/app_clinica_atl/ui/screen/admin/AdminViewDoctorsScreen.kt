@@ -12,6 +12,7 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
@@ -54,24 +55,29 @@ fun AdminViewDoctorsScreen(
             if (uiState.isLoading) {
                 CircularProgressIndicator(modifier = Modifier.align(Alignment.CenterHorizontally))
             } else {
-                // Lista
+                val sortedDoctors = remember(uiState.filteredList) {
+                    uiState.filteredList.sortedBy { (it.nombre ?: it.usuario?.nombre).orEmpty().lowercase() }
+                }
                 LazyColumn(verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                    items(uiState.filteredList) { doctor ->
+                    items(sortedDoctors) { doctor ->
                         Card(
                             modifier = Modifier
                                 .fillMaxWidth()
                                 .clickable {
                                     doctor.id?.let { onDoctorClick(it) }
                                 },
-                            elevation = CardDefaults.cardElevation(2.dp)
+                            colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant),
+                            elevation = CardDefaults.cardElevation(1.dp)
                         ) {
                             Row(
-                                modifier = Modifier.padding(16.dp),
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .padding(16.dp),
                                 verticalAlignment = Alignment.CenterVertically
                             ) {
                                 Icon(Icons.Default.Person, null, Modifier.size(40.dp))
                                 Spacer(modifier = Modifier.width(16.dp))
-                                Column {
+                                Column(Modifier.fillMaxWidth()) {
                                     val displayName = listOfNotNull(doctor.nombre, doctor.apellido)
                                         .joinToString(" ")
                                         .trim()
@@ -81,18 +87,41 @@ fun AdminViewDoctorsScreen(
                                             .trim()
                                             .ifBlank { "Doctor" }
                                     val email = doctor.usuario?.correo ?: doctor.correo.orEmpty()
-                                    Text(displayName, style = MaterialTheme.typography.titleMedium)
-                                    doctor.id?.let { id ->
-                                        Text(
-                                            text = "ID: $id",
-                                            style = MaterialTheme.typography.labelSmall
-                                        )
-                                    }
+
+
                                     Text(
-                                        text = doctor.especialidad ?: "Sin especialidad",
-                                        style = MaterialTheme.typography.bodyMedium
+                                        displayName,
+                                        style = MaterialTheme.typography.titleMedium,
+                                        color = MaterialTheme.colorScheme.onSurface
                                     )
-                                    Text(email, style = MaterialTheme.typography.bodySmall)
+
+                                    Row(verticalAlignment = Alignment.CenterVertically) {
+                                        Text(
+                                            text = doctor.especialidad ?: "Sin especialidad",
+                                            style = MaterialTheme.typography.bodyMedium,
+                                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                                        )
+
+
+                                        Spacer(modifier = Modifier.weight(1f))
+
+
+                                        doctor.id?.let { id ->
+                                            Text(
+                                                text = "ID: $id",
+                                                style = MaterialTheme.typography.titleLarge,
+                                                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                                modifier = Modifier.padding(start = 8.dp)
+                                            )
+                                        }
+                                    }
+
+
+                                    Text(
+                                        email,
+                                        style = MaterialTheme.typography.bodySmall,
+                                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                                    )
                                 }
                             }
                         }

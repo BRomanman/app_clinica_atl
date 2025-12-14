@@ -75,10 +75,7 @@ fun AdminAddDoctorScreen(
                 requestPermission = notificationPermissionLauncher::launch
             )
             Toast.makeText(
-                context,
-                context.getString(R.string.admin_doctor_created_toast),
-                Toast.LENGTH_LONG
-            ).show()
+                context,"¡Doctor registrado con éxito!",Toast.LENGTH_LONG).show()
             viewModel.clearSuccess()
         }
     }

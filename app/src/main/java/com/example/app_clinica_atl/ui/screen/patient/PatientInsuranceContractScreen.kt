@@ -425,7 +425,7 @@ private fun formatRutInput(input: String): String {
     return "$withDots-$dv"
 }
 
-private fun formatDateInput(input: String): String {
+fun formatDateInput(input: String): String {
     val digits = input.filter { it.isDigit() }.take(8)
     val sb = StringBuilder()
     digits.forEachIndexed { index, c ->
