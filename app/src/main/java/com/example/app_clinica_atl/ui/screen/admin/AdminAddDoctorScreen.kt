@@ -38,16 +38,22 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.text.TextRange
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardType
+import androidx.compose.ui.text.input.TextFieldValue
 import androidx.compose.ui.unit.dp
 import androidx.core.content.ContextCompat
 import com.example.app_clinica_atl.R
 import com.example.app_clinica_atl.data.remote.dto.EspecialidadDto
 import com.example.app_clinica_atl.notifications.NotificationHelper
+import com.example.app_clinica_atl.ui.screen.patient.formatDateInput
 import com.example.app_clinica_atl.ui.viewmodel.admin.AdminAddDoctorViewModel
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -123,17 +129,32 @@ fun AdminAddDoctorScreen(
             uiState.lastNameError?.let { Text(it, color = MaterialTheme.colorScheme.error) }
             Spacer(Modifier.height(8.dp))
 
+
+
+
+            var birthField by remember(uiState.birthDate) {
+                mutableStateOf(TextFieldValue(uiState.birthDate, selection = TextRange(uiState.birthDate.length)))
+            }
             OutlinedTextField(
-                value = uiState.birthDate,
-                onValueChange = viewModel::onBirthDateChange,
-                label = { Text("Fecha de nacimiento (aaaa-mm-dd)") },
+                value = birthField,
+                onValueChange = { newValue ->
+                    val formatted = formatDateInput(newValue.text)
+                    val tfv = TextFieldValue(formatted, selection = TextRange(formatted.length))
+                    birthField = tfv
+                    viewModel.onBirthDateChange(formatted)
+                },
+                label = { Text("Fecha Nacimiento (dd-mm-yyyy)") },
                 modifier = Modifier.fillMaxWidth(),
                 isError = uiState.birthDateError != null,
                 singleLine = true,
                 keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number)
             )
-            uiState.birthDateError?.let { Text(it, color = MaterialTheme.colorScheme.error) }
-            Spacer(Modifier.height(8.dp))
+            uiState.birthDateError?.let {
+                Text(it, color = MaterialTheme.colorScheme.error)
+            }
+
+
+
 
             OutlinedTextField(
                 value = uiState.email,

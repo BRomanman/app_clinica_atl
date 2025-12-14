@@ -28,6 +28,7 @@ import androidx.compose.material3.Switch
 import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -53,6 +54,13 @@ fun AdminEditDoctorScreen(
 ) {
     val uiState by viewModel.uiState.collectAsState()
     var specialtyExpanded by remember { mutableStateOf(false) }
+    var birthField by remember(uiState.birthDate) {
+        mutableStateOf(TextFieldValue(uiState.birthDate, selection = TextRange(uiState.birthDate.length)))
+    }
+
+    LaunchedEffect(uiState.birthDate) {
+        birthField = TextFieldValue(uiState.birthDate, selection = TextRange(uiState.birthDate.length))
+    }
 
     Scaffold(
         topBar = {
@@ -134,9 +142,6 @@ fun AdminEditDoctorScreen(
 
 
 
-            var birthField by remember(uiState.birthDate) {
-                mutableStateOf(TextFieldValue(uiState.birthDate))
-            }
             OutlinedTextField(
                 value = birthField,
                 onValueChange = { newValue ->
