@@ -361,8 +361,6 @@ fun AppNavGraph(
             )
         }
 
-        composable(Route.Restart.path) {
-            // Placeholder para reinicio
-        }
+
     }
 }

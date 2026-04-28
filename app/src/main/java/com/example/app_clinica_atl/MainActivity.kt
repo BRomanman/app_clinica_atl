@@ -156,6 +156,28 @@ class MainActivity : ComponentActivity() {
     private val themeViewModel: ThemeViewModel by viewModels { ThemeViewModelFactory(userPreferences) }
 
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
     @RequiresApi(Build.VERSION_CODES.O)
     override fun onCreate(savedInstanceState: Bundle?) {
         installSplashScreen()
@@ -164,6 +186,7 @@ class MainActivity : ComponentActivity() {
         RetrofitClient.configure(userPreferences)
         setContent {
             val themePreference by themeViewModel.themeFlow.collectAsStateWithLifecycle(initialValue = "SYSTEM")
+
             val isDark = when (themePreference) {
                 "LIGHT" -> false
                 "DARK" -> true
@@ -183,6 +206,9 @@ class MainActivity : ComponentActivity() {
                     val userRole by authViewModel.userRoleFlow.collectAsStateWithLifecycle(initialValue = null)
                     val userId by userPreferences.userIdFlow.collectAsStateWithLifecycle(initialValue = null)
 
+
+
+
                     // --- ¡¡LÓGICA DE REINICIO (SOLUCIÓN NUCLEAR)!! ---
                     LaunchedEffect(currentRoute) {
                         if (currentRoute == Route.Restart.path) {
@@ -198,6 +224,10 @@ class MainActivity : ComponentActivity() {
                         }
                     }
                     // --- FIN DE LA LÓGICA DE REINICIO ---
+
+
+
+
 
                     val isPatient = userRole == "paciente"
                     val drawerState = rememberDrawerState(initialValue = DrawerValue.Closed, confirmStateChange = { isPatient })

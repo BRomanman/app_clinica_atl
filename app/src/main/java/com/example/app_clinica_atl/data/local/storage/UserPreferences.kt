@@ -42,6 +42,7 @@ class UserPreferences(context: Context) {
 
     // es nuestro caché que dejamos inicializado cuando se inicia sesión
     // con esto evitamos iniciar sesión all the tiempo
+
     private object PreferencesKeys {
         val USER_ID = longPreferencesKey("user_id")
         val USER_ROLE = stringPreferencesKey("user_role")

@@ -42,6 +42,9 @@ import com.example.app_clinica_atl.ui.viewmodel.doctor.DoctorScheduleViewModel
 @OptIn(ExperimentalMaterial3Api::class)
 @RequiresApi(Build.VERSION_CODES.O)
 @Composable
+
+
+
 fun DoctorScheduleScreen(
     doctorId: Long?,
     onBackClick: () -> Unit,

@@ -53,4 +53,18 @@ class ValidatorsTest {
         assertTrue(validateRegisterPassword("Password1", "Password1").isSuccess)
         assertNull(validateChileanPhoneNumber("+56987654321"))
     }
+
+    @Test
+    fun testUltraEasy(){
+        assertNull(validateChileanPhoneNumber("+56912345678"))
+        assertEquals("Nombre es requerido.", validateRequired("   ", "Nombre"))
+        assertNull(validateRequired("John", "Nombre"))
+    }
+
+
+
 }
+
+
+
+
